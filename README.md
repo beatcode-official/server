@@ -29,3 +29,7 @@ When creating a PR, make sure to add [NO-??] to link a task from Notion with you
 ```
 [NO-69] Centered a div after 5 days
 ```
+
+Make sure you request review from at least one other person and have it approved before you merge your branch to main. You can always request me @weebao and I will make sure to review it by the end of the day.
+
+Also, please delete the branch after having it merged to keep things clean :D

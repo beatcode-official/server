@@ -1,11 +1,11 @@
-import docker
-import threading
-import concurrent.futures
-import uuid
 import os
-import tempfile
 import shutil
+import tempfile
+import threading
+import uuid
 from typing import List
+
+import docker
 
 
 class DockerExecutionService:
@@ -13,16 +13,12 @@ class DockerExecutionService:
         """
         A service to execute code in a docker container. Limits the number of concurrent docker containers that can be run through a semaphore.
 
-        Args
-        ----
-        limit: int
-            The maximum number of docker containers that can be run concurrently
-        mem_limit: str
-            The memory limit for the docker container
-        cpu_period: int
-            The CPU period for the docker container
-        cpu_quota: int
-            The CPU quota for the docker container
+        Args:
+            limit (int): The number of concurrent docker containers that can be run
+            mem_limit (str): The memory limit for the docker container
+            cpu_period (int): The CPU period for the docker container
+            cpu_quota (int): The CPU quota for the docker container
+            timeout (int): The timeout for the docker container execution
         """
         self.docker_client = docker.from_env()
         self.mem_limit = mem_limit
@@ -35,21 +31,14 @@ class DockerExecutionService:
         """
         Executes the code in a docker container and compares the output with the expected output.
 
-        Args
-        ----
-        code: str
-            The code to be executed
-        test_cases: List[str]
-            The test cases to be run
-        expected_outputs: List[str]
-            The expected outputs for the test cases
-        compare_func: str
-            The function to compare the output with the expected output
+        Args:
+            code (str): The code to execute
+            test_cases (List[str]): The test cases to run
+            expected_outputs (List[str]): The expected outputs for the test cases
+            compare_func (str): The function to compare the output with the expected output
 
-        Returns
-        -------
-        int
-            The number of test cases that passed
+        Returns:
+            dictionary: The result of the execution, containing the status, passed tests, and message
         """
         with self.semaphore:  # Acquire the semaphore
             container = None
@@ -76,11 +65,15 @@ class DockerExecutionService:
                 )
 
                 result = container.wait(timeout=self.timeout)
+                logs = container.logs().decode("utf-8").strip()
 
                 if result["StatusCode"] != 0:
-                    raise Exception("Execution failed")
+                    return {
+                        "status": "error",
+                        "passed_tests": 0,
+                        "message": logs
+                    }
                 else:
-                    logs = container.logs().decode("utf-8").strip()
                     return {
                         "status": "success",
                         "passed_tests": int(logs),
@@ -102,21 +95,14 @@ class DockerExecutionService:
         """
         Prepares the script that will be executed in the docker container.
 
-        Args
-        ----
-        code: str
-            The code to be executed
-        test_cases: List[str]
-            The test cases to be run
-        expected_outputs: List[str]
-            The expected outputs for the test cases
-        compare_func: str
-            The function to compare the output with the expected output
+        Args:
+            code (str): The code to execute
+            test_cases (List[str]): The test cases to run
+            expected_outputs (List[str]): The expected outputs for the test cases
+            compare_func (str): The function to compare the output with the expected output
 
-        Returns
-        -------
-        str
-            The script to be executed
+        Returns:
+            str: The prepared script
         """
         script = f"""
 {code}
@@ -127,12 +113,9 @@ def run_tests():
     expected_outputs = {expected_outputs}
     
     for i, (test_case, expected) in enumerate(zip(test_cases, expected_outputs)):
-        try:
-            result = eval(test_case)
-            if {compare_func}:
-                passed_tests += 1
-        except Exception as e:
-            pass
+        result = eval(test_case)
+        if {compare_func}:
+            passed_tests += 1
     
     print(passed_tests)
 

@@ -7,13 +7,18 @@ Ship fast
 Clone this repo
 
 ```bash
-git clone https://github.com/beatcode-official/beatcode-server.git
+git clone https://github.com/beatcode-official/beatcode-server.git && cd beatcode-server/server/app
 ```
 
 Install dependencies
 
 ```bash
 pip install -r requirements.txt
+```
+
+Run
+```python
+python main.py
 ```
 
 ## Contribution guidelines

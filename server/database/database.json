@@ -1,0 +1,120 @@
+{
+    "CHALLENGES": [
+        {
+            "id": 1,
+            "title": "Add",
+            "description": "Given two integers, write a function that returns the sum of the two integers.",
+            "sample_test_cases": [
+                "add(1, 2)",
+                "add(5, 5)"
+            ],
+            "sample_expected_outputs": [
+                "3",
+                "10"
+            ],
+            "test_cases": [
+                "add(1, 2)",
+                "add(5, -5)",
+                "add(10, 20)",
+                "add(-10, 40)",
+                "add(-1, -2)"
+            ],
+            "expected_outputs": [
+                "3",
+                "0",
+                "30",
+                "30",
+                "-3"
+            ],
+            "compare_func": "result == int(expected)",
+            "signature": "def add(a: int, b: int) -> int:"
+        },
+        {
+            "id": 2,
+            "title": "Subtract",
+            "description": "Given two integers, write a function that returns the difference of the two integers.",
+            "sample_test_cases": [
+                "subtract(1, 2)",
+                "subtract(5, 5)"
+            ],
+            "sample_expected_outputs": [
+                "-1",
+                "0"
+            ],
+            "test_cases": [
+                "subtract(1, 2)",
+                "subtract(5, -5)",
+                "subtract(10, 20)",
+                "subtract(-10, 40)",
+                "subtract(-1, -2)"
+            ],
+            "expected_outputs": [
+                "-1",
+                "10",
+                "-10",
+                "-50",
+                "1"
+            ],
+            "compare_func": "result == int(expected)",
+            "signature": "def subtract(a: int, b: int) -> int:"
+        },
+        {
+            "id": 3,
+            "title": "Multiply",
+            "description": "Given two integers, write a function that returns the product of the two integers.",
+            "sample_test_cases": [
+                "multiply(1, 2)",
+                "multiply(5, 5)"
+            ],
+            "sample_expected_outputs": [
+                "2",
+                "25"
+            ],
+            "test_cases": [
+                "multiply(1, 2)",
+                "multiply(5, -5)",
+                "multiply(10, 20)",
+                "multiply(-10, 40)",
+                "multiply(-1, -2)"
+            ],
+            "expected_outputs": [
+                "2",
+                "-25",
+                "200",
+                "-400",
+                "2"
+            ],
+            "compare_func": "result == int(expected)",
+            "signature": "def multiply(a: int, b: int) -> int:"
+        },
+        {
+            "id": 4,
+            "title": "Divide",
+            "description": "Given two integers, write a function that returns the quotient of the two integers.",
+            "sample_test_cases": [
+                "divide(1, 2)",
+                "divide(5, 5)"
+            ],
+            "sample_expected_outputs": [
+                "0",
+                "1"
+            ],
+            "test_cases": [
+                "divide(1, 2)",
+                "divide(5, -5)",
+                "divide(10, 20)",
+                "divide(-10, 40)",
+                "divide(-1, -2)"
+            ],
+            "expected_outputs": [
+                "0",
+                "-1",
+                "0",
+                "0",
+                "0"
+            ],
+            "compare_func": "result == int(expected)",
+            "signature": "def divide(a: int, b: int) -> int:"
+        }
+    ]
+}

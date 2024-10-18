@@ -30,10 +30,36 @@ class TestDockerExec(unittest.TestCase):
         expected_outputs = ["3"]
         comparison_function = "result == int(expected)"
 
-        passed_tests = service.execute_code(code, test_cases, expected_outputs, comparison_function)
-        self.assertEqual(passed_tests['status'], 'error')
-        self.assertEqual(passed_tests['passed_tests'], 0)
-        self.assertEqual("timed out" in passed_tests['message'], True)
+        resp = service.execute_code(code, test_cases, expected_outputs, comparison_function)
+        self.assertEqual(resp['status'], 'error')
+        self.assertEqual(resp['passed_tests'], 0)
+        self.assertEqual("timed out" in resp['message'], True)
+
+    def test_wrong_method(self):
+        service = DockerExecutionService()
+
+        code = "def adda(a, b):\n    return a + b"
+        test_cases = ["add(1, 2)", "add(-1, 1)", "add(0, 0)"]
+        expected_outputs = ["3", "0", "0"]
+        comparison_function = "result == int(expected)"
+
+        resp = service.execute_code(code, test_cases, expected_outputs, comparison_function)
+        self.assertEqual(resp['status'], 'error')
+        self.assertEqual(resp['passed_tests'], 0)
+        self.assertEqual("NameError" in resp['message'], True)
+
+    def test_broken_code(self):
+        service = DockerExecutionService()
+
+        code = "def add(a, b):\n    return JOE"
+        test_cases = ["add(1, 2)", "add(-1, 1)", "add(0, 0)"]
+        expected_outputs = ["3", "0", "0"]
+        comparison_function = "result == int(expected)"
+
+        resp = service.execute_code(code + "a", test_cases, expected_outputs, comparison_function)
+        self.assertEqual(resp['status'], 'error')
+        self.assertEqual(resp['passed_tests'], 0)
+        self.assertEqual("NameError" in resp['message'], True)
 
 
 if __name__ == '__main__':

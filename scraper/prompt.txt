@@ -1,0 +1,20 @@
+Given a JSON that describes a competitive programming problem, think of 10 test cases and expected outputs for that problem, make sure you cover all the edge cases mentioned. Also come up with a compare function that compares the result of the code (`result`) versus the string representation of the expected outputs (`expected`).
+
+Here is the JSON
+```json
+|||AAA REPLACE THIS|||
+```
+
+Answer in this format and DO NOT INCLUDE ANYTHING ELSE.
+```
+{
+   "test_cases": "A",
+   "expected_outputs": "B",
+   "compare_func": "C"
+}
+```
+
+where:
+A: array of function calls of the method with the inputs e.g. ["add(1, 2)", "add(5, -5)"]
+B: array of expected outputs of those function calls above e.g. ["3", "0"]
+C: a string representation of the comparison done to figure out if the result from the user string is the correct one e.g. "result == int(expected)" for simple result comparison, or "sorted(list1) == eval(sorted(list2))" to make sure the result is correct even if order is not the same.

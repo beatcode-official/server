@@ -2,25 +2,172 @@ import os
 import sys
 import json
 
-from pydantic import BaseModel
 from typing import Annotated
+from pydantic import BaseModel
 
-from core.challenge_manager import ChallengeManager
 from core.game_manager import GameManager
+from core.challenge_manager import ChallengeManager
 from core.websocket_manager import WebSocketManager
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
 
 from services.docker_execution_service import DockerExecutionService
 
 from postgredb import models
-from postgredb.database import SessionLocal, engine
 from sqlalchemy.orm import Session
+from postgredb.database import SessionLocal, engine
+
+# TODO: Move this to OAuth folder
+from jose import JWTError, jwt  # For JWT token generation and validation
+from datetime import datetime, timedelta  # For JWT token session time management
+from passlib.context import CryptContext  # For password hashing
+
+# run [openssl rand -hex 32] in terminal to generate a secret key, then paste them to .env file
+# we can talk about this later when the database is properly set up
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# TODO: Remove this fake db
+fake_users_db = {
+    "bao": {
+        "username": "bao",
+        "full_name": "bao dz",
+        "email": "bowdong@umass.edu",
+        "hashed_password": "",
+        "disabled": False,
+    },
+    "minh": {
+        "username": "minh",
+        "full_name": "minh dz",
+        "email": "mivu@umass.edu",
+        "hashed_password": "",
+        "disabled": False,
+    },
+}
+
+
+class Token(BaseModel):
+    """
+    The JWT token is used to authenticate users
+    It contains 3 parts:
+    - Header: Contains the type of token and the hashing algorithm used
+    - Payload: Contains the claims. Claims are statements about an entity (typically, the user) and additional data.
+    - Signature: Contains the signature of the token that can be used to verify that the sender of the JWT is who it says it is and to ensure that the message wasn't changed along the way.
+
+    Below is the definition of the Token class, which is used to handle auth
+    """
+
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    """
+    Store data of the username after extracting it from the JWT token (decoding it)
+    """
+
+    username: str | None = None
+
+
+class User(BaseModel):
+    """
+    defining template for the request body for the user data endpoints
+
+    """
+
+    username: str
+    display_name: str
+    email: str | None = None
+    date_joined: str
+    # disabled: bool | None = None
+
+
+# inherit from User class to add password field
+class UserInDB(User):
+    """
+    We don't want to expose hashed_password to the client side, so we create a new class UserInDB that inherits from User and adds hashed_password field
+    """
+
+    hashed_password: str
+
+
+# pwd_context use for password hashing and manage hashing algorithm
+# schemes=["bcrypt"] defines bcrypt hashing algorithm
+# deprecated="auto" library will auto upgrade to a more secure algo if older scheme is detected
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# OAuth2: standard securing access to APIs
+# Password Bearers: scheme specifically allows clients to obtain a token by sending username and password
+# "token": path to endpoint where client will request a token
+# client will send this in `Authorization: Bearer <token>` header with every request to access protected resources
+oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def verify_password(plain_password, hashed_password):
+    """
+    Verify the password entered by the user with the hashed password stored in the database
+    """
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    """
+    Hash the password before storing it in the database
+    """
+    return pwd_context.hash(password)
+
+
+def get_user(db: Session, username: str):
+    """
+    Get the user from the database
+    """
+    if username in db:
+        user_dict = db[username]
+        return UserInDB(
+            **user_dict
+        )  # an extended version of User class with hashed_password field
+
+
+def authenticate_user(db: Session, username: str, password: str):
+    """
+    Authenticate the user by checking if the username exists in the database and the password matches
+    """
+    user = get_user(db, username)
+    # Checking if user exist
+    if not user:
+        return False
+    # Validating password
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
+
+
+def create_access_token(data: dict, exprires_delta: timedelta | None = None):
+    """
+    Create a JWT token that expires in 30 minutes
+    @param data: a dictionary that contains the data we want to include in the JWt payload
+    @param exprires_delta: optional parameter that allows us to specify how long th token should be valid.
+                           If we don't specify, the token will be valid for 15 minutes
+    """
+    to_encode = data.copy()
+    if exprires_delta:
+        expire = datetime.now(datetime.timezone.utc) + exprires_delta
+    else:
+        expire = datetime.now(datetime.timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})  # update the payload with the expiration time
+    encoded_jwt = jwt.encode(
+        to_encode, SECRET_KEY, algorithm=ALGORITHM
+    )  # return encoded JWT as a string
+    return encoded_jwt
+
 
 app = FastAPI()  # Initialize FastAPI app
+
+## TODO for all: Please create a database in pgAdmin called Beatcode to really avoid errors
 models.Base.metadata.create_all(bind=engine)  # Create tables in the database
-## TODO: Please create a database in pgAdmin called Beatcode to really avoid errors
 
 # Add CORS middleware
 app.add_middleware(
@@ -48,12 +195,12 @@ class PlayerJoin(BaseModel):
 
 
 # defining template for the request body for the user data endpoints
-class Users(BaseModel):
-    username: str
-    display_name: str
-    password: str
-    email: str
-    date_joined: str
+# class Users(BaseModel):
+#     username: str
+#     display_name: str
+#     password: str
+#     email: str
+#     date_joined: str
 
 
 # Reuse the same database management logic in all routes

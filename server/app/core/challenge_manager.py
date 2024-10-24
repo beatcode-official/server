@@ -31,7 +31,7 @@ class ChallengeManager:
         Args:
             count (int): The number of random challenge indexes to return.
 
-        Returns:    
+        Returns:
             list: A list of random challenge indexes.
         """
         return random.sample(range(len(self.db_obj)), count)

@@ -22,7 +22,7 @@ class WebSocketManager:
         if room_code not in self.active_connections:
             self.active_connections[room_code] = {}
         self.active_connections[room_code][player_id] = websocket
-        await websocket.accept()
+        await websocket.accept()  # waiting for the WebSocket connection to be accepted
 
     async def disconnect(self, room_code: str, player_id: str):
         """
@@ -49,5 +49,8 @@ class WebSocketManager:
         """
         Sends a message to a WebSocket in a room with the given room code and player ID.
         """
-        if room_code in self.active_connections and player_id in self.active_connections[room_code]:
+        if (
+            room_code in self.active_connections
+            and player_id in self.active_connections[room_code]
+        ):
             await self.active_connections[room_code][player_id].send_text(message)

@@ -1,15 +1,22 @@
 import os
-import shutil
-import tempfile
-import threading
-import uuid
+import shutil  # Shell utilities - perform operations such as copying, moving, and deleting files and directories, as well as archiving and unpacking
+import tempfile  # To create temporary files and directories
+import threading  # A module provides a way to run multiple threads concurrently - helps run functions in parallel
+import uuid  # Generate random unique identifiers, which is a 128-bit number that is unique across both space and time
 from typing import List
 
 import docker
 
 
 class DockerExecutionService:
-    def __init__(self, limit: int = 5, mem_limit: str = "128m", cpu_period: int = 100000, cpu_quota: int = 50000, timeout: int = 5):
+    def __init__(
+        self,
+        limit: int = 5, # maximum number of Docker containers that can run concurrently
+        mem_limit: str = "128m", # Memory limit for the docker container
+        cpu_period: int = 100000, # CPU period in microseconds - establishes the time window which the container's CPU usage is tracked and restricted
+        cpu_quota: int = 50000, # CPU quota? in microseconds - controls the CPU usage by limiting how long the container can run in each cpu_period
+        timeout: int = 5, # Maximum time to wait for container execution before timing out
+    ):
         """
         A service to execute code in a docker container. Limits the number of concurrent docker containers that can be run through a semaphore.
 
@@ -27,7 +34,13 @@ class DockerExecutionService:
         self.timeout = timeout
         self.semaphore = threading.Semaphore(limit)
 
-    def execute_code(self, code: str, test_cases: List[str], expected_outputs: List[str], compare_func: str) -> int:
+    def execute_code(
+        self,
+        code: str,
+        test_cases: List[str],
+        expected_outputs: List[str],
+        compare_func: str,
+    ) -> int:
         """
         Executes the code in a docker container and compares the output with the expected output.
 
@@ -45,53 +58,53 @@ class DockerExecutionService:
             temp_dir = None
 
             try:
-                temp_dir = tempfile.mkdtemp()
-                script = self._prepare_script(code, test_cases, expected_outputs, compare_func)
-
-                file_name = f"temp_{uuid.uuid4().hex}.py"
-                file_path = os.path.join(temp_dir, file_name)
-
-                with open(file_path, "w") as f:
-                    f.write(script)
-
-                container = self.docker_client.containers.run(
-                    "python:3.11-alpine",
-                    ["python", f"/code/{file_name}"],
-                    detach=True,
-                    mem_limit=self.mem_limit,
-                    cpu_period=self.cpu_period,
-                    cpu_quota=self.cpu_quota,
-                    volumes={temp_dir: {'bind': '/code', 'mode': 'ro'}}
+                temp_dir = tempfile.mkdtemp() # prepare a temporary directory to store the script that will be executed inside the container
+                script = self._prepare_script( # Preparees the Python script by injecting the user-provided code, test cases, expected outputs, and comparison function
+                    code, test_cases, expected_outputs, compare_func
                 )
 
-                result = container.wait(timeout=self.timeout)
-                logs = container.logs().decode("utf-8").strip()
+                file_name = f"temp_{uuid.uuid4().hex}.py" # Hmmm, generate a unique filename using uuid to avoid conflicts?
+                file_path = os.path.join(temp_dir, file_name) # just the path to the file
+
+                with open(file_path, "w") as f:
+                    f.write(script) # just write the pre-written script (checking test cases) to the file
+
+                container = self.docker_client.containers.run(
+                    "python:3.11-alpine", # Launch Docker container with Python 3.11 image
+                    ["python", f"/code/{file_name}"], # TODO: what is this
+                    detach=True, # TODO: what is this
+                    mem_limit=self.mem_limit, # Just some contraint
+                    cpu_period=self.cpu_period,
+                    cpu_quota=self.cpu_quota,
+                    volumes={temp_dir: {"bind": "/code", "mode": "ro"}}, # TODO: What is this?
+                )
+
+                result = container.wait(timeout=self.timeout) # Wait for the container to finish exe or until the timout is reached
+                logs = container.logs().decode("utf-8").strip() # Get the logs from the container
 
                 if result["StatusCode"] != 0:
-                    return {
-                        "status": "error",
-                        "passed_tests": 0,
-                        "message": logs
-                    }
+                    return {"status": "error", "passed_tests": 0, "message": logs}
                 else:
                     return {
                         "status": "success",
                         "passed_tests": int(logs),
-                        "message": ""
+                        "message": "",
                     }
             except Exception as e:
-                return {
-                    "status": "error",
-                    "passed_tests": 0,
-                    "message": str(e)
-                }
+                return {"status": "error", "passed_tests": 0, "message": str(e)}
             finally:
                 if container:
                     container.remove(force=True)
                 if temp_dir and os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
 
-    def _prepare_script(self, code: str, test_cases: List[str], expected_outputs: List[str], compare_func: str) -> str:
+    def _prepare_script(
+        self,
+        code: str,
+        test_cases: List[str],
+        expected_outputs: List[str],
+        compare_func: str,
+    ) -> str:
         """
         Prepares the script that will be executed in the docker container.
 

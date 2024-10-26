@@ -1,6 +1,6 @@
 import os
-import sys
 import json
+from datetime import date
 
 from typing import Annotated
 from pydantic import BaseModel
@@ -11,12 +11,13 @@ from core.websocket_manager import WebSocketManager
 
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
 
 from services.docker_execution_service import DockerExecutionService
 
-from postgredb import models
 from sqlalchemy.orm import Session
+from postgredb import models
 from postgredb.database import SessionLocal, engine
 
 # TODO: Move this to OAuth folder
@@ -31,22 +32,23 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # TODO: Remove this fake db
-fake_users_db = {
-    "bao": {
-        "username": "bao",
-        "full_name": "bao dz",
-        "email": "bowdong@umass.edu",
-        "hashed_password": "",
-        "disabled": False,
-    },
-    "minh": {
-        "username": "minh",
-        "full_name": "minh dz",
-        "email": "mivu@umass.edu",
-        "hashed_password": "",
-        "disabled": False,
-    },
-}
+# db = {
+#     "bao": {
+#         "username": "bao",
+#         "display_name": "bao dz",
+#         "email": "bowdong@umass.edu",
+#         "hashed_password": "$2b$12$dne0hHrrEf76YaO2dc9Swu2NfyUYxer0HXrFi8G3DHPtBwtWZXbPy",
+#         "date_joined": "today",
+#         "disabled": False,
+#     },
+#     # "minh": {
+#     #     "username": "minh",
+#     #     "full_name": "minh dz",
+#     #     "email": "mivu@umass.edu",
+#     #     "hashed_password": "",
+#     #     "disabled": False,
+#     # },
+# }
 
 
 class Token(BaseModel):
@@ -81,8 +83,8 @@ class User(BaseModel):
     username: str
     display_name: str
     email: str | None = None
-    date_joined: str
-    # disabled: bool | None = None
+    date_joined: date
+    disabled: bool | None = None
 
 
 # inherit from User class to add password field
@@ -91,7 +93,7 @@ class UserInDB(User):
     We don't want to expose hashed_password to the client side, so we create a new class UserInDB that inherits from User and adds hashed_password field
     """
 
-    hashed_password: str
+    password: str
 
 
 # pwd_context use for password hashing and manage hashing algorithm
@@ -103,7 +105,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Password Bearers: scheme specifically allows clients to obtain a token by sending username and password
 # "token": path to endpoint where client will request a token
 # client will send this in `Authorization: Bearer <token>` header with every request to access protected resources
-oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def verify_password(plain_password, hashed_password):
@@ -124,11 +126,22 @@ def get_user(db: Session, username: str):
     """
     Get the user from the database
     """
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(
-            **user_dict
-        )  # an extended version of User class with hashed_password field
+    # if username in db:
+    #     user_dict = db[username]
+    #     return UserInDB(
+    #         **user_dict
+    #     )  # an extended version of User class with hashed_password field
+
+    return db.query(models.Users).filter(models.Users.username == username).first()
+
+
+# Reuse the same database management logic in all routes
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def authenticate_user(db: Session, username: str, password: str):
@@ -154,9 +167,9 @@ def create_access_token(data: dict, exprires_delta: timedelta | None = None):
     """
     to_encode = data.copy()
     if exprires_delta:
-        expire = datetime.now(datetime.timezone.utc) + exprires_delta
+        expire = datetime.utcnow() + exprires_delta
     else:
-        expire = datetime.now(datetime.timezone.utc) + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})  # update the payload with the expiration time
     encoded_jwt = jwt.encode(
         to_encode, SECRET_KEY, algorithm=ALGORITHM
@@ -164,9 +177,94 @@ def create_access_token(data: dict, exprires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+## Create an Access Token based on Login Data
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
+    """
+    - Get the current user by decoding the JWT token
+    - The depends on oauth2_scheme: whenever the function get_current_user is called,
+    FastAPI will run the function oauth2_scheme to get the token from the request headers
+    """
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token, SECRET_KEY, algorithms=[ALGORITHM]
+        )  # decode the token using the secret key
+        username: str = payload.get("sub")  # get the username from the payload
+        if username is None:
+            raise credentials_exception
+
+        token_data = TokenData(username=username)  # create a TokenData object
+    except JWTError:
+        raise credentials_exception
+
+    user = get_user(db, username=token_data.username)
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):
+    """
+    - Check if the user is active
+    - The depends on get_current_user: whenever the function get_current_active_user is called,
+    FastAPI will run the function get_current_user to get the current user
+    """
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    return current_user
+
+
 app = FastAPI()  # Initialize FastAPI app
 
-## TODO for all: Please create a database in pgAdmin called Beatcode to really avoid errors
+
+@app.post(
+    "/token", response_model=Token
+)  # FastAPI will validate, serialize, and filter the data
+# (noticed the return of this function is the same as Model Token!)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
+    """
+    Get the access token by passing the username and password
+    """
+    user = authenticate_user(db, form_data.username, form_data.password)
+    print("how about this")
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    print("till this point")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, exprires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/users/me", response_model=User)
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    """
+    Get the user data
+    """
+    return current_user
+
+
+# pwd = get_password_hash("baodz")
+# print("minhdz", pwd)
+
+
+## TODO for all: Please create a database in pgAdmin4 called Beatcode to really avoid errors
 models.Base.metadata.create_all(bind=engine)  # Create tables in the database
 
 # Add CORS middleware
@@ -203,31 +301,43 @@ class PlayerJoin(BaseModel):
 #     date_joined: str
 
 
-# Reuse the same database management logic in all routes
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_user_by_username(username: str, db: Session):
+    return db.query(models.Users).filter(models.Users.username == username).first()
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
 @app.post("/register/")
-async def register(user: Users, db: db_dependency):
+async def register(user: UserInDB, db: db_dependency):
     """
+    @param user: FastAPI automatically deserializes the request body into the User Pydantic model
+    @param db: FastAPI uses dependency injection to provide the database session
     Sample request body:
     {
         "username": "bao",
-        "display_name": "baodz",
-        "password": "lonton",
+        "display_name": "baoszai",
+        "hashed_password": "lonton",
         "email": "minhdz@gmail.com",
-        "date_joined": "today"
+        "date_joined": "today",
+        "disabled": false
     }
     """
-    db_user = models.Users(**user.model_dump())
+    # Check if the username already exists
+    if get_user_by_username(user.username, db):
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    # Hash the password before storing it in the database
+    hashed_password = get_password_hash(user.password)
+
+    # Create a dictionary from user data and update it with the hashed password
+    user_data = user.model_dump()
+    user_data.update({"hashed_password": hashed_password})
+    del user_data["password"]
+
+    # Create a new user in the database
+    db_user = models.Users(**user_data)
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

@@ -1,7 +1,7 @@
+import secrets
+
 import resend
 from core.config import settings
-from pathlib import Path
-import secrets
 
 
 class EmailService:

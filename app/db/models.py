@@ -1,8 +1,8 @@
-from sqlalchemy import ARRAY, Boolean, CheckConstraint, Column, DateTime, Enum, Float, Integer, String, Text
 from db.base import Base
-from sqlalchemy.sql import func
-from enum import Enum as PyEnum
 from services.email import generate_token
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, Integer,
+                        String, Text)
+from sqlalchemy.sql import func
 
 
 class User(Base):
@@ -23,38 +23,17 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
-class DifficultyLevel(str, PyEnum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
-
-
 class Problem(Base):
     __tablename__ = "problems"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)  # HTML Format
-    difficulty = Column(
-        Enum(DifficultyLevel),
-        nullable=False,
-        index=True
-    )
-    time_limit_ms = Column(Integer, nullable=False)
-    memory_limit_mb = Column(Integer, nullable=False)
-    sample_test_cases = Column(ARRAY(String), nullable=False)
-    sample_test_results = Column(ARRAY(String), nullable=False)
-    hidden_test_cases = Column(ARRAY(String), nullable=False)
-    hidden_test_results = Column(ARRAY(String), nullable=False)
+    difficulty = Column(String, nullable=False, index=True)
+    sample_test_cases = Column(JSON, nullable=False)
+    sample_test_results = Column(JSON, nullable=False)
+    hidden_test_cases = Column(JSON, nullable=False)
+    hidden_test_results = Column(JSON, nullable=False)
     boilerplate = Column(Text, nullable=False)
     compare_func = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    __table_args__ = (
-        CheckConstraint(
-            'array_length(sample_test_cases, 1) = array_length(sample_test_results, 1)'
-        ),
-        CheckConstraint(
-            'array_length(hidden_test_cases, 1) = array_length(hidden_test_results, 1)'
-        ),
-    )

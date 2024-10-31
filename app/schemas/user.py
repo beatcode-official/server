@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
-from typing import Optional, Annotated
 from datetime import datetime
+from typing import Annotated, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 UsernameStr = Annotated[str, Field(min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_-]+$")]
 DisplayNameStr = Annotated[str, Field(min_length=1, max_length=50)]

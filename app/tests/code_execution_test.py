@@ -1,13 +1,10 @@
+import asyncio
 import os
 import sys
-import pytest
-import asyncio
 from pprint import pprint
 
-# fmt: off
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from services.code_execution import CodeExecutionService, ExecutionResult
-# fmt: on
+import pytest
+from services.code_execution import CodeExecutionService
 
 
 @pytest.fixture
@@ -63,7 +60,7 @@ class Solution:
 """
 
 
-@pytest.mark.asyncio(loop_scope="function")
+@pytest.mark.asyncio
 async def test_successful_execution(executor, valid_solution):
     result = await executor.execute_code(
         code=valid_solution,

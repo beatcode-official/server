@@ -1,17 +1,19 @@
-from datetime import timedelta
 import datetime
+from datetime import timedelta
 from typing import Annotated
+
+from core.config import settings
+from core.security import (create_access_token, get_password_hash,
+                           verify_password)
+from db.base import get_db
+from db.models import User
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from requests import Session
-from core.config import settings
-from db.base import get_db
-from schemas.user import ForgotPassword, PasswordReset, Token, UserCreate, UserResponse, UserUpdate
-from db.models import User
-from core.security import create_access_token, get_password_hash, verify_password
+from schemas.user import (ForgotPassword, PasswordReset, Token, UserCreate,
+                          UserResponse, UserUpdate)
 from services.email import EmailService, generate_token
-
 
 router = APIRouter(prefix="/users", tags=["users"])
 oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_STR}/users/login")

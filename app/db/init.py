@@ -1,8 +1,11 @@
-from sqlalchemy_utils import database_exists, create_database
-from sqlalchemy import create_engine, event
+import json
+
 from core.config import settings
 from db.base import Base
-from db.models import User
+from db.models import Problem
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import create_database, database_exists
 
 
 def init_db():
@@ -14,6 +17,38 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
     print("Created all database tables")
+
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = SessionLocal()
+
+    try:
+        with open('db/combined.json', 'r') as file:
+            problems = json.load(file)
+
+        for problem in problems:
+            new_problem = Problem(
+                title=problem['title'],
+                description=problem['description'],
+                difficulty=problem['difficulty'],
+                sample_test_cases=problem['sample_test_cases'],
+                sample_test_results=problem['sample_test_results'],
+                hidden_test_cases=problem['hidden_test_cases'],
+                hidden_test_results=problem['hidden_test_results'],
+                boilerplate=problem['boilerplate'],
+                compare_func=problem['compare_func']
+            )
+
+            session.add(new_problem)
+
+        session.commit()
+        print("Problem data inserted successfully!")
+
+    except Exception as e:
+        print(f"Error inserting data: {e}")
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
     return engine
 

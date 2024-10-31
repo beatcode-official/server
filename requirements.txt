@@ -1,0 +1,11 @@
+bcrypt==4.2.0
+docker==7.1.0
+fastapi[standard]==0.115.4
+psycopg2-binary==2.9.10
+pydantic-settings==2.6.0
+pydantic==2.9.2
+pytest==8.3.3
+python-jose==3.3.0
+resend==2.4.0
+SQLAlchemy-Utils==0.41.2
+SQLAlchemy==2.0.36

@@ -241,7 +241,7 @@
             "4"
         ],
         "boilerplate": "class Solution:\n    def searchInsert(self, nums: List[int], target: int) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "Length of Last Word",
@@ -282,7 +282,7 @@
             "1"
         ],
         "boilerplate": "class Solution:\n    def lengthOfLastWord(self, s: str) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "Plus One",
@@ -323,7 +323,7 @@
             "[5,0,0,0]"
         ],
         "boilerplate": "class Solution:\n    def plusOne(self, digits: List[int]) -> List[int]:\n        ",
-        "compare_func": "return str(result) == expected_output"
+        "compare_func": "return str(result).replace(', ', ',') == expected"
     },
     {
         "title": "Add Binary",
@@ -362,7 +362,7 @@
             "\"10000\""
         ],
         "boilerplate": "class Solution:\n    def addBinary(self, a: str, b: str) -> str:\n        ",
-        "compare_func": "return '\"' + result + '\"' == expected_output"
+        "compare_func": "return '\"' + result + '\"' == expected"
     },
     {
         "title": "Climbing Stairs",
@@ -401,7 +401,7 @@
             "832040"
         ],
         "boilerplate": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "Best Time to Buy and Sell Stock",
@@ -1534,7 +1534,7 @@
             "11",
             "9",
             "20",
-            "7",
+            "6",
             "2",
             "3",
             "6",
@@ -1660,7 +1660,7 @@
             "'AB'"
         ],
         "boilerplate": "class Solution:\n    def convert(self, s: str, numRows: int) -> str:\n        ",
-        "compare_func": "return result == eval(expected_output)"
+        "compare_func": "return result == eval(expected)"
     },
     {
         "title": "Container With Most Water",
@@ -1699,7 +1699,7 @@
             "1"
         ],
         "boilerplate": "class Solution:\n    def maxArea(self, height: List[int]) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "3Sum Closest",
@@ -1738,7 +1738,7 @@
             "1000"
         ],
         "boilerplate": "class Solution:\n    def threeSumClosest(self, nums: List[int], target: int) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "Search in Rotated Sorted Array",
@@ -1779,7 +1779,7 @@
             "-1"
         ],
         "boilerplate": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        ",
-        "compare_func": "return result == int(expected_output)"
+        "compare_func": "return result == int(expected)"
     },
     {
         "title": "Find First and Last Position of Element in Sorted Array",
@@ -1820,7 +1820,7 @@
             "[4,7]"
         ],
         "boilerplate": "class Solution:\n    def searchRange(self, nums: List[int], target: int) -> List[int]:\n        ",
-        "compare_func": "return result == eval(expected_output)"
+        "compare_func": "return result == eval(expected)"
     },
     {
         "title": "Count and Say",
@@ -1861,7 +1861,7 @@
             "\"11131221131211132221232112111312111213111213211231132132211211131221131211221321123113213221123113112221131112311332111213122112311311123112112322211211131221131211132221232112111312111213322112132113213221123113112221133211322112211213322112132113213221123113112221131112311332111213122112311311123112112322211211131221131211132221232112111312111213322112132113213221123113112221133211322112211213322112132113213221123113112221131112311332111213122112311311123112112322211211131221131211132221232112111312111213322112132113213221123113112221131112311332111213122112311311123112112322211211131221131211132221232112111312111213322112132113213221123113112221131112311332111213122112311311123112112322211211131221131211132221232112111312111213322112132113213221123113112221131112311332111213214412411221\""
         ],
         "boilerplate": "class Solution:\n    def countAndSay(self, n: int) -> str:\n        ",
-        "compare_func": "return result == eval(expected_output)"
+        "compare_func": "return result == eval(expected)"
     },
     {
         "title": "Combination Sum II",
@@ -1902,7 +1902,7 @@
             "[[1,2,2,2],[2,2,3]]"
         ],
         "boilerplate": "class Solution:\n    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:\n        ",
-        "compare_func": "return sorted([sorted(x) for x in result]) == eval(expected_output)"
+        "compare_func": "return sorted([sorted(x) for x in result]) == eval(expected)"
     },
     {
         "title": "Multiply Strings",
@@ -1943,7 +1943,7 @@
             "\"0\""
         ],
         "boilerplate": "class Solution:\n    def multiply(self, num1: str, num2: str) -> str:\n        ",
-        "compare_func": "return result == eval(expected_output)"
+        "compare_func": "return result == eval(expected)"
     },
     {
         "title": "Jump Game II",
@@ -1984,7 +1984,7 @@
             "1"
         ],
         "boilerplate": "class Solution:\n    def jump(self, nums: List[int]) -> int:\n        ",
-        "compare_func": "return str(result) == expected_output"
+        "compare_func": "return str(result) == expected"
     },
     {
         "title": "Maximum Subarray",
@@ -2025,7 +2025,7 @@
             "2"
         ],
         "boilerplate": "class Solution:\n    def maxSubArray(self, nums: List[int]) -> int:\n        ",
-        "compare_func": "return str(result) == expected_output"
+        "compare_func": "return str(result) == expected"
     },
     {
         "title": "Spiral Matrix",

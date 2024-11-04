@@ -562,7 +562,7 @@
             "false",
             "false",
             "false",
-            "false"
+            "true"
         ],
         "boilerplate": "class Solution:\n    def isHappy(self, n: int) -> bool:\n        ",
         "compare_func": "return str(result).lower() == expected.lower()"
@@ -1502,7 +1502,7 @@
             "[3333,3000]"
         ],
         "boilerplate": "class Solution:\n    def constructRectangle(self, area: int) -> List[int]:\n        ",
-        "compare_func": "result = eval(result); expected = eval(expected); return result[0]*result[1] == expected[0]*expected[1] and result[0] >= result[1] and abs(result[0]-result[1]) <= abs(expected[0]-expected[1])"
+        "compare_func": "return str(result).replace(' ', '') == expected"
     },
     {
         "title": "Teemo Attacking",

@@ -2,14 +2,14 @@ import json
 
 from core.config import settings
 from db.base import Base
-from db.models import Problem
+from db.models.problem import Problem
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
 
-def init_db():
-    engine = create_engine(settings.DATABASE_URL)
+def init_db(test=False):
+    engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
 
     if not database_exists(engine.url):
         create_database(engine.url)
@@ -53,8 +53,8 @@ def init_db():
     return engine
 
 
-def drop_db():
-    engine = create_engine(settings.DATABASE_URL)
+def drop_db(test=False):
+    engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
 
     if database_exists(engine.url):
         Base.metadata.drop_all(bind=engine)
@@ -64,7 +64,7 @@ def drop_db():
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Initialize or drop the database")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--drop",
         action="store_true",
@@ -75,5 +75,7 @@ if __name__ == "__main__":
 
     if args.drop:
         drop_db()
+        drop_db(test=True)
 
     init_db()
+    init_db(test=True)

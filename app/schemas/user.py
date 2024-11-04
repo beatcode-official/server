@@ -1,53 +1,96 @@
-from datetime import datetime
 from typing import Annotated, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from core.config import settings
 
-UsernameStr = Annotated[str, Field(min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_-]+$")]
-DisplayNameStr = Annotated[str, Field(min_length=1, max_length=50)]
-PasswordStr = Annotated[str, Field(min_length=6)]
+# Custom Pydantic types with validation
+UsernameStr = Annotated[
+    str,
+    Field(
+        min_length=settings.USERNAME_MIN_LENGTH,
+        max_length=settings.USERNAME_MAX_LENGTH,
+        pattern=settings.USERNAME_REGEX)
+]
+DisplayNameStr = Annotated[
+    str,
+    Field(
+        min_length=settings.DISPLAY_NAME_MIN_LENGTH,
+        max_length=settings.DISPLAY_NAME_MAX_LENGTH,
+        pattern=settings.DISPLAY_NAME_REGEX
+    )
+]
+PasswordStr = Annotated[
+    str,
+    Field(
+        min_length=settings.PASSWORD_MIN_LENGTH
+    )
+]
 
 
 class UserBase(BaseModel):
+    """
+    Base schema for user data.
+    """
     username: UsernameStr
     email: EmailStr
     display_name: DisplayNameStr
 
 
 class UserCreate(UserBase):
+    """
+    Schema for creating a new user.
+    """
     password: PasswordStr
 
 
 class UserUpdate(BaseModel):
+    """
+    Schema for updating user data.
+    """
     display_name: Optional[DisplayNameStr] = None
 
 
-class UserLogin(BaseModel):
-    login: str
-    password: PasswordStr
-
-
-class PasswordReset(BaseModel):
-    token: str
-    new_password: PasswordStr
-
-
-class ForgotPassword(BaseModel):
-    email: EmailStr
-
-
 class UserResponse(BaseModel):
+    """
+    A response schema to return user data to the client.
+    """
     username: UsernameStr
     email: EmailStr
     display_name: DisplayNameStr
     rating: float
     is_verified: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+    created_at: float
+    updated_at: Optional[float] = None
 
+    # Allow reading data from the model's attributes
     model_config = ConfigDict(from_attributes=True)
 
 
+class ForgotPassword(BaseModel):
+    """
+    A schema for requesting a password reset.
+    """
+    email: EmailStr
+
+
+class PasswordReset(BaseModel):
+    """
+    A schema for resetting the password.
+    """
+    token: str
+    new_password: PasswordStr
+
+
 class Token(BaseModel):
+    """
+    A schema for returning the access token.
+    """
     access_token: str
-    token_type: str = "bearer"
+    refresh_token: str
+
+
+class TokenRefresh(BaseModel):
+    """
+    A schema for refreshing the access token.
+    """
+    refresh_token: str

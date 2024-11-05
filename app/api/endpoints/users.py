@@ -307,6 +307,9 @@ async def reset_password(
     # Generate a new token secret to invalidate all existing tokens
     user.token_secret = PasswordManager.generate_secret_token()
 
+    # Invalidate all existing refresh tokens
+    jwt_manager.revoke_all_refresh_tokens(user.id, db)
+
     db.commit()
 
     return {"message": "Password reset successful"}

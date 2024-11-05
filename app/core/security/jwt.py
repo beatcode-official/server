@@ -137,6 +137,20 @@ class JWTManager:
 
         db.commit()
 
+    def revoke_all_refresh_tokens(self, user_id: int, db: Session):
+        """
+        Revoke all refresh tokens for the given user.
+
+        :param user_id: The ID of the user to revoke refresh tokens for.
+        :param db: The database session to use.
+        """
+        # Delete all refresh tokens that match the given user ID.
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id
+        ).delete()
+
+        db.commit()
+
     def cleanup_refresh_tokens(self, user_id: int, db: Session):
         """
         Cleanup expired refresh tokens for the given user.

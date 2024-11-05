@@ -56,7 +56,7 @@ class RefreshToken(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String, unique=True, index=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     expires_at = Column(Float, nullable=False)
     created_at = Column(Float, server_default=func.extract('epoch', func.now()))
 

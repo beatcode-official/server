@@ -71,10 +71,17 @@ if __name__ == "__main__":
         help="Drop existing tables before creation"
     )
 
+    parser.add_argument(
+        "--droptest",
+        action="store_true",
+        help="Drop existing test tables before creation"
+    )
+
     args = parser.parse_args()
 
     if args.drop:
         drop_db()
+    if args.droptest:
         drop_db(test=True)
 
     init_db()

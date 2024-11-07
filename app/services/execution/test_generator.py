@@ -29,13 +29,11 @@ def compare_results(result: Any, expected: str) -> bool:
 class TestResult:
     def __init__(
         self,
-        test_input: str,
         expected: str,
         passed: bool,
         output: Any = None,
         error: str = None,
     ):
-        self.test_input = test_input
         self.expected = expected
         self.output = str(output) if output is not None else None
         self.passed = passed
@@ -43,7 +41,6 @@ class TestResult:
         
     def to_dict(self):
         return {{
-            "test_input": self.test_input,
             "expected": self.expected,
             "output": self.output,
             "passed": self.passed,
@@ -58,14 +55,12 @@ def run_tests(solution, test_data):
             result = eval(f"solution.{{test['input']}}")
             passed = compare_results(result, test['expected'])
             results.append(TestResult(
-                test_input=test['input'],
                 expected=test['expected'],
                 output=result,
                 passed=passed,
             ).to_dict())
         except Exception as e:
             results.append(TestResult(
-                test_input=test['input'],
                 expected=test['expected'],
                 passed=False,
                 error=traceback.format_exc(),

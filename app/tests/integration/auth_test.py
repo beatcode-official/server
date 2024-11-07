@@ -1,13 +1,14 @@
 
-import sys
 import os
 import subprocess
+import sys
 from pprint import pprint
 
 # fmt: off
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from core.config import settings
 from tests.integration.functions import *
+
 # fmt: on
 
 # Important: Make sure server is in test mode.
@@ -22,6 +23,7 @@ subprocess.run(
 SKIP = [
 
 ]
+print(f"Skipping tests: {SKIP}")
 
 # 1. Register a new user
 if 1 not in SKIP:

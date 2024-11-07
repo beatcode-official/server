@@ -1,6 +1,6 @@
 import asyncio
-from enum import Enum
 import time
+from enum import Enum
 from typing import Dict, List, Optional
 
 from core.config import settings
@@ -38,7 +38,7 @@ class PlayerState(BaseModel):
     username: str
     display_name: str
     current_problem_index: int = 0
-    hp: int = settings.STARTING_HP
+    hp: int = settings.STARTING_HP if not settings.TESTING else 140
     problems_solved: int = 0
     partial_progress: Dict[int, int] = {}
     last_submission: Optional[float] = None
@@ -87,6 +87,8 @@ class GameState(BaseModel):
     winner: Optional[str] = None
     is_cleaning_up: bool = False
     timeout_task: Optional[asyncio.Task] = None
+    player1_rating_change: Optional[float] = None
+    player2_rating_change: Optional[float] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -133,4 +135,5 @@ class GameState(BaseModel):
         :return: True if the match has timed out, False otherwise.
         """
         elapsed_time = time.time() - self.start_time
-        return elapsed_time >= (settings.MATCH_TIMEOUT_MINUTES * 60)
+        timeout = settings.MATCH_TIMEOUT_MINUTES * 60 if not settings.TESTING else 3 * 60  # change when testing (timeout test = 20, normal = 3 * 60)
+        return elapsed_time >= timeout

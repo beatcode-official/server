@@ -3,8 +3,8 @@ import os
 import traceback
 
 import docker.errors
-from services.execution.types import ExecutionResult
 from core.config import settings
+from services.execution.types import ExecutionResult
 
 
 class DockerRunner:
@@ -16,10 +16,16 @@ class DockerRunner:
         self.client = client
         self.docker_image = settings.DOCKER_IMAGE
         self.docker_cpu_limit = settings.DOCKER_CPU_LIMIT
+        easy_mem, medium_mem, hard_mem = [
+            int(x) for x in settings.DOCKER_MEMORY_LIMIT.split(",")
+        ]
+        easy_time, medium_time, hard_time = [
+            int(x) for x in settings.DOCKER_TIME_LIMIT.split(",")
+        ]
         self._docker_settings = {
-            "easy": [settings.DOCKER_MEMORY_LIMIT_EASY, settings.DOCKER_TIME_LIMIT_EASY],
-            "medium": [settings.DOCKER_MEMORY_LIMIT_MEDIUM, settings.DOCKER_TIME_LIMIT_MEDIUM],
-            "hard": [settings.DOCKER_MEMORY_LIMIT_HARD, settings.DOCKER_TIME_LIMIT_HARD],
+            "easy": [easy_mem, easy_time],
+            "medium": [medium_mem, medium_time],
+            "hard": [hard_mem, hard_time],
         }
 
     def run_container(self, file_path: str, difficulty: str) -> ExecutionResult:

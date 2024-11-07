@@ -11,7 +11,8 @@ make .env using .env.example
 cd app
 
 python -m db.init --d
-pytest tests/
+python .\tests\integration\user_simulator.py
+pytest tests/unit
 
 fastapi dev main.py
 uvicorn main:app

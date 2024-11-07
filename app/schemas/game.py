@@ -19,6 +19,7 @@ class GameView(BaseModel):
     :param start_time: The start time of the match (epoch)
     :param status: The status of the match.
     :param winner: The winner of the match. 
+    :param rating_change: The rating change of the user.
     """
     match_id: str
     opponent_name: str
@@ -32,35 +33,7 @@ class GameView(BaseModel):
     start_time: float
     status: str
     winner: Optional[str] = None
-
-
-class MatchResult(BaseModel):
-    """
-    A model for the result of a match.
-
-    :param winner_username: The username of the winner.
-    :param player1_username: The username of player 1.
-    :param player2_username: The username of player 2.
-    :param player1_hp: The HP of player 1.
-    :param player2_hp: The HP of player 2.
-    :param player1_problems_solved: The number of problems solved by player 1.
-    :param player2_problems_solved: The number of problems solved by player 2.
-    :param player1_partial_progress: The partial progress of player 1.
-    :param player2_partial_progress: The partial progress of player 2.
-    :param match_type: The type of the match.
-    :param rating_changes: The dict mapping rating changes of the players.
-    """
-    winner_username: Optional[str]
-    player1_username: str
-    player2_username: str
-    player1_hp: int
-    player2_hp: int
-    player1_problems_solved: int
-    player2_problems_solved: int
-    player1_partial_progress: Dict[int, int]
-    player2_partial_progress: Dict[int, int]
-    match_type: str
-    rating_changes: Optional[Dict[str, float]] = None
+    rating_change: Optional[float] = None
 
 
 class GameEvent(BaseModel):

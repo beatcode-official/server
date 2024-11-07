@@ -11,7 +11,7 @@ class EmailService:
     def __init__(self):
         resend.api_key = settings.RESEND_API_KEY
         self.from_email = settings.FROM_EMAIL
-        self.expire_minutes = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+        self.expire_minutes = settings.PASSWORD_RESET_TOKEN_EXPIRE
         self.frontend_url = settings.FRONTEND_URL
 
     def send_verification_email(self, to_email: str, token: str):

@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from core.config import settings
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 # Custom Pydantic types with validation
 UsernameStr = Annotated[

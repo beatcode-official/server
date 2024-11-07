@@ -4,8 +4,8 @@ from typing import Annotated
 from core.config import settings
 from core.security.jwt import JWTManager
 from core.security.password import PasswordManager
-from db.session import get_db
 from db.models.user import User
+from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -271,7 +271,7 @@ async def forgot_password(
         email_service.send_password_reset_email(user.email, reset_token)
 
     user.reset_token = reset_token
-    user.reset_token_expires = time.time() + settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES * 60
+    user.reset_token_expires = time.time() + settings.PASSWORD_RESET_TOKEN_EXPIRE * 60
 
     db.commit()
 

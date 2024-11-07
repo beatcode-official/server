@@ -1,16 +1,16 @@
 import asyncio
-import uuid
 import time
+import uuid
 from typing import Dict, List, Optional
 
 from core.config import settings
+from db.models.game import Match
 from db.models.problem import Problem
 from db.models.user import User
-from db.models.game import Match
+from schemas.game import GameEvent, GameView
 from services.game.matchmaker import Matchmaker
 from services.game.state import GameState, GameStatus, PlayerState
 from sqlalchemy.orm import Session
-from schemas.game import GameEvent, MatchResult
 
 
 class GameManager:
@@ -25,11 +25,45 @@ class GameManager:
         self.timeout_tasks: Dict[str, asyncio.Task] = {}
         self.db_sessions: Dict[str, Session] = {}
         self.hp_deduction = settings.HP_DEDUCTION_BASE
+        easy, medium, hard = [
+            float(x) for x in settings.HP_MULTIPLIER.split(",")
+        ]
         self.hp_multiplier = {
-            "easy": settings.HP_MULTIPLIER_EASY,
-            "medium": settings.HP_MULTIPLIER_MEDIUM,
-            "hard": settings.HP_MULTIPLIER_HARD,
+            "easy": easy,
+            "medium": medium,
+            "hard": hard,
         }
+
+    def create_game_view(self, game_state: GameState, user_id: int) -> GameView:
+        """
+        Create a GameView object from a GameState object
+
+        :param game_state: GameState object
+        :param user_id: ID of the user requesting the view
+        """
+        is_player1 = game_state.player1.user_id == user_id
+        player = game_state.player1 if is_player1 else game_state.player2
+        opponent = game_state.player2 if is_player1 else game_state.player1
+        rating_change = (
+            game_state.player1_rating_change if is_player1
+            else game_state.player2_rating_change
+        )
+
+        return GameView(
+            match_id=game_state.id,
+            opponent_name=opponent.username,
+            opponent_display_name=opponent.display_name,
+            current_problem_index=player.current_problem_index,
+            problems_solved=player.problems_solved,
+            opponent_problems_solved=opponent.problems_solved,
+            your_hp=player.hp,
+            opponent_hp=opponent.hp,
+            match_type=game_state.match_type,
+            start_time=game_state.start_time,
+            status=game_state.status.value,
+            winner=game_state.winner,
+            rating_change=rating_change
+        )
 
     async def get_winner(self, game: GameState) -> Optional[str]:
         """
@@ -203,8 +237,8 @@ class GameManager:
         if (
             game.player1.hp <= 0 or
             game.player2.hp <= 0 or
-            game.player1.current_problem_index == len(game.problems) or
-            game.player2.current_problem_index == len(game.problems)
+            game.player1.problems_solved == len(game.problems) or
+            game.player2.problems_solved == len(game.problems)
         ):
             game.winner = await self.get_winner(game)
 
@@ -230,6 +264,9 @@ class GameManager:
 
         game_state.is_cleaning_up = True
 
+        if game_state.match_type == "ranked":
+            await self.handle_ranked_match_end(game_state, db)
+
         # Save the match data
         match = Match(
             player1_id=game_state.player1.user_id,
@@ -249,6 +286,8 @@ class GameManager:
                 else None
             ),
             problems=[p.id for p in game_state.problems],
+            player1_rating_change=game_state.player1_rating_change,
+            player2_rating_change=game_state.player2_rating_change,
         )
 
         try:
@@ -259,25 +298,59 @@ class GameManager:
             db.rollback()
 
         # Broadcast the match result to the players
-        result = MatchResult(
-            winner_username=game_state.winner,
-            player1_username=game_state.player1.username,
-            player2_username=game_state.player2.username,
-            player1_hp=game_state.player1.hp,
-            player2_hp=game_state.player2.hp,
-            player1_problems_solved=game_state.player1.problems_solved,
-            player2_problems_solved=game_state.player2.problems_solved,
-            player1_partial_progress=game_state.player1.partial_progress,
-            player2_partial_progress=game_state.player2.partial_progress,
-            match_type=game_state.match_type,
-        )
-
-        await game_state.broadcast_event(GameEvent(
+        await game_state.player1.send_event(GameEvent(
             type="match_end",
-            data=result.model_dump()
+            data=self.create_game_view(game_state, game_state.player1.user_id).model_dump()
+        ))
+
+        await game_state.player2.send_event(GameEvent(
+            type="match_end",
+            data=self.create_game_view(game_state, game_state.player2.user_id).model_dump()
         ))
 
         await self.cleanup_game(game_state.id)
+
+    async def handle_ranked_match_end(
+        self,
+        game_state: GameState,
+        db: Session
+    ):
+        """
+        Handle the end of a ranked match including rating calculations
+
+        :param game_state: The game state
+        :param db: Database session
+        """
+        # Skip rating calculation if the game is a draw
+        if game_state.winner:
+            # Get winner and loser states
+            winner = game_state.player1 if game_state.winner == game_state.player1.username else game_state.player2
+            loser = game_state.player2 if game_state.winner == game_state.player1.username else game_state.player1
+
+            # Get users from database
+            winner_user = db.query(User).filter(User.id == winner.user_id).first()
+            loser_user = db.query(User).filter(User.id == loser.user_id).first()
+
+            # Calculate rating change
+            winner_change = self.matchmaker.ranked_service.calculate_rating_change(
+                winner_user.rating,
+                loser_user.rating,
+                True
+            )
+
+            loser_change = self.matchmaker.ranked_service.calculate_rating_change(
+                loser_user.rating,
+                winner_user.rating,
+                False
+            )
+
+            # Update ratings
+            winner_user.rating = max(0, winner_user.rating + winner_change)
+            loser_user.rating = max(0, loser_user.rating + loser_change)
+
+            # Save rating changes
+            game_state.player1_rating_change = winner_change if game_state.winner == game_state.player1.username else loser_change if loser_user.rating > 0 else 0
+            game_state.player2_rating_change = winner_change if game_state.winner == game_state.player2.username else loser_change if loser_user.rating > 0 else 0
 
     async def forfeit_game(self, game_id: str, player_id: int):
         """

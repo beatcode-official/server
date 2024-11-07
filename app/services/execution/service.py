@@ -18,10 +18,13 @@ class CodeExecutionService:
     def __init__(self):
         self.docker = DockerRunner(docker.from_env())
         self.test_generator = TestGenerator()
+        easy, medium, hard = [
+            int(x) for x in settings.MAX_CONCURRENT.split(",")
+        ]
         self._execution_semaphores = {
-            "easy": asyncio.Semaphore(settings.MAX_CONCURRENT_EASY),
-            "medium": asyncio.Semaphore(settings.MAX_CONCURRENT_MEDIUM),
-            "hard": asyncio.Semaphore(settings.MAX_CONCURRENT_HARD),
+            "easy": asyncio.Semaphore(easy),
+            "medium": asyncio.Semaphore(medium),
+            "hard": asyncio.Semaphore(hard),
         }
 
     async def execute_code(

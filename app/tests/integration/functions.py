@@ -1,6 +1,12 @@
+import asyncio
+import json
+from pprint import pprint
+
 import requests
+import websockets
 
 BASE_URL = "http://localhost:8000/api"
+WS_BASE_URL = "ws://localhost:8000/api"
 API_MAP = {
     "register": "/users/register",
     "login": "/users/login",
@@ -10,6 +16,9 @@ API_MAP = {
     "reset": "/users/reset-password",
     "refresh": "/users/refresh",
     "logout": "/users/logout",
+    "queue": "/game/queue",
+    "queue_ranked": "/game/ranked-queue",
+    "current_game": "/game/current-game",
 }
 
 
@@ -115,3 +124,82 @@ def logout_user(access_token, refresh_token):
 
     response = requests.post(url, headers=headers, json=data)
     return response.json()
+
+
+async def get_current_game(headers):
+    url = f"{BASE_URL}{API_MAP['current_game']}"
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+
+async def make_user(username, email, password, display_name):
+    # Persistent session for faster testing
+    session = requests.Session()
+    registration_url = f"{BASE_URL}{API_MAP['register']}"
+    verify_url = f"{BASE_URL}{API_MAP['verify']}"
+    login_url = f"{BASE_URL}{API_MAP['login']}"
+    data = {
+        "username": username,
+        "email": email,
+        "password": password,
+        "display_name": display_name
+    }
+    response = session.post(registration_url, json=data)
+    session.get(verify_url + "/test_email_token")
+    response = session.post(login_url, data={"username": username, "password": password})
+    access_token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+async def get_latest_message(ws: websockets.WebSocketClientProtocol, print_all=False):
+    message = None
+    while True:
+        try:
+            message = await asyncio.wait_for(ws.recv(), timeout=1)
+            message = json.loads(message)
+            if print_all:
+                pprint(message)
+        except asyncio.TimeoutError:
+            break
+
+    return message
+
+
+async def get_until(ws: websockets.WebSocketClientProtocol, message_type: str):
+    message = None
+    while True:
+        try:
+            message = await asyncio.wait_for(ws.recv(), timeout=1)
+            message = json.loads(message)
+            if message["type"] == message_type:
+                break
+        except asyncio.TimeoutError:
+            break
+
+    return message
+
+
+async def send_query(ws: websockets.WebSocketClientProtocol):
+    return await ws.send(json.dumps({"type": "query"}))
+
+
+async def send_forfeit(ws: websockets.WebSocketClientProtocol):
+    return await ws.send(json.dumps({"type": "forfeit"}))
+
+
+async def send_chat(ws: websockets.WebSocketClientProtocol, message: str):
+    return await ws.send(json.dumps({
+        "type": "chat",
+        "data": {
+            "message": message
+        }
+    }))
+
+
+async def send_code(ws: websockets.WebSocketClientProtocol, code: str):
+    return await ws.send(json.dumps({
+        "type": "submit",
+        "data": {
+            "code": code
+        }
+    }))

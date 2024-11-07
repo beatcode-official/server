@@ -26,7 +26,7 @@ subprocess.run(
 
 # Global Variables
 SKIP = [
-    1, 2
+
 ]
 print(f"Skipping tests: {SKIP}")
 
@@ -233,8 +233,8 @@ if 1 not in SKIP:
 
                     async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
                         await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode:
-            assert True
+        except ConnectionClosedError as e:
+            assert e.code == 4000
         except Exception:
             assert False
         finally:
@@ -245,6 +245,32 @@ if 1 not in SKIP:
 
             try:
                 async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+                    await asyncio.wait_for(ws.recv(), timeout=1)
+            except TimeoutError:
+                assert True
+            except Exception:
+                assert False
+
+        try:
+            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws1:
+                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers2) as ws2:
+                    response = await ws1.recv()
+                    match_id = json.loads(response)["data"]["match_id"]
+
+                    async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+                        await asyncio.wait_for(ws.recv(), timeout=1)
+        except ConnectionClosedError as e:
+            assert e.code == 4000
+        except Exception:
+            assert False
+        finally:
+            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers) as game_ws:
+                await game_ws.send(json.dumps({
+                    "type": "forfeit"
+                }))
+
+            try:
+                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
             except TimeoutError:
                 assert True
@@ -527,8 +553,8 @@ if 2 not in SKIP:
                     extra_headers=p1_auth_headers
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
-            except InvalidStatusCode:
-                assert True
+            except ConnectionClosedError as e:
+                assert e.code == 4000
             except Exception:
                 assert False
 
@@ -539,8 +565,8 @@ if 2 not in SKIP:
                     extra_headers=p3_auth_headers
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
-            except InvalidStatusCode:
-                assert True
+            except ConnectionClosedError as e:
+                assert e.code == 4000
             except Exception:
                 assert False
 
@@ -659,7 +685,7 @@ if 2 not in SKIP:
                     assert "submitting too fast" in p1_resp["data"]["message"]
 
                     # Solution solved none
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, NONE_SOLUTION)
 
                     p1_resp = await get_until(p1, "submission_result")
@@ -668,7 +694,7 @@ if 2 not in SKIP:
                     assert p1_resp["data"]["opponent_hp"] == 140
 
                     # Solution solved some
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, SOME_SOLUTION1)
 
                     p1_resp = await get_until(p1, "submission_result")
@@ -676,7 +702,7 @@ if 2 not in SKIP:
                     p1_resp = await get_until(p1, "game_state")
                     assert p1_resp["data"]["opponent_hp"] == 112
 
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, SOME_SOLUTION2)
 
                     p1_resp = await get_until(p1, "submission_result")
@@ -685,7 +711,7 @@ if 2 not in SKIP:
                     assert p1_resp["data"]["opponent_hp"] == 112
 
                     # Solution solved all
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, ALL_SOLUTION)
 
                     p1_resp = await get_until(p1, "submission_result")
@@ -695,10 +721,10 @@ if 2 not in SKIP:
                     assert p1_resp["data"]["problems_solved"] == 1
 
                     # Solved all = win
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, ALL_SOLUTION)
 
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, ALL_SOLUTION)
 
                     p1_resp = await get_latest_message(p1)
@@ -754,7 +780,7 @@ if 2 not in SKIP:
                     extra_headers=p2_auth_headers
                 ) as p2:
                     await send_code(p1, ALL_SOLUTION)
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     await send_code(p1, ALL_SOLUTION)
 
                     p1_resp = await get_latest_message(p1)

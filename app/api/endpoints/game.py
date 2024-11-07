@@ -35,12 +35,12 @@ async def queue_websocket(
     :param current_user: User object
     :param db: Database session
     """
-    # Check if the user is already in a game
-    if game_manager.get_player_game(current_user.id):
-        return await websocket.close(code=4000, reason="Already in a game")
-
     try:
         await websocket.accept()
+
+        # Check if the user is already in a game
+        if game_manager.get_player_game(current_user.id):
+            return await websocket.close(code=4000, reason="Already in a game")
 
         # Only add the user to the queue if they're not already in it
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=False):
@@ -123,12 +123,13 @@ async def ranked_queue_websocket(
     :param current_user: User object
     :param db: Database session
     """
-    # Check if the user is already in a game
-    if game_manager.get_player_game(current_user.id):
-        return await websocket.close(code=4000, reason="Already in a game")
 
     try:
         await websocket.accept()
+
+        # Check if the user is already in a game
+        if game_manager.get_player_game(current_user.id):
+            return await websocket.close(code=4000, reason="Already in a game")
 
         # Only add the user to the queue if they're not already in it
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=True):
@@ -216,6 +217,8 @@ async def game_websocket(
     :param current_user: User object
     :param db: Database session
     """
+    await websocket.accept()
+
     game_state = game_manager.active_games.get(game_id)
 
     # Check if the game exists and is not finished
@@ -225,8 +228,6 @@ async def game_websocket(
     # Check if the user is a player in the game
     if current_user.id not in [game_state.player1.user_id, game_state.player2.user_id]:
         return await websocket.close(code=4000, reason="Not a player in this game")
-
-    await websocket.accept()
 
     # Get the player state
     player = game_state.get_player_state(current_user.id)

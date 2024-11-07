@@ -56,7 +56,6 @@ class DockerRunner:
                 network_disabled=True,
                 read_only=True,
                 detach=True,  # run the container in the background
-                remove=True,  # remove the container after it stops
             )
 
             try:

@@ -89,6 +89,7 @@ class GameState(BaseModel):
     timeout_task: Optional[asyncio.Task] = None
     player1_rating_change: Optional[float] = None
     player2_rating_change: Optional[float] = None
+    custom_settings: Optional[Dict] = None
 
     class Config:
         arbitrary_types_allowed = True

@@ -27,7 +27,7 @@ print(f"Skipping tests: {SKIP}")
 
 # 1. Register a new user
 if 1 not in SKIP:
-    print("Running test 1: Register a new user", end=" ")
+    print("Running test 1: Register a new user", end=" ", flush=True)
     user1 = register_user("jdoe", "jdoe@email.com", "password", "John Doe")
 
     assert user1["username"] == "jdoe"
@@ -38,7 +38,7 @@ if 1 not in SKIP:
 
 # 2. Register another user with same username or password
 if 2 not in SKIP:
-    print("Running test 2: Register another user with same username or password", end=" ")
+    print("Running test 2: Register another user with same username or password", end=" ", flush=True)
     broken_user1 = register_user("jdoe", "john@email.com", "password", "John Doe")
     assert broken_user1["detail"] == "Username already exists"
     broken_user1 = register_user("john", "jdoe@email.com", "password", "John Doe")
@@ -49,21 +49,21 @@ if 2 not in SKIP:
 
 # 3. Login before verifying
 if 3 not in SKIP:
-    print("Running test 3: Login before verifying", end=" ")
+    print("Running test 3: Login before verifying", end=" ", flush=True)
     user1 = login_user("jdoe", "password")
     assert user1["detail"] == "Email not verified"
     print("✅")
 
 # 4. Login with wrong details
 if 4 not in SKIP:
-    print("Running test 4: Login with wrong details", end=" ")
+    print("Running test 4: Login with wrong details", end=" ", flush=True)
     user1 = login_user("jdoe", "passworddd")
     assert user1["detail"] == "Incorrect login credentials"
     print("✅")
 
 # 5. Verify email and login
 if 5 not in SKIP:
-    print("Running test 5: Verify email and login", end=" ")
+    print("Running test 5: Verify email and login", end=" ", flush=True)
     verify_email("test_email_token")
     user1 = login_user("jdoe", "password")
 
@@ -75,7 +75,7 @@ if 5 not in SKIP:
 
 # 6. Get, update, and delete user info
 if 6 not in SKIP:
-    print("Running test 6: Get, update, and delete user info", end=" ")
+    print("Running test 6: Get, update, and delete user info", end=" ", flush=True)
     user1 = get_user(user1_access)
     assert user1["username"] == "jdoe"
     assert user1["email"] == "jdoe@email.com"
@@ -95,7 +95,7 @@ if 6 not in SKIP:
 
 # 7. Forgot and reset password
 if 7 not in SKIP:
-    print("Running test 7: Forgot and reset password", end=" ")
+    print("Running test 7: Forgot and reset password", end=" ", flush=True)
     register_user("janedoe", "janedoe@email.com", "old_password", "Jane Doe")
     verify_email("test_email_token")
     user2 = login_user("janedoe", "old_password")
@@ -129,7 +129,7 @@ if 7 not in SKIP:
 
 # 8. Refreshing tokens
 if 8 not in SKIP:
-    print("Running test 8: Refreshing tokens", end=" ")
+    print("Running test 8: Refreshing tokens", end=" ", flush=True)
     register_user("lorem", "lorem@email.com", "ipsumpassword", "Lorem Ipsum")
     verify_email("test_email_token")
     user3 = login_user("lorem", "ipsumpassword")
@@ -154,7 +154,7 @@ if 8 not in SKIP:
 
 # 9. Log out
 if 9 not in SKIP:
-    print("Running test 9: Log out", end=" ")
+    print("Running test 9: Log out", end=" ", flush=True)
     register_user("ipsum", "ipsum@email.com", "lorempassword", "Ipsum Lorem")
     verify_email("test_email_token")
     user4 = login_user("ipsum", "lorempassword")
@@ -167,7 +167,7 @@ if 9 not in SKIP:
 
 # 10. Checking validity of access and refresh tokens after password change, user delete, logout
 if 10 not in SKIP:
-    print("Running test 10: Checking validity of access and refresh tokens after password change, user delete, logout", end=" ")
+    print("Running test 10: Checking validity of access and refresh tokens after password change, user delete, logout", end=" ", flush=True)
     register_user("user5", "user5@email.com", "password", "User Five")
     verify_email("test_email_token")
     user5 = login_user("user5", "password")

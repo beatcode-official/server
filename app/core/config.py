@@ -70,6 +70,27 @@ class Settings(BaseSettings):
     RANK_NAMES: str                     # Names for each rank
     RANK_PROBLEM_DISTRIBUTION: str      # Problem distribution for each rank
 
+    # Room Settings
+    ROOM_CODE_LENGTH: int               # Length of the room code
+    ROOM_PROBLEM_COUNT: int             # Number of problems
+    ROOM_STARTING_HP: int               # Starting HP for each player
+    ROOM_HP_MULTIPLIER: str             # HP multiplier for each difficulty
+    ROOM_DISTRIBUTION: str              # Distribution mode for problems
+    ROOM_PROBLEM_DISTRIBUTION: str      # Problem distribution for room
+    ROOM_UPDATE_THROTTLE: int           # Minimum seconds between room broadcasts
+    ROOM_BASE_HP_DEDUCTION: int         # Base HP deduction for each test case
+
+    @property
+    def DEFAULT_ROOM_SETTINGS(self) -> dict:
+        return {
+            "problem_count": self.ROOM_PROBLEM_COUNT,
+            "starting_hp": self.ROOM_STARTING_HP,
+            "base_hp_deduction": self.ROOM_BASE_HP_DEDUCTION,
+            "hp_multiplier": self.ROOM_HP_MULTIPLIER,
+            "distribution": self.ROOM_DISTRIBUTION,
+            "problem_distribution": self.ROOM_PROBLEM_DISTRIBUTION
+        }
+
     model_config = SettingsConfigDict(
         env_file="../.env",
         env_file_encoding="utf-8",

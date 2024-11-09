@@ -64,3 +64,6 @@ class CodeExecutionService:
             finally:
                 # Clean up the temporary file
                 os.unlink(file_path)
+
+
+code_execution = CodeExecutionService()

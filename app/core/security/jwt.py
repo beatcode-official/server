@@ -165,3 +165,6 @@ class JWTManager:
         ).delete()
 
         db.commit()
+
+
+jwt_manager = JWTManager()

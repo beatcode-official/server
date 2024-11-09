@@ -2,7 +2,7 @@ import time
 from typing import Annotated
 
 from core.config import settings
-from core.security.jwt import JWTManager
+from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
 from db.models.user import User
 from db.session import get_db
@@ -11,13 +11,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from schemas.user import (ForgotPassword, PasswordReset, Token, TokenRefresh,
                           UserCreate, UserResponse, UserUpdate)
-from services.email.service import EmailService
+from services.email.service import email_service
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["users"])
 oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"users/login")
-email_service = EmailService()
-jwt_manager = JWTManager()
 
 
 async def get_current_user(

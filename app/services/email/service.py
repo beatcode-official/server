@@ -59,3 +59,6 @@ class EmailService:
             # Logging the error to allow for debugging without an actual API key
             print(f"Error sending email to {to_email}:\n{e}\nReset Token: {token}")
             return None
+
+
+email_service = EmailService()

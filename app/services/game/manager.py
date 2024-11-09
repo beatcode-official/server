@@ -1,4 +1,6 @@
 import asyncio
+from collections import defaultdict
+import random
 import time
 import uuid
 from typing import Dict, List, Optional
@@ -11,6 +13,9 @@ from schemas.game import GameEvent, GameView
 from services.game.matchmaker import Matchmaker
 from services.game.state import GameState, GameStatus, PlayerState
 from sqlalchemy.orm import Session
+from services.room.state import RoomSettings, RoomStatus
+from services.problem.service import ProblemManager
+from services.room.service import room_service
 
 
 class GameManager:
@@ -155,6 +160,83 @@ class GameManager:
 
         return game
 
+    async def create_game_with_settings(
+        self,
+        player1: User,
+        player2: User,
+        room_settings: RoomSettings,
+        db: Session,
+    ) -> GameState:
+        """
+        Creates a new game with custom room settings
+
+        :param player1: The first player
+        :param player2: The second player
+        :param room_settings: The room settings
+        :param db: The database session
+        """
+        game_id = uuid.uuid4().hex
+
+        # Get problems based on distribution settings
+        if room_settings.distribution_mode == "fixed":
+            distribution = {
+                "easy": int(room_settings.prob_easy * room_settings.problem_count),
+                "medium": int(room_settings.prob_medium * room_settings.problem_count),
+                "hard": int(room_settings.problem_count - int(room_settings.prob_easy * room_settings.problem_count) - int(room_settings.prob_medium * room_settings.problem_count))
+            }
+        else:
+            distribution = defaultdict(int)
+            for _ in range(room_settings.problem_count):
+                r = random.random()
+                if r < room_settings.prob_easy:
+                    distribution["easy"] += 1
+                elif r < room_settings.prob_easy + room_settings.prob_medium:
+                    distribution["medium"] += 1
+                else:
+                    distribution["hard"] += 1
+
+        problems = await ProblemManager.get_problems_by_distribution(db, dict(distribution))
+
+        # Create the corresponding game state object
+        game = GameState(
+            id=game_id,
+            status=GameStatus.WAITING,
+            player1=PlayerState(
+                user_id=player1.id,
+                username=player1.username,
+                display_name=player1.display_name,
+                hp=room_settings.starting_hp
+            ),
+            player2=PlayerState(
+                user_id=player2.id,
+                username=player2.username,
+                display_name=player2.display_name,
+                hp=room_settings.starting_hp
+            ),
+            problems=problems,
+            start_time=time.time(),
+            match_type="custom",
+            custom_settings={
+                "hp_multiplier": {
+                    "easy": room_settings.hp_multiplier_easy,
+                    "medium": room_settings.hp_multiplier_medium,
+                    "hard": room_settings.hp_multiplier_hard
+                },
+                "base_hp_deduction": room_settings.base_hp_deduction
+            }
+        )
+
+        self.active_games[game_id] = game
+        self.player_to_game[player1.id] = game_id
+        self.player_to_game[player2.id] = game_id
+
+        # Start the timeout checker task
+        timeout_task = asyncio.create_task(self.check_timeout(game_id, db))
+        self.timeout_tasks[game_id] = timeout_task
+        game.timeout_task = timeout_task
+
+        return game
+
     def get_player_game(self, player_id: int) -> Optional[GameState]:
         """
         Gets the game that a player is currently in.
@@ -165,18 +247,27 @@ class GameManager:
         game_id = self.player_to_game.get(player_id)
         return self.active_games.get(game_id) if game_id else None
 
-    def calculate_hp_deduction(self, test_cases_solved: int, difficulty: str) -> int:
+    def calculate_hp_deduction(self, test_cases_solved: int, difficulty: str, game_state: GameState) -> int:
         """
         # SUBJECT TO CHANGE
         Calculates the HP deduction for a player based on the number of test cases solved and the problem difficulty.
 
         :param test_cases_solved: The number of test cases solved.
         :param difficulty: The difficulty of the problem.
+        :param game_state: The game state object.
         :return: The HP deduction.
         """
-        base_deduction = self.hp_deduction * test_cases_solved
+        # Use custom base deduction if available, otherwise use default
+        if game_state.custom_settings and 'base_hp_deduction' in game_state.custom_settings:
+            base_deduction = game_state.custom_settings['base_hp_deduction'] * test_cases_solved
+        else:
+            base_deduction = self.hp_deduction * test_cases_solved
 
-        multiplier = self.hp_multiplier.get(difficulty.lower(), 1)
+        # Use custom multipliers if available, otherwise use default
+        if game_state.custom_settings and 'hp_multiplier' in game_state.custom_settings:
+            multiplier = game_state.custom_settings['hp_multiplier'].get(difficulty.lower(), 1)
+        else:
+            multiplier = self.hp_multiplier.get(difficulty.lower(), 1)
 
         return int(base_deduction * multiplier)
 
@@ -209,6 +300,7 @@ class GameManager:
             hp_deduction = self.calculate_hp_deduction(
                 test_cases_solved - prev_solved,  # Deduct HP based on new test cases solved only
                 current_problem.difficulty,
+                game
             )
             opponent.hp = max(0, opponent.hp - hp_deduction)
             player.partial_progress[player.current_problem_index] = test_cases_solved
@@ -297,6 +389,33 @@ class GameManager:
             print(f"Error saving match: {e}")
             db.rollback()
 
+        # Find the room this game belongs to
+        room = next(
+            (room for room in room_service.rooms.values() if room.game_id == game_state.id),
+            None
+        )
+
+        # If room exists, reset its status
+        if room:
+            room.status = RoomStatus.WAITING
+            room.game_id = None
+            room.reset_ready_status()
+
+            # Get users for room view
+            users = {
+                room.host_id: db.query(User).filter(User.id == room.host_id).first(),
+            }
+            if room.guest_id:
+                users[room.guest_id] = db.query(User).filter(
+                    User.id == room.guest_id
+                ).first()
+
+            # Broadcast updated room state
+            await room.broadcast({
+                "type": "room_update",
+                "data": room_service.create_room_view(room, users).model_dump()
+            })
+
         # Broadcast the match result to the players
         await game_state.player1.send_event(GameEvent(
             type="match_end",
@@ -384,3 +503,6 @@ class GameManager:
         if game:
             self.player_to_game.pop(game.player1.user_id, None)
             self.player_to_game.pop(game.player2.user_id, None)
+
+
+game_manager = GameManager()

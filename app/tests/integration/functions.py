@@ -203,3 +203,38 @@ async def send_code(ws: websockets.WebSocketClientProtocol, code: str):
             "code": code
         }
     }))
+
+
+async def create_room(auth_headers, session, settings=None, is_public=None):
+    url = f"{BASE_URL}/rooms/create"
+    if is_public is not None:
+        url += "?is_public=true" if is_public else "?is_public=false"
+
+    if settings is not None:
+        response = session.post(url, headers=auth_headers, json=settings)
+    else:
+        response = session.post(url, headers=auth_headers)
+
+    return response.json()
+
+
+async def get_room(room_code: str, auth_headers):
+    url = f"{BASE_URL}/rooms/{room_code}"
+    response = requests.get(url, headers=auth_headers)
+    return response.json()
+
+
+async def update_room_settings(room_code: str, auth_headers, session, settings=None):
+    url = f"{BASE_URL}/rooms/{room_code}/settings"
+    if settings is not None:
+        data = settings
+        response = session.patch(url, headers=auth_headers, json=data)
+    else:
+        response = session.patch(url, headers=auth_headers)
+
+    return response.json()
+
+
+async def leave_room(room_code: str, auth_headers: dict):
+    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers) as ws:
+        await ws.close()

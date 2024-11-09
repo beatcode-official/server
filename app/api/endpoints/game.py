@@ -10,16 +10,14 @@ from db.models.user import User
 from db.session import get_db
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from schemas.game import GameEvent, GameView
-from services.execution.service import CodeExecutionService
-from services.game.manager import GameManager
+from services.execution.service import code_execution
+from services.game.manager import game_manager
 from services.game.state import GameStatus
 from services.problem.service import ProblemManager
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/game", tags=["game"])
-game_manager = GameManager()
 matchmaker = game_manager.matchmaker
-code_execution = CodeExecutionService()
 
 
 @router.websocket("/queue")
@@ -282,7 +280,7 @@ async def game_websocket(
 
         while True:
             try:
-                data = await websocket.receive_json()
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
 
                 # No longer accept messages if the game is finished
                 if game_state.status == GameStatus.FINISHED:
@@ -388,20 +386,16 @@ async def game_websocket(
 
             except asyncio.TimeoutError:
                 continue
-            except JSONDecodeError:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {
-                        "message": "Invalid JSON format"
-                    }
-                })
             except Exception as e:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {
-                        "message": "An error occurred while processing your request"
-                    }
-                })
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": {
+                            "message": "An error occurred:" + str(e)
+                        }
+                    })
+                except Exception:
+                    raise e
 
     except WebSocketDisconnect:
         pass

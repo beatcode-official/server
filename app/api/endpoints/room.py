@@ -181,6 +181,11 @@ async def room_websocket(
         return await websocket.close(code=4003, reason="Room is full")
     else:
         # New guest joining the room
+
+        # Check if user is already in any room (except this one)
+        if room_service.is_user_in_any_room(current_user.id) and not room.is_player_in_room(current_user.id):
+            return await websocket.close(code=4005, reason="Already in another room")
+
         room.guest_id = current_user.id
         room.guest_ws = websocket
 

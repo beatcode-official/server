@@ -267,5 +267,14 @@ class RoomService():
         """
         await self.broadcast_room_list()
 
+    def is_user_in_any_room(self, user_id: int) -> bool:
+        """
+        Check if a user is in any room
+
+        :param user_id: User ID
+        :return: Whether the user is in any room
+        """
+        return any(room.is_player_in_room(user_id) for room in self.rooms.values())
+
 
 room_service = RoomService()

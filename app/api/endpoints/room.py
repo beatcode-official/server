@@ -1,14 +1,16 @@
 import asyncio
 import time
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
-from sqlalchemy.orm import Session
-from db.session import get_db
-from db.models.user import User
+
 from api.endpoints.users import get_current_user, get_current_user_ws
-from services.room.state import RoomSettings, RoomStatus
-from services.room.service import room_service
+from db.models.user import User
+from db.session import get_db
+from fastapi import (APIRouter, Depends, HTTPException, WebSocket,
+                     WebSocketDisconnect, status)
 from services.game.manager import game_manager
+from services.room.service import room_service
+from services.room.state import RoomSettings, RoomStatus
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 

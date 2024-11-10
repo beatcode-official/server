@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -34,6 +34,9 @@ class GameView(BaseModel):
     status: str
     winner: Optional[str] = None
     rating_change: Optional[float] = None
+    skill_points: int
+    mana_points: int
+    abilities: List[str]
 
 
 class GameEvent(BaseModel):

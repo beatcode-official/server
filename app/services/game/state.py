@@ -43,6 +43,9 @@ class PlayerState(BaseModel):
     partial_progress: Dict[int, int] = {}
     last_submission: Optional[float] = None
     ws: Optional[WebSocket] = None
+    skill_points: int = settings.STARTING_SP
+    mana_points: int = settings.STARTING_MP
+    abilities: List[str] = []
 
     # Necessary for inclusion of types like WebSocket
     class Config:

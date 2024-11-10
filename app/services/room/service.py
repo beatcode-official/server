@@ -1,14 +1,14 @@
-
 import asyncio
 import random
 import string
 import time
 from typing import Dict, List, Optional, Set
-from fastapi import HTTPException, WebSocket
-from services.room.state import RoomState, RoomStatus, RoomSettings, RoomView
+
 from core.config import settings
 from db.models.user import User
 from db.session import get_db
+from fastapi import HTTPException, WebSocket
+from services.room.state import RoomSettings, RoomState, RoomStatus, RoomView
 
 
 class RoomService():
@@ -55,7 +55,10 @@ class RoomService():
             distribution_mode=settings.DEFAULT_ROOM_SETTINGS["distribution"],
             prob_easy=prob_easy,
             prob_medium=prob_medium,
-            prob_hard=prob_hard
+            prob_hard=prob_hard,
+            starting_sp=settings.STARTING_SP,
+            starting_mp=settings.STARTING_MP,
+            mana_recharge=settings.MANA_RECHARGE
         )
 
     async def _get_user(self, user_id: int) -> User:

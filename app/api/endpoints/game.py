@@ -1,7 +1,6 @@
 import asyncio
 import time
 import traceback
-from json.decoder import JSONDecodeError
 from typing import Optional
 
 from api.endpoints.users import get_current_user, get_current_user_ws
@@ -11,6 +10,7 @@ from db.session import get_db
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from schemas.game import GameEvent, GameView
 from services.execution.service import code_execution
+from services.game.ability import ability_manager
 from services.game.manager import game_manager
 from services.game.state import GameStatus
 from services.problem.service import ProblemManager
@@ -296,6 +296,19 @@ async def game_websocket(
                             "timestamp": time.time()
                         }
                     ))
+
+                elif data["type"] == "ability":
+                    error = await ability_manager.handle_ability_message(
+                        game_state,
+                        game_manager,
+                        current_user.id,
+                        data["data"]
+                    )
+                    if error:
+                        await websocket.send_json({
+                            "type": "error",
+                            "data": {"message": error}
+                        })
 
                 elif data["type"] == "query":
                     await websocket.send_json({

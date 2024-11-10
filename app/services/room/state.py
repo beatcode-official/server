@@ -1,8 +1,8 @@
-
 from enum import Enum
 from typing import Dict, Literal, Optional
-from pydantic import BaseModel, field_validator
+
 from fastapi import WebSocket
+from pydantic import BaseModel, field_validator
 
 
 class RoomStatus(str, Enum):
@@ -38,6 +38,9 @@ class RoomSettings(BaseModel):
     prob_easy: float
     prob_medium: float
     prob_hard: float
+    starting_sp: int
+    starting_mp: int
+    mana_recharge: int
 
     @field_validator("problem_count")
     def validate_problem_count(cls, v):
@@ -81,6 +84,27 @@ class RoomSettings(BaseModel):
             total = values['prob_easy'] + values['prob_medium'] + v
             if not (0.99 <= total <= 1.01):  # Allow small floating point errors
                 raise ValueError('Probabilities must sum to 1')
+        return v
+
+    @field_validator("starting_sp")
+    def validate_starting_sp(cls, v):
+        min_sp, max_sp = 0, 1000
+        if not (min_sp <= v <= max_sp):
+            raise ValueError(f"Starting SP must be between {min_sp} and {max_sp}")
+        return v
+
+    @field_validator("starting_mp")
+    def validate_starting_mp(cls, v):
+        min_mp, max_mp = 0, 1000
+        if not (min_mp <= v <= max_mp):
+            raise ValueError(f"Starting MP must be between {min_mp} and {max_mp}")
+        return v
+
+    @field_validator("mana_recharge")
+    def validate_mana_recharge(cls, v):
+        min_recharge, max_recharge = 0, 500
+        if not (min_recharge <= v <= max_recharge):
+            raise ValueError(f"Mana recharge must be between {min_recharge} and {max_recharge}")
         return v
 
 

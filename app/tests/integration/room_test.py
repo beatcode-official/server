@@ -60,7 +60,11 @@ if 1 not in SKIP:
             "distribution_mode": "fixed",
             "prob_easy": 0.4,
             "prob_medium": 0.3,
-            "prob_hard": 0.3
+            "prob_hard": 0.3,
+            "starting_sp": 200,
+            "starting_mp": 200,
+            "mana_recharge": 50,
+
         }
         room_data3 = await create_room(auth_headers2, session, settings=custom_settings)
         assert "room_code" in room_data3
@@ -78,7 +82,10 @@ if 1 not in SKIP:
             "distribution_mode": "fixed",
             "prob_easy": 0.4,
             "prob_medium": 0.3,
-            "prob_hard": 0.3
+            "prob_hard": 0.3,
+            "starting_sp": 200,
+            "starting_mp": 200,
+            "mana_recharge": 50,
         }
         try:
             await create_room(auth_headers2, session, settings=invalid_settings)
@@ -146,7 +153,10 @@ if 3 not in SKIP:
             "distribution_mode": "fixed",
             "prob_easy": 0.5,
             "prob_medium": 0.3,
-            "prob_hard": 0.2
+            "prob_hard": 0.2,
+            "starting_sp": 200,
+            "starting_mp": 200,
+            "mana_recharge": 50,
         }
         update_result = await update_room_settings(room_code, auth_headers1, session, new_settings)
 
@@ -203,7 +213,10 @@ if 4 not in SKIP:
                 "distribution_mode": "fixed",
                 "prob_easy": 0.4,
                 "prob_medium": 0.3,
-                "prob_hard": 0.3
+                "prob_hard": 0.3,
+                "starting_sp": 200,
+                "starting_mp": 200,
+                "mana_recharge": 50,
             }
             await update_room_settings(room_data["room_code"], auth_headers2, session, new_settings)
             message = await get_latest_message(lobby_ws)
@@ -366,7 +379,10 @@ if 7 not in SKIP:
             "distribution_mode": "fixed",
             "prob_easy": 0.6,
             "prob_medium": 0.2,
-            "prob_hard": 0.2
+            "prob_hard": 0.2,
+            "starting_sp": 200,
+            "starting_mp": 200,
+            "mana_recharge": 50,
         }
 
         room_data = await create_room(auth_headers1, session, settings=settings)
@@ -406,14 +422,15 @@ if 7 not in SKIP:
 
                 # Connect to game and verify settings
                 async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", extra_headers=auth_headers1) as p1:
-                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", extra_headers=auth_headers2) as p2:
+                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", extra_headers=auth_headers2):
                         game_state = await get_until(p1, "game_state")
-                        await get_until(p2, "game_state")
 
                         # Test if started game has correct settings
                         assert game_state["data"]["match_type"] == "custom"
                         assert game_state["data"]["your_hp"] == 500
                         assert game_state["data"]["opponent_hp"] == 500
+                        assert game_state["data"]["skill_points"] == 200
+                        assert game_state["data"]["mana_points"] == 200
 
                         # Chat and clear initial messages
                         await send_chat(p1, "clear")
@@ -421,12 +438,10 @@ if 7 not in SKIP:
                         ALL_SOLUTION = "class Solution:\r\n  def test(self, inp: bool) -> bool:\r\n    return not inp"
                         for _ in range(3):
                             await get_latest_message(p1)
-                            await get_latest_message(p2)
                             await send_code(p1, ALL_SOLUTION)
                             await asyncio.sleep(3)
 
                         game_state = await get_until(p1, "game_state")
-                        await get_until(p2, "game_state")
                         assert game_state["data"]["problems_solved"] == 3
                         # First 3 probs are easy, so HP should be 500 - 5 * 10 * 1 * 3 = 350
                         assert game_state["data"]["opponent_hp"] == 350
@@ -434,22 +449,34 @@ if 7 not in SKIP:
                         await send_code(p1, ALL_SOLUTION)
                         await asyncio.sleep(3)
                         game_state = await get_until(p1, "game_state")
-                        await get_until(p2, "game_state")
                         assert game_state["data"]["problems_solved"] == 4
                         # Next prob is medium, so HP should be 350 - 5 * 10 * 2 = 250
                         assert game_state["data"]["opponent_hp"] == 250
 
+                        # Buy and use a healing skill 3 times
+                        # Heal 20 * 3 = 60 HP
+                        # SP cost is 10
+                        # MP cost is 5 * 3 = 15
+                        await buy_ability(p1, "heal")
+                        await use_ability(p1, "heal")
+                        await use_ability(p1, "heal")
+                        await get_latest_message(p1)
+                        await use_ability(p1, "heal")
+
+                        game_state = await get_until(p1, "game_state")
+                        assert game_state["data"]["your_hp"] == 560
+                        assert game_state["data"]["skill_points"] == 190
+                        assert game_state["data"]["mana_points"] == 200 - 15 + 50 * 4
+
                         await send_code(p1, ALL_SOLUTION)
                         await asyncio.sleep(3)
                         game_state = await get_until(p1, "game_state")
-                        await get_until(p2, "game_state")
                         assert game_state["data"]["problems_solved"] == 5
                         # Last prob is hard, so HP should be 250 - 5 * 10 * 3 = 100
                         assert game_state["data"]["opponent_hp"] == 100
 
                         # Since all problems are solved, game should end
                         game_end = await get_until(p1, "match_end")
-                        await get_until(p2, "match_end")
                         assert game_end["data"]["winner"] == "rtest13"
 
                 # Verify room returned to waiting state

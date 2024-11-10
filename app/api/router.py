@@ -1,8 +1,6 @@
-
-
-from fastapi import FastAPI
-from api.endpoints import users, game, room
+from api.endpoints import game, room, users
 from core.config import settings
+from fastapi import FastAPI
 
 
 def include_routers(app: FastAPI):

@@ -205,6 +205,26 @@ async def send_code(ws: websockets.WebSocketClientProtocol, code: str):
     }))
 
 
+async def buy_ability(ws: websockets.WebSocketClientProtocol, ability_id: str):
+    return await ws.send(json.dumps({
+        "type": "ability",
+        "data": {
+            "action": "buy",
+            "ability_id": ability_id
+        }
+    }))
+
+
+async def use_ability(ws: websockets.WebSocketClientProtocol, ability_id: str):
+    return await ws.send(json.dumps({
+        "type": "ability",
+        "data": {
+            "action": "use",
+            "ability_id": ability_id
+        }
+    }))
+
+
 async def create_room(auth_headers, session, settings=None, is_public=None):
     url = f"{BASE_URL}/rooms/create"
     if is_public is not None:

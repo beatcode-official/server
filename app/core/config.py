@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     STARTING_HP: int                    # Starting HP for each player
     MATCH_PROBLEM_COUNT: int            # Number of problems in each match
     MATCH_TIMEOUT_MINUTES: int          # Time limit (min) for each match
+    STARTING_SP: int                    # Starting SP for each player
+    STARTING_MP: int                    # Starting MP for each player
+    MANA_RECHARGE: int                  # Mana recharge per problem solved
 
     # Unranked Problem Distribution
     UNRANKED_PROBS: str                 # Probability of an easy problem
@@ -79,6 +82,9 @@ class Settings(BaseSettings):
     ROOM_PROBLEM_DISTRIBUTION: str      # Problem distribution for room
     ROOM_UPDATE_THROTTLE: int           # Minimum seconds between room broadcasts
     ROOM_BASE_HP_DEDUCTION: int         # Base HP deduction for each test case
+    ROOM_STARTING_SP: int               # Starting SP for each player in room
+    ROOM_STARTING_MP: int               # Starting MP for each player in room
+    ROOM_MANA_RECHARGE: int             # Mana recharge per problem solved
 
     @property
     def DEFAULT_ROOM_SETTINGS(self) -> dict:
@@ -88,7 +94,10 @@ class Settings(BaseSettings):
             "base_hp_deduction": self.ROOM_BASE_HP_DEDUCTION,
             "hp_multiplier": self.ROOM_HP_MULTIPLIER,
             "distribution": self.ROOM_DISTRIBUTION,
-            "problem_distribution": self.ROOM_PROBLEM_DISTRIBUTION
+            "problem_distribution": self.ROOM_PROBLEM_DISTRIBUTION,
+            "starting_sp": self.ROOM_STARTING_SP,
+            "starting_mp": self.ROOM_STARTING_MP,
+            "mana_recharge": self.ROOM_MANA_RECHARGE
         }
 
     model_config = SettingsConfigDict(

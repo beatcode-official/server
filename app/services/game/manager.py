@@ -1,8 +1,8 @@
 import asyncio
-from collections import defaultdict
 import random
 import time
 import uuid
+from collections import defaultdict
 from typing import Dict, List, Optional
 
 from core.config import settings
@@ -12,10 +12,10 @@ from db.models.user import User
 from schemas.game import GameEvent, GameView
 from services.game.matchmaker import Matchmaker
 from services.game.state import GameState, GameStatus, PlayerState
-from sqlalchemy.orm import Session
-from services.room.state import RoomSettings, RoomStatus
 from services.problem.service import ProblemManager
 from services.room.service import room_service
+from services.room.state import RoomSettings, RoomStatus
+from sqlalchemy.orm import Session
 
 
 class GameManager:
@@ -67,7 +67,10 @@ class GameManager:
             start_time=game_state.start_time,
             status=game_state.status.value,
             winner=game_state.winner,
-            rating_change=rating_change
+            rating_change=rating_change,
+            skill_points=player.skill_points,
+            mana_points=player.mana_points,
+            abilities=player.abilities,
         )
 
     async def get_winner(self, game: GameState) -> Optional[str]:
@@ -205,13 +208,17 @@ class GameManager:
                 user_id=player1.id,
                 username=player1.username,
                 display_name=player1.display_name,
-                hp=room_settings.starting_hp
+                hp=room_settings.starting_hp,
+                skill_points=room_settings.starting_sp,
+                mana_points=room_settings.starting_mp
             ),
             player2=PlayerState(
                 user_id=player2.id,
                 username=player2.username,
                 display_name=player2.display_name,
-                hp=room_settings.starting_hp
+                hp=room_settings.starting_hp,
+                skill_points=room_settings.starting_sp,
+                mana_points=room_settings.starting_mp
             ),
             problems=problems,
             start_time=time.time(),
@@ -222,7 +229,8 @@ class GameManager:
                     "medium": room_settings.hp_multiplier_medium,
                     "hard": room_settings.hp_multiplier_hard
                 },
-                "base_hp_deduction": room_settings.base_hp_deduction
+                "base_hp_deduction": room_settings.base_hp_deduction,
+                "mana_recharge": room_settings.mana_recharge
             }
         )
 
@@ -308,6 +316,14 @@ class GameManager:
             # Check if the player has solved the problem
             if test_cases_solved == total_test_cases:
                 player.problems_solved += 1
+
+                mana_recharge = (
+                    game.custom_settings.get("mana_recharge", settings.MANA_RECHARGE)
+                    if game.custom_settings
+                    else settings.MANA_RECHARGE
+                )
+
+                player.mana_points += mana_recharge  # Recharge mana
                 if player.current_problem_index < len(game.problems) - 1:
                     player.current_problem_index += 1
 

@@ -21,7 +21,6 @@ subprocess.run(
 
 # Global Variables
 SKIP = [
-    2, 3, 4, 6, 7, 8, 9, 10
 ]
 print(f"Skipping tests: {SKIP}")
 
@@ -64,7 +63,7 @@ if 4 not in SKIP:
 # 5. Verify email and login
 if 5 not in SKIP:
     print("Running test 5: Verify email and login", end=" ", flush=True)
-    print(verify_email("test_email_token"))
+    verify_email("test_email_token")
     user1 = login_user("jdoe", "password")
 
     assert "access_token" in user1

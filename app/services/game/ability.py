@@ -24,7 +24,10 @@ class AbilityManager:
 
     def __init__(self):
         self.abilities: Dict[str, Ability] = {
-            "heal": Ability(sp_cost=10, mp_cost=5),
+            "healio": Ability(sp_cost=10, mp_cost=5),
+            "deletio": Ability(sp_cost=10, mp_cost=5),
+            "syntaxio": Ability(sp_cost=10, mp_cost=5),
+            "lightio": Ability(sp_cost=10, mp_cost=5),
         }
 
     async def handle_ability_message(
@@ -150,7 +153,7 @@ class AbilityManager:
         player.mana_points -= ability.mp_cost
 
         # Handle abilities here, define new methods if needed
-        if ability_id == "heal":
+        if ability_id == "healio":
             player.hp += 20  # Heal for 20
 
         await game_state.broadcast_event(GameEvent(

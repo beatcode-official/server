@@ -35,7 +35,6 @@ class PlayerState(BaseModel):
     :param skill_points: The skill points (SP) of the player.
     :param mana_points: The mana points (MP) of the player.
     :param abilities: List of abilities that the player has.
-
     """
     user_id: int
     username: str

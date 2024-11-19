@@ -21,6 +21,7 @@ subprocess.run(
 
 # Global Variables
 SKIP = [
+
 ]
 print(f"Skipping tests: {SKIP}")
 

@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 from core.config import settings
 from core.security.password import PasswordManager
 from db.models.user import RefreshToken, User
-from jose import jwt
+import jwt
 from sqlalchemy.orm import Session
 
 

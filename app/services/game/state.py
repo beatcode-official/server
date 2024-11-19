@@ -32,7 +32,9 @@ class PlayerState(BaseModel):
     :param partial_progress: A dictionary mapping problem indices to the number of test cases passed.
     :param last_submission: The timestamp of the last submission.
     :param ws: The WebSocket connection of the player.
-
+    :param skill_points: The skill points (SP) of the player.
+    :param mana_points: The mana points (MP) of the player.
+    :param abilities: List of abilities that the player has.
     """
     user_id: int
     username: str

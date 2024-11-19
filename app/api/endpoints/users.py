@@ -1,3 +1,5 @@
+import random
+import string
 import time
 from typing import Annotated
 
@@ -338,6 +340,13 @@ async def update_user(
     :param current_user: The current user
     :param db: The database session
     """
+    # Prevent guests from updating their display name
+    if current_user.is_guest:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Guest users cannot change their account details"
+        )
+
     # Update the user fields specified in the user update dictionary
     for field, value in user_update.model_dump(exclude_unset=True).items():
         setattr(current_user, field, value)
@@ -413,3 +422,48 @@ async def logout(
     jwt_manager.revoke_refresh_token(token_data.refresh_token, db)
     jwt_manager.cleanup_refresh_tokens(current_user.id, db)
     return {"message": "Succesfully logged out"}
+
+
+@router.post("/guest", response_model=Token)
+async def create_guest_account(db: Session = Depends(get_db)):
+    """
+    Create a guest account and return access tokens
+
+    :param db: The database session
+    :return: The guest's access and refresh tokens
+    """
+    # Generate guest credentials
+    random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    username = f"guest_{random_string}"
+    display_name = f"Guest_{random_string[:5]}"
+    email = f"{random_string}-not-an-actual-email"
+    password = PasswordManager.generate_secret_token()
+
+    # Create the guest account
+    db_user = User(
+        username=username,
+        email=email,
+        display_name=display_name,
+        hashed_password=PasswordManager.hash_password(password),
+        is_verified=True,
+        is_guest=True,
+        token_secret=PasswordManager.generate_secret_token()
+    )
+
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error creating guest account"
+        )
+
+    # Generate tokens
+    access_token, refresh_token = jwt_manager.create_tokens(db_user, db)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    }

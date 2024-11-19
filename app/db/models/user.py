@@ -16,6 +16,7 @@ class User(Base):
     :param hashed_password: The hashed password of the user.
     :param rating: The rating of the user.
     :param is_verified: Whether the user has verified their email.
+    :param is_guest: Whether the user is a guest user.
     :param verification_token: The token used to verify the user's email.
     :param reset_token: The token used to reset the user's password.
     :param reset_token_expires: The expiration date of the reset token.
@@ -32,6 +33,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     rating = Column(Float, default=0)
     is_verified = Column(Boolean, default=False)
+    is_guest = Column(Boolean, default=False)
     verification_token = Column(String, unique=True, nullable=True)
     reset_token = Column(String, unique=True, nullable=True)
     reset_token_expires = Column(Float, nullable=True)

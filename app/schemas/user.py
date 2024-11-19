@@ -59,6 +59,7 @@ class UserResponse(BaseModel):
     display_name: DisplayNameStr
     rating: float
     is_verified: bool
+    is_guest: bool
     created_at: float
     updated_at: Optional[float] = None
 

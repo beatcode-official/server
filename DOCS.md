@@ -23,6 +23,8 @@ Refer to this in addition to the Swagger docs to have a better idea on how to ut
       - This token has a much longer life span, and is used to obtain new access tokens via `/users/refresh/`
       - Make sure to store this token securely (`HttpOnly` cookies) to prevent exposure via JavaScript injection or XSS.
 
+ALTERNATIVELY: Send a POST request to `/api/users/guest` to get `access_token` and `refresh_token` of a guest account. Guest accounts cannot change display name, password. The rest behaves as normal.
+
 #### 2. Forgot Password
 1. If forgotten password, send the user's email to `/users/forgot-password` and they'll receive an email with a token
 2. Supply the token and a new password to `/users/reset-password` to change the account's password. Changing the password will immediatey invalidate ALL access tokens and refresh tokens.

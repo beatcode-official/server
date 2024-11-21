@@ -15,7 +15,7 @@ from services.email.service import email_service
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["users"])
-oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"users/login")
+oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"api/users/login")
 
 
 async def get_current_user(
@@ -123,22 +123,13 @@ async def get_current_user_ws(
 
     return user
 
-
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserCreate,
     db: Session = Depends(get_db)
 ):
-    """
-    Register a new user.
+    from sqlalchemy.exc import IntegrityError
 
-    :param user: The user data
-    :param db: The database session
-
-    :raises HTTPException: If the username or email already exists
-
-    :return: The created user
-    """
     # Check for existing username or email
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
@@ -150,72 +141,35 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
-        )
+       )
 
-    # Send verification email
-    if settings.TESTING:
-        verification_token = settings.TEST_EMAIL_TOKEN
-    else:
-        verification_token = PasswordManager.generate_secret_token()
-        email_service.send_verification_email(user.email, verification_token)
+    while True:
+        try:
+            # Generate verification token
+            if settings.TESTING:
+                verification_token = settings.TEST_EMAIL_TOKEN
+            else:
+                verification_token = PasswordManager.generate_secret_token()
+                email_service.send_verification_email(user.email, verification_token)
 
-    # Create the user
-    db_user = User(
-        username=user.username,
-        email=user.email,
-        display_name=user.display_name,
-        hashed_password=PasswordManager.hash_password(user.password),
-        verification_token=verification_token
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)  # Refresh the user to get the user's updated fields
+            # Create the user
+            db_user = User(
+                username=user.username,
+                email=user.email,
+                display_name=user.display_name,
+                hashed_password=PasswordManager.hash_password(user.password),
+                verification_token=verification_token
+            )
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+            return db_user
 
-    return db_user
-
-
-@router.post("/login", response_model=Token)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
-    """
-    Log in a user.
-
-    :param form_data: The login form data
-    :param db: The database session
-
-    :raises HTTPException: If the login credentials are incorrect or the email is not verified
-
-    :return: The user's access and refresh tokens
-    """
-    # Query the database for the user with the username or email
-    user = db.query(User).filter(
-        (User.username == form_data.username) | (User.email == form_data.username)
-    ).first()
-
-    # Check if the user exists and the password is correct
-    if not user or not PasswordManager.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect login credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Check if the email is verified
-    if not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified",
-        )
-
-    access_token, refresh_token = jwt_manager.create_tokens(user, db)
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
-
+        except IntegrityError as e:
+            db.rollback()
+            if "users_verification_token_key" in str(e):
+                continue  # Try again with new token
+            raise  # Re-raise other integrity errors
 
 @router.get("/verify-email/{token}")
 async def verify_email(token: str, db: Session = Depends(get_db)):
@@ -396,6 +350,25 @@ async def refresh_token(
         "refresh_token": refresh_token,
     }
 
+@router.post("/login", response_model=Token)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(
+        (User.username == form_data.username) |
+        (User.email == form_data.username)
+    ).first()
+
+    if not user or not PasswordManager.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect credentials"
+        )
+
+    # Generate tokens
+    access_token, refresh_token = jwt_manager.create_tokens(user, db)
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/logout")
 async def logout(

@@ -469,14 +469,15 @@ if 7 not in SKIP:
                         assert game_state["data"]["mana_points"] == 200 - 15 + 50 * 4
 
                         # Buy and use another skill
-                        # SP cost is 5
+                        # SP cost is 10
                         # MP cost is 5
                         await buy_ability(p1, "deletio")
+                        await get_latest_message(p1)
                         await use_ability(p1, "deletio")
 
-                        game_state = await get_until(p1, "game_state")
-                        assert game_state["data"]["your_hp"] == 560 # HP should stay the same
-                        assert game_state["data"]["skill_points"] == 185
+                        game_state = await get_latest_message(p1)
+                        assert game_state["data"]["your_hp"] == 560  # HP should stay the same
+                        assert game_state["data"]["skill_points"] == 180
                         assert game_state["data"]["mana_points"] == 200 - 15 + 50 * 4 - 5
 
                         await send_code(p1, ALL_SOLUTION)

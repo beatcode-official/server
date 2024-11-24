@@ -13,6 +13,7 @@ from schemas.user import (ForgotPassword, PasswordReset, Token, TokenRefresh,
                           UserCreate, UserResponse, UserUpdate)
 from services.email.service import email_service
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/users", tags=["users"])
 oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"api/users/login")
@@ -128,9 +129,7 @@ async def register_user(
     user: UserCreate,
     db: Session = Depends(get_db)
 ):
-    from sqlalchemy.exc import IntegrityError
-
-    # Check for existing username or email
+    # Check for existing username or email first
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -141,35 +140,50 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
-       )
+        )
 
-    while True:
-        try:
-            # Generate verification token
-            if settings.TESTING:
-                verification_token = settings.TEST_EMAIL_TOKEN
-            else:
-                verification_token = PasswordManager.generate_secret_token()
-                email_service.send_verification_email(user.email, verification_token)
+    try:
+        # Generate verification token - make it unique even in test mode
+        if settings.TESTING:
+            # Add timestamp to make it unique
+            import time
+            verification_token = f"{settings.TEST_EMAIL_TOKEN}_{int(time.time())}"
+        else:
+            verification_token = PasswordManager.generate_secret_token()
+            email_service.send_verification_email(user.email, verification_token)
 
-            # Create the user
-            db_user = User(
-                username=user.username,
-                email=user.email,
-                display_name=user.display_name,
-                hashed_password=PasswordManager.hash_password(user.password),
-                verification_token=verification_token
-            )
-            db.add(db_user)
-            db.commit()
-            db.refresh(db_user)
-            return db_user
+        # Generate token secret
+        token_secret = PasswordManager.generate_secret_token()
 
-        except IntegrityError as e:
-            db.rollback()
-            if "users_verification_token_key" in str(e):
-                continue  # Try again with new token
-            raise  # Re-raise other integrity errors
+        # Create the user
+        db_user = User(
+            username=user.username,
+            email=user.email,
+            display_name=user.display_name,
+            hashed_password=PasswordManager.hash_password(user.password),
+            verification_token=verification_token,
+            token_secret=token_secret
+        )
+
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+
+    except IntegrityError as e:
+        db.rollback()
+        print(f"Database IntegrityError: {str(e)}")  # Log the error
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed: User already exists"
+        )
+    except Exception as e:
+        db.rollback()
+        print(f"Unexpected error during registration: {str(e)}")  # Log the error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
 
 @router.get("/verify-email/{token}")
 async def verify_email(token: str, db: Session = Depends(get_db)):

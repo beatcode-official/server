@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,8 +14,8 @@ class Settings(BaseSettings):
     API_STR: str = "/api"               # Base URL for the API
 
     # Testing
-    TESTING: bool                       # Enable testing mode
-    TEST_EMAIL_TOKEN: str               # Email token for testing verification and password reset
+    TESTING: bool = os.getenv("TESTING", "False").lower() == "true"            # Enable testing mode
+    TEST_EMAIL_TOKEN: str = "test_token"               # Email token for testing verification and password reset
     TEST_DATABASE_URL: str              # URL for the test database
 
     # Signup

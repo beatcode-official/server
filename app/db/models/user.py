@@ -35,7 +35,7 @@ class User(Base):
     verification_token = Column(String, unique=True, nullable=True)
     reset_token = Column(String, unique=True, nullable=True)
     reset_token_expires = Column(Float, nullable=True)
-    token_secret = Column(String, nullable=True, server_default=PasswordManager.generate_secret_token())
+    token_secret = Column(String, nullable=True)
     created_at = Column(Float, server_default=func.extract('epoch', func.now()))
     updated_at = Column(Float, server_default=func.extract('epoch', func.now()))
 

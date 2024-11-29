@@ -1,3 +1,0 @@
-numpy==1.26
-leetscrape==1.0.1
-tqdm==4.66.5

@@ -1,0 +1,4 @@
+__pycache__/
+database.db
+init_db.py
+.env

@@ -6,7 +6,7 @@ from typing import Annotated
 from core.config import settings
 from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
-from db.models.user import User
+from db.models.user import RefreshToken, User
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -91,12 +91,12 @@ async def get_current_user_ws(
 
     try:
         # Extract the token from the protocols header
-        protocols = websocket.headers.get("sec-websocket-protocol", "").split(", ")
-
         token = None
-        for protocol in protocols:
+        for protocol in websocket.headers.get("sec-websocket-protocol", "").split(", "):
             if protocol.startswith("access_token|"):
                 token = protocol.split("|")[1]
+                # Accept the protocol that contains the token
+                await websocket.accept(subprotocol=protocol)
                 break
 
         if not token:
@@ -436,13 +436,31 @@ async def create_guest_account(db: Session = Depends(get_db)):
     :param db: The database session
     :return: The guest's access and refresh tokens
     """
-    # Clean up old guest accounts first
-    time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
-    db.query(User).filter(
-        User.is_guest == True,
-        User.created_at < time_limit
-    ).delete()
-    db.commit()
+    try:
+        # Clean up old guest accounts and their refresh tokens first
+        time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
+
+        # First delete associated refresh tokens
+        old_guest_users = db.query(User).filter(
+            User.is_guest == True,
+            User.created_at < time_limit
+        ).all()
+
+        for user in old_guest_users:
+            db.query(RefreshToken).filter(
+                RefreshToken.user_id == user.id
+            ).delete()
+
+        # Then delete the guest users
+        db.query(User).filter(
+            User.is_guest == True,
+            User.created_at < time_limit
+        ).delete()
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error cleaning up guest accounts: {e}")
 
     # Generate guest credentials
     random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))

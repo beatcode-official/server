@@ -34,8 +34,6 @@ async def queue_websocket(
     :param db: Database session
     """
     try:
-        await websocket.accept()
-
         # Check if the user is already in a game
         if game_manager.get_player_game(current_user.id):
             return await websocket.close(code=4000, reason="Already in a game")
@@ -123,8 +121,6 @@ async def ranked_queue_websocket(
     """
 
     try:
-        await websocket.accept()
-
         # Check if the user is already in a game
         if game_manager.get_player_game(current_user.id):
             return await websocket.close(code=4000, reason="Already in a game")
@@ -215,8 +211,6 @@ async def game_websocket(
     :param current_user: User object
     :param db: Database session
     """
-    await websocket.accept()
-
     game_state = game_manager.active_games.get(game_id)
 
     # Check if the game exists and is not finished

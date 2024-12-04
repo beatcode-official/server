@@ -86,11 +86,15 @@ async def get_current_user_ws(
         code: int = 4001,
         reason: str = "Could not validate credentials"
     ):
-        await websocket.close(code=code, reason=reason)
+        try:
+            await websocket.close(code=code, reason=reason)
+        except Exception:
+            pass
         raise credentials_exception
 
     try:
         # Extract the token from the protocols header
+
         token = None
         for protocol in websocket.headers.get("sec-websocket-protocol", "").split(", "):
             if protocol.startswith("access_token|"):

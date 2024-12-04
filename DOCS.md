@@ -50,7 +50,8 @@ ALTERNATIVELY: Send a POST request to `/api/users/guest` to get `access_token` a
    - `type: "submit"`: used to submit your code for execution. Inside your `"data"` property:
      - `code: string`: your code string (includes boilerplate)
    - `type: "forfeit"`: used to forfeit the match
-   - `type: "query"`: used to fetch current match data. Inside your `"data"` property:
+   - `type: "query"`: used to fetch current match data. 
+   - `type: "ability"`: used to signal a buy/use of abilities. Inside your `"data"` property:
      - `action: string`: either `buy` or `use`
      - `ability_id: string`: the ID string of the ability
    - `type: "chat"`: used to send a message to your opponent in the game room. Inside your `"data"` property:

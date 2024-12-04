@@ -436,7 +436,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
     random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
     username = f"guest_{random_string}"
     display_name = f"Guest_{random_string[:5]}"
-    email = f"{random_string}-not-an-actual-email"
+    email = f"{random_string}-not-an-actual@email.com"
     password = PasswordManager.generate_secret_token()
 
     # Create the guest account

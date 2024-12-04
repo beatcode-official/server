@@ -90,14 +90,18 @@ async def get_current_user_ws(
         raise credentials_exception
 
     try:
-        # Extract the token from the authorization header
-        auth_header = websocket.headers.get("authorization", "")
+        # Extract the token from the protocols header
+        protocols = websocket.headers.get("sec-websocket-protocol", "").split(", ")
 
-        # Quick and dirty check for the Bearer token
-        if not auth_header.startswith("Bearer "):
+        token = None
+        for protocol in protocols:
+            if protocol.startswith("access_token|"):
+                token = protocol.split("|")[1]
+                break
+
+        if not token:
             await close_ws_and_raise()
 
-        token = auth_header.split(" ")[1]
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
@@ -111,7 +115,7 @@ async def get_current_user_ws(
         if username is None:
             await close_ws_and_raise()
 
-    except JWTError:
+    except jwt.PyJWTError:
         await close_ws_and_raise()
 
     # Query the database for the user with that username
@@ -432,6 +436,14 @@ async def create_guest_account(db: Session = Depends(get_db)):
     :param db: The database session
     :return: The guest's access and refresh tokens
     """
+    # Clean up old guest accounts first
+    time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
+    db.query(User).filter(
+        User.is_guest == True,
+        User.created_at < time_limit
+    ).delete()
+    db.commit()
+
     # Generate guest credentials
     random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
     username = f"guest_{random_string}"

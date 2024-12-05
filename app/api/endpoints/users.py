@@ -6,7 +6,7 @@ from typing import Annotated
 from core.config import settings
 from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
-from db.models.user import User
+from db.models.user import RefreshToken, User
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -86,18 +86,26 @@ async def get_current_user_ws(
         code: int = 4001,
         reason: str = "Could not validate credentials"
     ):
-        await websocket.close(code=code, reason=reason)
+        try:
+            await websocket.close(code=code, reason=reason)
+        except Exception:
+            pass
         raise credentials_exception
 
     try:
-        # Extract the token from the authorization header
-        auth_header = websocket.headers.get("authorization", "")
+        # Extract the token from the protocols header
 
-        # Quick and dirty check for the Bearer token
-        if not auth_header.startswith("Bearer "):
+        token = None
+        for protocol in websocket.headers.get("sec-websocket-protocol", "").split(", "):
+            if protocol.startswith("access_token|"):
+                token = protocol.split("|")[1]
+                # Accept the protocol that contains the token
+                await websocket.accept(subprotocol=protocol)
+                break
+
+        if not token:
             await close_ws_and_raise()
 
-        token = auth_header.split(" ")[1]
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
@@ -111,7 +119,7 @@ async def get_current_user_ws(
         if username is None:
             await close_ws_and_raise()
 
-    except JWTError:
+    except jwt.PyJWTError:
         await close_ws_and_raise()
 
     # Query the database for the user with that username
@@ -432,6 +440,32 @@ async def create_guest_account(db: Session = Depends(get_db)):
     :param db: The database session
     :return: The guest's access and refresh tokens
     """
+    try:
+        # Clean up old guest accounts and their refresh tokens first
+        time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
+
+        # First delete associated refresh tokens
+        old_guest_users = db.query(User).filter(
+            User.is_guest == True,
+            User.created_at < time_limit
+        ).all()
+
+        for user in old_guest_users:
+            db.query(RefreshToken).filter(
+                RefreshToken.user_id == user.id
+            ).delete()
+
+        # Then delete the guest users
+        db.query(User).filter(
+            User.is_guest == True,
+            User.created_at < time_limit
+        ).delete()
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error cleaning up guest accounts: {e}")
+
     # Generate guest credentials
     random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
     username = f"guest_{random_string}"

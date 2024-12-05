@@ -135,8 +135,6 @@ async def room_lobby_websocket(
     :param websocket: WebSocket connection
     :param current_user: Current user
     """
-    await websocket.accept()
-
     try:
         await room_service.add_lobby_connection(websocket)
 
@@ -166,8 +164,6 @@ async def room_websocket(
     :param current_user: Current user
     :param db: Database session
     """
-    await websocket.accept()
-
     room = room_service.get_room(room_code)
     if not room:
         return await websocket.close(code=4004, reason="Room not found")

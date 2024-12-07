@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 from typing import Optional
 
 from api.endpoints.users import get_current_user, get_current_user_ws
@@ -211,20 +212,21 @@ async def room_websocket(
             try:
                 data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
 
+                # If data received, update users
+                users = {
+                    room.host_id: db.query(User).filter(User.id == room.host_id).first()
+                }
+                if room.guest_id:
+                    users[room.guest_id] = db.query(User).filter(
+                        User.id == room.guest_id
+                    ).first()
+
                 if data["type"] == "toggle_ready":
                     # Toggle ready status
                     current_ready = room.get_player_ready(current_user.id)
                     room.set_player_ready(current_user.id, not current_ready)
 
                     # Broadcast updated room state
-                    users = {
-                        room.host_id: db.query(User).filter(User.id == room.host_id).first()
-                    }
-                    if room.guest_id:
-                        users[room.guest_id] = db.query(User).filter(
-                            User.id == room.guest_id
-                        ).first()
-
                     await room.broadcast({
                         "type": "room_state",
                         "data": room_service.create_room_view(room, users).model_dump()
@@ -286,7 +288,8 @@ async def room_websocket(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                print(f"Error in room websocket: {e}")
+                print(f"Error in room websocket")
+                print(traceback.format_exc())
                 break
 
     finally:

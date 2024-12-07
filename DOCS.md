@@ -19,6 +19,7 @@ Refer to this in addition to the Swagger docs to have a better idea on how to ut
       - This will be your authorization tool, in every authenticated endpoint include a header with the following format
       ```"Authorization": "Bearer <JWT_ACCESS_TOKEN>"```
       - Access tokens have a really short lifespan, when it expires you must acquire a new one (see Refresh Token)
+      - **ATTENTION**: For WebSocket endpoints, since you cannot attach `"Authorization"` headers to your WebSocket connection, we will "smuggle" the token inside `"Sec-WebSocket-Protocol"` header instead. In Javascript and JS-based frameworks this means adding a ```["access_token|YOUR_TOKEN_HERE"]``` to the second argument of the `new WebSocket()` call (first argument is the WebSocket URL).
    2. Refresh Token:
       - This token has a much longer life span, and is used to obtain new access tokens via `/users/refresh/`
       - Make sure to store this token securely (`HttpOnly` cookies) to prevent exposure via JavaScript injection or XSS.

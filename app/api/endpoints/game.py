@@ -398,7 +398,7 @@ async def game_websocket(
                     await websocket.send_json({
                         "type": "error",
                         "data": {
-                            "message": "An error occurred:" + str(e)
+                            "message": "An error occurred: " + str(e)
                         }
                     })
                 except Exception:

@@ -33,11 +33,13 @@ class TestResult:
         passed: bool,
         output: Any = None,
         error: str = None,
+        input_data: str = None,
     ):
         self.expected = expected
         self.output = str(output) if output is not None else None
         self.passed = passed
         self.error = error
+        self.input_data = input_data
         
     def to_dict(self):
         return {{
@@ -45,6 +47,7 @@ class TestResult:
             "output": self.output,
             "passed": self.passed,
             "error": self.error,
+            "input_data": self.input_data,
         }}
         
 def run_tests(solution, test_data):
@@ -58,12 +61,14 @@ def run_tests(solution, test_data):
                 expected=test['expected'],
                 output=result,
                 passed=passed,
+                input_data=test['input'],
             ).to_dict())
         except Exception as e:
             results.append(TestResult(
                 expected=test['expected'],
                 passed=False,
                 error=traceback.format_exc(),
+                input_data=test['input'],
             ).to_dict())
             
     return {{

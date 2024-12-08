@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # Code Execution
 
     MAX_CONCURRENT: str                 # Maximum number of problems that can be executed concurrently for each difficulty
+    OPENAI_API_KEY: str                 # API key for OpenAI (Used for Runtime Analysis)
 
     # Docker Settings
     DOCKER_IMAGE: str                   # Docker image to use for code execution

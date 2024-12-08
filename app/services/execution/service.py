@@ -8,6 +8,7 @@ from core.config import settings
 from services.execution.docker import DockerRunner
 from services.execution.test_generator import TestGenerator
 from services.execution.types import ExecutionResult
+from services.execution.runtime_analysis import runtime_analysis_service
 
 
 class CodeExecutionService:
@@ -60,7 +61,14 @@ class CodeExecutionService:
                 file_path = f.name
 
             try:
-                return self.docker.run_container(file_path, difficulty)
+                result = self.docker.run_container(file_path, difficulty)
+
+                # If all tests passed, get runtime analysis
+                if result.all_cleared():
+                    runtime_analysis = await runtime_analysis_service.analyze_code(code)
+                    result.runtime_analysis = runtime_analysis
+
+                return result
             finally:
                 # Clean up the temporary file
                 os.unlink(file_path)

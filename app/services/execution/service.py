@@ -33,6 +33,8 @@ class CodeExecutionService:
         code: str,
         test_cases: List[str],
         expected_results: List[str],
+        sample_test_cases: List[str],
+        sample_expected_results: List[str],
         difficulty: str,
         compare_func: str,
     ) -> ExecutionResult:
@@ -57,7 +59,11 @@ class CodeExecutionService:
                     {"input": tc, "expected": er}
                     for tc, er in zip(test_cases, expected_results)
                 ]
-                f.write(self.test_generator.generate_test_runner(code, test_data, compare_func))
+                sample_data = [
+                    {"input": tc, "expected": er}
+                    for tc, er in zip(sample_test_cases, sample_expected_results)
+                ]
+                f.write(self.test_generator.generate_test_runner(code, test_data, sample_data, compare_func))
                 file_path = f.name
 
             try:

@@ -125,10 +125,20 @@ class ProblemManager:
                     "True",
                 ],
                 "compare_func": "return str(result) == expected",
+                "sample_test_cases": [
+                    "test(True)",
+                    "test(False)",
+                ],
+                "sample_test_results": [
+                    "False",
+                    "True",
+                ]
             }
 
         return {
             "hidden_test_cases": problem.hidden_test_cases,
             "hidden_test_results": problem.hidden_test_results,
+            "sample_test_cases": problem.sample_test_cases,
+            "sample_test_results": problem.sample_test_results,
             "compare_func": problem.compare_func,
         }

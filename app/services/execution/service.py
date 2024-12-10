@@ -8,6 +8,7 @@ from core.config import settings
 from services.execution.docker import DockerRunner
 from services.execution.test_generator import TestGenerator
 from services.execution.types import ExecutionResult
+from services.execution.runtime_analysis import runtime_analysis_service
 
 
 class CodeExecutionService:
@@ -32,6 +33,8 @@ class CodeExecutionService:
         code: str,
         test_cases: List[str],
         expected_results: List[str],
+        sample_test_cases: List[str],
+        sample_expected_results: List[str],
         difficulty: str,
         compare_func: str,
     ) -> ExecutionResult:
@@ -56,11 +59,22 @@ class CodeExecutionService:
                     {"input": tc, "expected": er}
                     for tc, er in zip(test_cases, expected_results)
                 ]
-                f.write(self.test_generator.generate_test_runner(code, test_data, compare_func))
+                sample_data = [
+                    {"input": tc, "expected": er}
+                    for tc, er in zip(sample_test_cases, sample_expected_results)
+                ]
+                f.write(self.test_generator.generate_test_runner(code, test_data, sample_data, compare_func))
                 file_path = f.name
 
             try:
-                return self.docker.run_container(file_path, difficulty)
+                result = self.docker.run_container(file_path, difficulty)
+
+                # If all tests passed, get runtime analysis
+                if result.all_cleared():
+                    runtime_analysis = await runtime_analysis_service.analyze_code(code)
+                    result.runtime_analysis = runtime_analysis
+
+                return result
             finally:
                 # Clean up the temporary file
                 os.unlink(file_path)

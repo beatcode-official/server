@@ -81,9 +81,11 @@ class DockerRunner:
                     execution_data = json.loads(
                         logs.split("EXECUTION_RESULTS:")[1].strip()
                     )
+
                     return ExecutionResult(
                         success=True,
-                        test_results=execution_data["test_results"],
+                        test_results=execution_data["hidden_results"]["test_results"],
+                        sample_results=execution_data["sample_results"]["test_results"],
                     )
 
                 # If the success string is not found, means an exception occurred

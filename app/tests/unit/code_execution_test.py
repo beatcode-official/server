@@ -79,6 +79,8 @@ async def test_successful_execution(executor, valid_solution):
         code=valid_solution,
         test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
         expected_results=["3", "0", "0"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -96,6 +98,8 @@ async def test_failed_test_cases(executor, valid_solution):
         code=valid_solution,
         test_cases=["add(1, 2)", "add(0, 0)"],
         expected_results=["4", "1"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -112,6 +116,8 @@ async def test_syntax_error(executor, invalid_syntax_solution):
         code=invalid_syntax_solution,
         test_cases=["add(1, 2)"],
         expected_results=["3"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -126,6 +132,8 @@ async def test_undefined_error(executor, undefined_variable_solution):
         code=undefined_variable_solution,
         test_cases=["add(1, 2)", "add(2, 2)"],
         expected_results=["3", "4"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -142,6 +150,8 @@ async def test_timeout(executor, infinite_loop_solution):
         code=infinite_loop_solution,
         test_cases=["add(1, 2)"],
         expected_results=["3"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -156,6 +166,8 @@ async def test_memory_limit(executor, memory_heavy_solution):
         code=memory_heavy_solution,
         test_cases=["add(1, 2)"],
         expected_results=["3"],
+        sample_test_cases=["add(1, 2)", "add(0, 0)", "add(-1, 1)"],
+        sample_expected_results=["3", "0", "0"],
         difficulty="easy",
         compare_func="return str(result) == expected"
     )
@@ -174,6 +186,16 @@ async def test_complex_problem(executor, valid_solution):
             "twoSum([3,3], 6)"
         ],
         expected_results=[
+            "[0,1]",
+            "[1,2]",
+            "[0,1]"
+        ],
+        sample_test_cases=[
+            "twoSum([2,7,11,15], 9)",
+            "twoSum([3,2,4], 6)",
+            "twoSum([3,3], 6)"
+        ],
+        sample_expected_results=[
             "[0,1]",
             "[1,2]",
             "[0,1]"
@@ -200,6 +222,8 @@ async def test_concurrent_executions(executor, valid_solution):
                 code=valid_solution,
                 test_cases=["add(1, 2)"],
                 expected_results=["3"],
+                sample_test_cases=["add(1, 2)"],
+                sample_expected_results=["3"],
                 difficulty="hard",
                 compare_func="return str(result) == expected"
             )

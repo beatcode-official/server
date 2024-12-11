@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 from pprint import pprint
+import traceback
 
 from websockets.exceptions import ConnectionClosedError
 from websockets.legacy.exceptions import InvalidStatusCode
@@ -47,7 +48,8 @@ if 1 not in SKIP:
 
         # Join queue with valid access token
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -55,7 +57,8 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -65,18 +68,20 @@ if 1 not in SKIP:
         # Join queue with invalid access token
         fake_headers = {"Authorization": "Bearer fake_token"}
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=fake_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(fake_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode:  # 403
-            assert True
+        except ConnectionClosedError as e:
+            assert e.code == 4001
         except Exception:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=fake_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(fake_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode:  # 403
-            assert True
+        except ConnectionClosedError as e:
+            assert e.code == 4001
         except Exception:
             assert False
 
@@ -84,23 +89,25 @@ if 1 not in SKIP:
         try:
             async with websockets.connect(unranked_queue_url) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode:  # 403
-            assert True
+        except InvalidStatusCode as e:  # 403
+            assert e.status_code == 403
         except Exception:
             assert False
 
         try:
             async with websockets.connect(ranked_queue_url) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode:  # 403
-            assert True
+        except InvalidStatusCode as e:  # 403
+            assert e.status_code == 403
         except Exception:
             assert False
 
         # Join queue when already in queue (same access token)
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -108,8 +115,10 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -118,8 +127,10 @@ if 1 not in SKIP:
 
         # Join queue when already in queue (different access token)
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -127,8 +138,10 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -137,8 +150,10 @@ if 1 not in SKIP:
 
         # Join unranked queue when already in ranked queue and vice versa
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -146,8 +161,10 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
@@ -156,13 +173,15 @@ if 1 not in SKIP:
 
         # Leave queue and rejoin
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -170,13 +189,15 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -185,19 +206,22 @@ if 1 not in SKIP:
 
         # Join queue on one connection, leave and join on another
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -205,19 +229,22 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                 try:
                     await asyncio.wait_for(ws.recv(), timeout=1)
                 except TimeoutError:
                     pass
 
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers_2) as ws:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers_2)}"]) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
         except TimeoutError:
             assert True
@@ -226,25 +253,30 @@ if 1 not in SKIP:
 
         # Join queue when already in a match and then join queue after finishing a match
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers2) as ws2:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
                     response = await ws1.recv()
                     match_id = json.loads(response)["data"]["match_id"]
 
-                    async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+                    async with websockets.connect(ranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                         await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
         except Exception:
             assert False
         finally:
-            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers) as game_ws:
+            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as game_ws:
                 await game_ws.send(json.dumps({
                     "type": "forfeit"
                 }))
 
             try:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
             except TimeoutError:
                 assert True
@@ -252,25 +284,30 @@ if 1 not in SKIP:
                 assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers2) as ws2:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
                     response = await ws1.recv()
                     match_id = json.loads(response)["data"]["match_id"]
 
-                    async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+                    async with websockets.connect(ranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                         await asyncio.wait_for(ws.recv(), timeout=1)
         except ConnectionClosedError as e:
             assert e.code == 4000
         except Exception:
             assert False
         finally:
-            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers) as game_ws:
+            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as game_ws:
                 await game_ws.send(json.dumps({
                     "type": "forfeit"
                 }))
 
             try:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
             except TimeoutError:
                 assert True
@@ -279,14 +316,17 @@ if 1 not in SKIP:
 
         # Join queue as 2 players and get matched
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers2) as ws2:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
                     response1 = await ws1.recv()
                     response2 = await ws2.recv()
                     assert json.loads(response1)["data"]["match_id"] == json.loads(response2)["data"]["match_id"]
 
                     match_id = json.loads(response1)["data"]["match_id"]
-                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers) as game_ws:
+                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as game_ws:
                         await game_ws.send(json.dumps({
                             "type": "forfeit"
                         }))
@@ -294,14 +334,17 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers2) as ws2:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
                     response1 = await ws1.recv()
                     response2 = await ws2.recv()
                     assert json.loads(response1)["data"]["match_id"] == json.loads(response2)["data"]["match_id"]
 
                     match_id = json.loads(response1)["data"]["match_id"]
-                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers) as game_ws:
+                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as game_ws:
                         await game_ws.send(json.dumps({
                             "type": "forfeit"
                         }))
@@ -310,9 +353,12 @@ if 1 not in SKIP:
 
         # Join queue as 3 players and 2 get matched
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers2) as ws2:
-                    async with websockets.connect(unranked_queue_url, extra_headers=auth_headers3) as ws3:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
+                    async with websockets.connect(unranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as ws3:
                         response1 = None
                         response2 = None
                         response3 = None
@@ -339,7 +385,8 @@ if 1 not in SKIP:
                         match_id = list(user_to_match_id.keys())[0]
                         user_index1 = user_to_match_id[match_id]
 
-                        async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers_list[user_index1]) as game_ws:
+                        async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                                      subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index1])}"]) as game_ws:
                             await game_ws.send(json.dumps({
                                 "type": "forfeit"
                             }))
@@ -348,9 +395,12 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers2) as ws2:
-                    async with websockets.connect(ranked_queue_url, extra_headers=auth_headers3) as ws3:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
+                    async with websockets.connect(ranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as ws3:
                         response1 = None
                         response2 = None
                         response3 = None
@@ -377,7 +427,8 @@ if 1 not in SKIP:
                         match_id = list(user_to_match_id.keys())[0]
                         user_index1 = user_to_match_id[match_id]
 
-                        async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}", extra_headers=auth_headers_list[user_index1]) as game_ws:
+                        async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id}",
+                                                      subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index1])}"]) as game_ws:
                             await game_ws.send(json.dumps({
                                 "type": "forfeit"
                             }))
@@ -387,10 +438,13 @@ if 1 not in SKIP:
 
         # Join queue as 4 players and all 4 get matched
         try:
-            async with websockets.connect(unranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(unranked_queue_url, extra_headers=auth_headers2) as ws2:
-                    async with websockets.connect(unranked_queue_url, extra_headers=auth_headers3) as ws3:
-                        async with websockets.connect(unranked_queue_url, extra_headers=auth_headers4) as ws4:
+            async with websockets.connect(unranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(unranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
+                    async with websockets.connect(unranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as ws3:
+                        async with websockets.connect(unranked_queue_url, subprotocols=[f"access_token|{extract_token(auth_headers4)}"]) as ws4:
                             response1 = None
                             response2 = None
                             response3 = None
@@ -421,12 +475,14 @@ if 1 not in SKIP:
                             match_id_2 = list(user_to_match_id.keys())[1]
                             user_index2 = user_to_match_id[match_id_2]
 
-                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_1}", extra_headers=auth_headers_list[user_index1]) as game_ws:
+                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_1}",
+                                                          subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index1])}"]) as game_ws:
                                 await game_ws.send(json.dumps({
                                     "type": "forfeit"
                                 }))
 
-                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_2}", extra_headers=auth_headers_list[user_index2]) as game_ws:
+                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_2}",
+                                                          subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index2])}"]) as game_ws:
                                 await game_ws.send(json.dumps({
                                     "type": "forfeit"
                                 }))
@@ -435,10 +491,13 @@ if 1 not in SKIP:
             assert False
 
         try:
-            async with websockets.connect(ranked_queue_url, extra_headers=auth_headers) as ws1:
-                async with websockets.connect(ranked_queue_url, extra_headers=auth_headers2) as ws2:
-                    async with websockets.connect(ranked_queue_url, extra_headers=auth_headers3) as ws3:
-                        async with websockets.connect(ranked_queue_url, extra_headers=auth_headers4) as ws4:
+            async with websockets.connect(ranked_queue_url,
+                                          subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws1:
+                async with websockets.connect(ranked_queue_url,
+                                              subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as ws2:
+                    async with websockets.connect(ranked_queue_url,
+                                                  subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as ws3:
+                        async with websockets.connect(ranked_queue_url, subprotocols=[f"access_token|{extract_token(auth_headers4)}"]) as ws4:
                             response1 = None
                             response2 = None
                             response3 = None
@@ -469,12 +528,14 @@ if 1 not in SKIP:
                             match_id_2 = list(user_to_match_id.keys())[1]
                             user_index2 = user_to_match_id[match_id_2]
 
-                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_1}", extra_headers=auth_headers_list[user_index1]) as game_ws:
+                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_1}",
+                                                          subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index1])}"]) as game_ws:
                                 await game_ws.send(json.dumps({
                                     "type": "forfeit"
                                 }))
 
-                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_2}", extra_headers=auth_headers_list[user_index2]) as game_ws:
+                            async with websockets.connect(f"{WS_BASE_URL}/game/play/{match_id_2}",
+                                                          subprotocols=[f"access_token|{extract_token(auth_headers_list[user_index2])}"]) as game_ws:
                                 await game_ws.send(json.dumps({
                                     "type": "forfeit"
                                 }))
@@ -510,11 +571,11 @@ if 2 not in SKIP:
             # Join queue as 2 players and get matched
             async with websockets.connect(
                 unranked_queue_url,
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as q1:
                 async with websockets.connect(
                     unranked_queue_url,
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as q2:
                     response1 = await q1.recv()
                     response2 = await q2.recv()
@@ -529,20 +590,21 @@ if 2 not in SKIP:
                     f"{game_url}{match_id}"
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
-            except InvalidStatusCode:  # 403
-                assert True
+            except InvalidStatusCode as e:  # 403
+                assert e.status_code == 403
             except Exception:
                 assert False
 
             # Join with invalid access token
+            fake_headers = {"Authorization": "Bearer fake"}
             try:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers={"Authorization": "Bearer fake"}
+                    subprotocols=[f"access_token|{extract_token(fake_headers)}"]
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
-            except InvalidStatusCode:  # 403
-                assert True
+            except ConnectionClosedError as e:
+                assert e.code == 4001
             except Exception:
                 assert False
 
@@ -550,7 +612,7 @@ if 2 not in SKIP:
             try:
                 async with websockets.connect(
                     f"{game_url}fake",
-                    extra_headers=p1_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
             except ConnectionClosedError as e:
@@ -562,7 +624,7 @@ if 2 not in SKIP:
             try:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p3_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p3_auth_headers)}"]
                 ) as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
             except ConnectionClosedError as e:
@@ -574,11 +636,11 @@ if 2 not in SKIP:
             try:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p1_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
                 ) as ws1:
                     async with websockets.connect(
                         f"{game_url}{match_id}",
-                        extra_headers=p1_auth_headers
+                        subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
                     ) as ws2:
                         await asyncio.wait_for(ws1.recv(), timeout=5)
                         await asyncio.wait_for(ws2.recv(), timeout=5)
@@ -591,21 +653,21 @@ if 2 not in SKIP:
             try:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p1_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
                 ) as p1:
                     response = await asyncio.wait_for(p1.recv(), timeout=5)
                     assert json.loads(response)["data"]["status"] == "waiting"
 
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p1_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
                 ) as p1:
                     p1_response = await asyncio.wait_for(p1.recv(), timeout=5)
                     assert json.loads(p1_response)["data"]["status"] == "waiting"
 
                     async with websockets.connect(
                         f"{game_url}{match_id}",
-                        extra_headers=p2_auth_headers
+                        subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                     ) as p2:
                         p1_response = await asyncio.wait_for(p1.recv(), timeout=5)
                         assert json.loads(p1_response)["type"] == "game_start"
@@ -620,22 +682,22 @@ if 2 not in SKIP:
 
             async with websockets.connect(
                 f"{game_url}{match_id}",
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as p1:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as p2:
                     await get_latest_message(p1)
                     await get_latest_message(p2)
 
             async with websockets.connect(
                 f"{game_url}{match_id}",
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as p1:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as p2:
                     # Game state is in-progress every rejoin
                     p1_resp = await asyncio.wait_for(p1.recv(), timeout=5)
@@ -758,11 +820,11 @@ if 2 not in SKIP:
         try:
             async with websockets.connect(
                 ranked_queue_url,
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as q1:
                 async with websockets.connect(
                     ranked_queue_url,
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as q2:
                     response1 = await q1.recv()
                     response2 = await q2.recv()
@@ -773,11 +835,11 @@ if 2 not in SKIP:
 
             async with websockets.connect(
                 f"{game_url}{match_id}",
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as p1:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as p2:
                     await send_code(p1, ALL_SOLUTION)
                     await asyncio.sleep(3)
@@ -804,11 +866,11 @@ if 2 not in SKIP:
         try:
             async with websockets.connect(
                 ranked_queue_url,
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as q1:
                 async with websockets.connect(
                     ranked_queue_url,
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as q2:
                     response1 = await q1.recv()
                     response2 = await q2.recv()
@@ -819,11 +881,11 @@ if 2 not in SKIP:
 
             async with websockets.connect(
                 f"{game_url}{match_id}",
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as p1:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as p2:
                     await send_code(p1, ALL_SOLUTION)
                     await send_forfeit(p1)
@@ -850,11 +912,11 @@ if 2 not in SKIP:
         # try:
         #     async with websockets.connect(
         #         ranked_queue_url,
-        #         extra_headers=p1_auth_headers
+        #         subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
         #     ) as q1:
         #         async with websockets.connect(
         #             ranked_queue_url,
-        #             extra_headers=p2_auth_headers
+        #             subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
         #         ) as q2:
         #             response1 = await q1.recv()
         #             response2 = await q2.recv()
@@ -865,11 +927,11 @@ if 2 not in SKIP:
 
         #             async with websockets.connect(
         #                 ranked_queue_url,
-        #                 extra_headers=p3_auth_headers
+        #                 subprotocols=[f"access_token|{extract_token(p3_auth_headers)}"]
         #             ) as q3:
         #                 async with websockets.connect(
         #                     ranked_queue_url,
-        #                     extra_headers=p4_auth_headers
+        #                     subprotocols=[f"access_token|{extract_token(p4_auth_headers)}"]
         #                 ) as q4:
         #                     response3 = await q3.recv()
         #                     response4 = await q4.recv()
@@ -880,19 +942,19 @@ if 2 not in SKIP:
 
         #     async with websockets.connect(
         #         f"{game_url}{match_id_1}",
-        #         extra_headers=p1_auth_headers
+        #         subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
         #     ) as p1:
         #         async with websockets.connect(
         #             f"{game_url}{match_id_1}",
-        #             extra_headers=p2_auth_headers
+        #             subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
         #         ) as p2:
         #             async with websockets.connect(
         #                 f"{game_url}{match_id_2}",
-        #                 extra_headers=p3_auth_headers
+        #                 subprotocols=[f"access_token|{extract_token(p3_auth_headers)}"]
         #             ) as p3:
         #                 async with websockets.connect(
         #                     f"{game_url}{match_id_2}",
-        #                     extra_headers=p4_auth_headers
+        #                     subprotocols=[f"access_token|{extract_token(p4_auth_headers)}"]
         #                 ) as p4:
         #                     # First pair, send code until hp is 4 vs 36
         #                     await send_code(p1, ALL_SOLUTION)
@@ -959,11 +1021,11 @@ if 3 not in SKIP:
         try:
             async with websockets.connect(
                 ranked_queue_url,
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as q1:
                 async with websockets.connect(
                     ranked_queue_url,
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as q2:
                     response1 = await q1.recv()
                     response2 = await q2.recv()
@@ -981,11 +1043,11 @@ if 3 not in SKIP:
 
             async with websockets.connect(
                 f"{game_url}{match_id}",
-                extra_headers=p1_auth_headers
+                subprotocols=[f"access_token|{extract_token(p1_auth_headers)}"]
             ) as p1:
                 async with websockets.connect(
                     f"{game_url}{match_id}",
-                    extra_headers=p2_auth_headers
+                    subprotocols=[f"access_token|{extract_token(p2_auth_headers)}"]
                 ) as p2:
                     cur_game1 = await get_current_game(p1_auth_headers)
                     cur_game2 = await get_current_game(p2_auth_headers)

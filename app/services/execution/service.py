@@ -70,7 +70,7 @@ class CodeExecutionService:
                 result = self.docker.run_container(file_path, difficulty)
 
                 # If all tests passed, get runtime analysis
-                if result.all_cleared():
+                if result.all_cleared() and not settings.TESTING:
                     runtime_analysis = await runtime_analysis_service.analyze_code(code)
                     result.runtime_analysis = runtime_analysis
 

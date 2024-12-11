@@ -256,5 +256,9 @@ async def update_room_settings(room_code: str, auth_headers, session, settings=N
 
 
 async def leave_room(room_code: str, auth_headers: dict):
-    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers) as ws:
+    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers)}"]) as ws:
         await ws.close()
+
+
+def extract_token(auth_header):
+    return auth_header['Authorization'].split(" ")[1]

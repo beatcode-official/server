@@ -190,7 +190,7 @@ if 4 not in SKIP:
         lobby_url = f"{WS_BASE_URL}/rooms/lobby"
 
         # Test: Connect to lobby
-        async with websockets.connect(lobby_url, extra_headers=auth_headers1) as lobby_ws:
+        async with websockets.connect(lobby_url, subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as lobby_ws:
             # Initial empty room list
             message = await get_latest_message(lobby_ws)
             assert message["type"] == "room_list"
@@ -224,7 +224,7 @@ if 4 not in SKIP:
             assert message["rooms"][0]["settings"]["problem_count"] == 5
 
             # Player joins and check broadcast
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_data['room_code']}", extra_headers=auth_headers1) as _:
+            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_data['room_code']}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as _:
                 message = await get_latest_message(lobby_ws)
                 assert message["type"] == "room_list"
                 assert message["rooms"][0]["player_count"] == 2
@@ -255,7 +255,7 @@ if 5 not in SKIP:
 
         # Test: Connect to non-existent room
         try:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/INVALID", extra_headers=auth_headers1) as ws:
+            async with websockets.connect(f"{WS_BASE_URL}/rooms/INVALID", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as ws:
                 await ws.recv()
             assert False
         except ConnectionClosedError as e:
@@ -266,8 +266,8 @@ if 5 not in SKIP:
         room_code = room_data["room_code"]
 
         # Connect host and guest
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers1) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers2) as guest_ws:
+        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
+            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
                 # Test: Verify initial room state messages
                 host_state = await get_latest_message(host_ws)
                 guest_state = await get_latest_message(guest_ws)
@@ -279,7 +279,7 @@ if 5 not in SKIP:
 
                 # Test: Connect to full room
                 try:
-                    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers3) as third_ws:
+                    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as third_ws:
                         await asyncio.wait_for(third_ws.recv(), timeout=1)
                 except asyncio.TimeoutError:
                     assert False
@@ -305,8 +305,8 @@ if 6 not in SKIP:
         room_data = await create_room(auth_headers1, session)
         room_code = room_data["room_code"]
 
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers1) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers2) as guest_ws:
+        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
+            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
                 # Clear initial messages
                 await get_latest_message(host_ws)
                 await get_latest_message(guest_ws)
@@ -349,11 +349,11 @@ if 6 not in SKIP:
                 # Both players connect to game
                 async with websockets.connect(
                     f"{WS_BASE_URL}/game/play/{game_id}",
-                    extra_headers=auth_headers1
+                    subprotocols=[f"access_token|{extract_token(auth_headers1)}"]
                 ) as p1:
                     async with websockets.connect(
                         f"{WS_BASE_URL}/game/play/{game_id}",
-                        extra_headers=auth_headers2
+                        subprotocols=[f"access_token|{extract_token(auth_headers2)}"]
                     ):
                         await send_forfeit(p1)
 
@@ -388,8 +388,8 @@ if 7 not in SKIP:
         room_data = await create_room(auth_headers1, session, settings=settings)
         room_code = room_data["room_code"]
 
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers1) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", extra_headers=auth_headers2) as guest_ws:
+        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
+            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
                 # Clear initial messages
                 await get_latest_message(host_ws)
                 await get_latest_message(guest_ws)
@@ -421,8 +421,8 @@ if 7 not in SKIP:
                 game_id = game_start_host["data"]["game_id"]
 
                 # Connect to game and verify settings
-                async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", extra_headers=auth_headers1) as p1:
-                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", extra_headers=auth_headers2):
+                async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as p1:
+                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]):
                         game_state = await get_until(p1, "game_state")
 
                         # Test if started game has correct settings

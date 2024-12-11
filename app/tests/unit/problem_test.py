@@ -100,10 +100,11 @@ def test_get_problem_for_validation(db: Session):
 
     assert "hidden_test_cases" in result
     assert "hidden_test_results" in result
+    assert "sample_test_cases" in result
+    assert "sample_test_results" in result
     assert "compare_func" in result
     assert "title" not in result
     assert "description" not in result
-    assert "sample_test_cases" not in result
 
 
 @pytest.mark.asyncio

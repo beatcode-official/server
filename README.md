@@ -38,9 +38,10 @@ Step 4: Copy the .env.example to a new file and name it .env (place in the same 
 ```
 1. DB_USER, DB_PASSWORD, DB_HOST
 2. TEST_DB_USER, TEST_DB_PASSWORD, TEST_DB_HOST
-3. RESEND_API_KEY
+3. RESEND_API_KEY (leave as default if you don't possess one)
 4. FRONTEND_URL
 5. SECRET_KEY
+6. OPENAI_API_KEY (leave as default if you don't possess one)
 ```
 
 Step 5: Initialize the database
@@ -56,6 +57,13 @@ fastapi dev main.py # For development (auto reload)
 ```
 
 ## Testing
+### Unit Tests
+These are pytest scripts I wrote to test the individual components of the backend. To run them:
+```bash
+pytest tests/unit # Test all components
+pytest tests/unit/code_execution_test.py # Test a single component
+pytest tests/unit/problem_test.py # Test a single component
+```
 
 ### Integration Tests
 These are user-simulation scripts I wrote to test the endpoints as a whole and serves as a good enough sanity check when updating your code. Feel free to modify it however you like. Note that to run these the server must be running on `TESTING=True` in your .env file.
@@ -65,12 +73,4 @@ To run these tests, run them as normal Python scripts from the `/app` directory:
 python tests/integration/auth_test.py # Test authentication endpoints
 python tests/integration/game_test.py # Test game endpoints
 python tests/integration/room_test.py # Test room endpoints
-```
-
-### Unit Tests
-These are pytest scripts I wrote to test the individual components of the backend. To run them:
-```bash
-pytest tests/unit -sv # Test all components
-pytest tests/unit/code_execution_test.py # Test a single component
-pytest tests/unit/problem_test.py # Test a single component
 ```

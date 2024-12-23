@@ -1,4 +1,3 @@
-# Use the specified Docker image from the environment
 ARG DOCKER_IMAGE=python:3.11-alpine
 FROM ${DOCKER_IMAGE}
 

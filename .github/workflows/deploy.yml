@@ -39,6 +39,6 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $HETZNER_USER@$HETZNER_IP << 'EOF'
             docker pull ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
-            docker-compose -f ~/docker-compose.yml down
-            docker-compose -f ~/docker-compose.yml up -d
+            docker compose -f ~/docker-compose.yml down
+            docker compose -f ~/docker-compose.yml up -d
           EOF

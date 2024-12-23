@@ -33,7 +33,11 @@ jobs:
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
           HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i $HETZNER_SSH_KEY $HETZNER_USER@$HETZNER_IP << 'EOF'
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $HETZNER_USER@$HETZNER_IP << 'EOF'
             docker pull ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
             docker-compose -f ~/docker-compose.yml down
             docker-compose -f ~/docker-compose.yml up -d

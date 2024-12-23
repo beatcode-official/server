@@ -17,8 +17,8 @@ For information on how to integrate with the frontend, check out DOCS.md.
 Step 1: Clone this repo
 
 ```bash
-git clone https://github.com/beatcode-official/beatcode-server.git
-cd beatcode-server
+git clone https://github.com/beatcode-official/server.git
+cd server
 ```
 
 Step 2: [OPTIONAL] Create a new Python virtual environment

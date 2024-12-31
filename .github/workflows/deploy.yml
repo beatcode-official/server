@@ -37,9 +37,15 @@ jobs:
           echo "${{ secrets.HETZNER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yml $HETZNER_USER@$HETZNER_IP:/var/lib/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yml $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa .env $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/.env
+
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $HETZNER_USER@$HETZNER_IP << 'EOF'
+            mkdir -p /var/lib/beatcode-server
+            
             docker pull ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
-            docker compose -f /var/lib/docker-compose.yml down
-            docker compose -f /var/lib/docker-compose.yml up -d
+
+            cd /var/lib/beatcode-server
+            docker compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml up -d
           EOF

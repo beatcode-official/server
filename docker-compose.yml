@@ -1,9 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      args:
-        DOCKER_IMAGE: ${DOCKER_IMAGE}
+    image: baochidang/beatcode-server:latest
     ports:
       - "8000:8000"
     env_file:

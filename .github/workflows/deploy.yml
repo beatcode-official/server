@@ -26,7 +26,6 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
-
       - name: Deploy to Hetzner
         env:
           HETZNER_IP: ${{ secrets.HETZNER_IP }}
@@ -38,14 +37,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yml $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa .env $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/.env
 
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $HETZNER_USER@$HETZNER_IP << 'EOF'
-            mkdir -p /var/lib/beatcode-server
-            
-            docker pull ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
-
             cd /var/lib/beatcode-server
+            docker pull ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
             docker compose -f docker-compose.yml down
             docker compose -f docker-compose.yml up -d
           EOF

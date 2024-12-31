@@ -37,6 +37,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yml $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa Dockerfile $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/Dockerfile
 
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $HETZNER_USER@$HETZNER_IP << 'EOF'
             cd /var/lib/beatcode-server

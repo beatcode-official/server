@@ -26,6 +26,7 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/beatcode-server:latest
+
       - name: Deploy to Hetzner
         env:
           HETZNER_IP: ${{ secrets.HETZNER_IP }}

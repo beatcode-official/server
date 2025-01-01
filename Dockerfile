@@ -1,5 +1,4 @@
-ARG DOCKER_IMAGE=python:3.11-alpine
-FROM ${DOCKER_IMAGE}
+FROM python:3.11-alpine
 
 WORKDIR /app
 

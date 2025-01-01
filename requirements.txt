@@ -9,4 +9,4 @@ PyJWT==2.9.0
 resend==2.4.0
 SQLAlchemy-Utils==0.41.2
 SQLAlchemy==2.0.36
-openai==1.52.0
+openai==1.58.1

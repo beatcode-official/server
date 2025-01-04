@@ -86,6 +86,7 @@ class ProblemManager:
         """
         return {
             "title": problem.title,
+            "source": problem.source,
             "description": problem.description,
             "difficulty": problem.difficulty,
             "sample_test_cases": problem.sample_test_cases,

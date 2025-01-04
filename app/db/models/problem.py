@@ -23,6 +23,7 @@ class Problem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    source = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     difficulty = Column(String, nullable=False, index=True)
     sample_test_cases = Column(JSON, nullable=False)

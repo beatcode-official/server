@@ -24,6 +24,7 @@ class GameView(BaseModel):
     match_id: str
     opponent_name: str
     opponent_display_name: str
+    opponent_avatar_url: Optional[str] = None
     current_problem_index: int
     problems_solved: int
     opponent_problems_solved: int

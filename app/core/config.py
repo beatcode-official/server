@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     FRONTEND_URL: str                   # URL of the frontend (included in email links)
     PASSWORD_RESET_TOKEN_EXPIRE: int    # Time in minutes for the password reset token to expire
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str               # Client ID for Google OAuth
+    GOOGLE_CLIENT_SECRET: str           # Client secret for Google OAuth
+    GOOGLE_REDIRECT_URI: str            # Redirect URI for Google OAuth
+    GOOGLE_CLIENT_SCOPES: list[str] = ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
+
     # Database
     DATABASE_URL: str                   # URL for the database
 
@@ -42,7 +48,6 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int      # Time in days for the refresh token to expire
 
     # Code Execution
-
     MAX_CONCURRENT: str                 # Maximum number of problems that can be executed concurrently for each difficulty
     OPENAI_API_KEY: str                 # API key for OpenAI (Used for Runtime Analysis)
 

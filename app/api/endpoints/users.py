@@ -8,17 +8,19 @@ from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
 from db.models.user import RefreshToken, User
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from schemas.user import (ForgotPassword, PasswordReset, Token, TokenRefresh,
-                          UserCreate, UserResponse, UserUpdate)
+                          UserCreate, UserCreateWithGoogle, UserResponse, UserUpdate)
 from services.email.service import email_service
 from sqlalchemy.orm import Session
 import jwt
+import requests
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 
 router = APIRouter(prefix="/users", tags=["users"])
 oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"users/login")
-
 
 async def get_current_user(
     token: Annotated[str, Depends(oath2_scheme)],
@@ -500,4 +502,150 @@ async def create_guest_account(db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "refresh_token": refresh_token
+    }
+
+def create_google_flow(state=None):
+    """
+    Create a Google OAuth flow object.
+
+    :return: The Google OAuth flow object
+    """
+    return Flow.from_client_config(
+        client_config={
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://accounts.google.com/o/oauth2/token",
+            }
+        },
+        scopes=settings.GOOGLE_CLIENT_SCOPES,
+        redirect_uri=settings.GOOGLE_REDIRECT_URI,
+        state=state
+    )
+
+@router.get("/google/redirect")
+async def google_redirect():
+    """
+    Redirect user to Google's OAuth authorization page.
+    """
+    flow = create_google_flow()
+    url, _ = flow.authorization_url()
+    return { "url": url }
+
+@router.post("/google/login")
+async def google_login(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Login function for Google OAuth
+
+    Google redirects back with `code`. Server exchanges code for token, fetches user profile, logs user in or registers them.
+
+    :return: Access and refresh tokens if user exists, else user data for registration
+    """
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
+    print(code, "what")
+    print(state, "nice")
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No code found")
+    
+    flow = create_google_flow(state=state)
+    print(flow)
+
+    # Exchange code for tokens and retrieve user info
+    flow.fetch_token(code=code)
+    credentials = flow.credentials
+    oauth2_client = build("oauth2", "v2", credentials=credentials)
+    user_info = oauth2_client.userinfo().get().execute()    
+
+    # Extract relevant fields
+    print(user_info)
+    google_id = user_info.get("id")
+    email = user_info.get("email")
+    name = user_info.get("name")
+    avatar_url = user_info.get("picture")
+
+    if not google_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing account information from Google"
+        )
+
+    # See if user already exists
+    db_user = db.query(User).filter(User.google_id == google_id).first()
+    if not db_user:
+        # Create user account if not
+        existing_user_by_email = db.query(User).filter(User.email == email).first()
+        if existing_user_by_email:
+            # Possibly link that user’s google_id so next time it matches
+            existing_user_by_email.google_id = google_id
+            db.add(existing_user_by_email)
+            db.commit()
+            db.refresh(existing_user_by_email)
+            db_user = existing_user_by_email
+        else:
+            return {
+                "google_id": google_id,
+                "email": email,
+                "name": name,
+                "avatar_url": avatar_url
+            }
+
+    access_token, refresh_token = jwt_manager.create_tokens(db_user, db)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+@router.post("/google/register")
+async def google_register(
+    user: UserCreateWithGoogle,
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    Register a new user with Google OAuth.
+
+    :param user: The user data
+    :param db: The database session
+
+    :raises HTTPException: If the username or email already exists
+
+    :return: Access and refresh tokens
+    """
+    # Check for existing username or email
+    if db.query(User).filter(User.username == user.username).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists"
+        )
+
+    if db.query(User).filter(User.email == user.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    # Create the user
+    db_user = User(
+        username=user.username,
+        email=user.email,
+        display_name=user.display_name,
+        hashed_password="",
+        google_id=user.google_id,
+        avatar_url=user.avatar_url,
+        is_verified=True
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    access_token, refresh_token = jwt_manager.create_tokens(db_user, db)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
     }

@@ -40,7 +40,8 @@ class User(Base):
     token_secret = Column(String, nullable=True, server_default=PasswordManager.generate_secret_token())
     created_at = Column(Float, server_default=func.extract('epoch', func.now()))
     updated_at = Column(Float, server_default=func.extract('epoch', func.now()))
-
+    google_id = Column(String, unique=True, index=True, nullable=True)
+    avatar_url = Column(String, nullable=True)
 
 class RefreshToken(Base):
     """

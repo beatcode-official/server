@@ -39,6 +39,7 @@ class PlayerState(BaseModel):
     user_id: int
     username: str
     display_name: str
+    avatar_url: Optional[str] = None
     current_problem_index: int = 0
     hp: int = settings.STARTING_HP if not settings.TESTING else 140
     problems_solved: int = 0

@@ -42,6 +42,15 @@ class UserCreate(UserBase):
     """
     password: PasswordStr
 
+class UserCreateWithGoogle(UserBase):
+    """
+    Schema for creating a new user with Google OAuth.
+    """
+    username: UsernameStr
+    email: EmailStr
+    display_name: DisplayNameStr
+    google_id: str
+    avatar_url: str
 
 class UserUpdate(BaseModel):
     """
@@ -57,6 +66,7 @@ class UserResponse(BaseModel):
     username: UsernameStr
     email: EmailStr
     display_name: DisplayNameStr
+    avatar_url: Optional[str] = None
     rating: float
     is_verified: bool
     is_guest: bool

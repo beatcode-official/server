@@ -58,6 +58,7 @@ class GameManager:
             match_id=game_state.id,
             opponent_name=opponent.username,
             opponent_display_name=opponent.display_name,
+            opponent_avatar_url=opponent.avatar_url,
             current_problem_index=player.current_problem_index,
             problems_solved=player.problems_solved,
             opponent_problems_solved=opponent.problems_solved,
@@ -140,11 +141,13 @@ class GameManager:
                 user_id=player1.id,
                 username=player1.username,
                 display_name=player1.display_name,
+                avatar_url=player1.avatar_url,
             ),
             player2=PlayerState(
                 user_id=player2.id,
                 username=player2.username,
                 display_name=player2.display_name,
+                avatar_url=player2.avatar_url,
             ),
             problems=problems,
             start_time=time.time(),
@@ -208,6 +211,7 @@ class GameManager:
                 user_id=player1.id,
                 username=player1.username,
                 display_name=player1.display_name,
+                avatar_url=player1.avatar_url,
                 hp=room_settings.starting_hp,
                 skill_points=room_settings.starting_sp,
                 mana_points=room_settings.starting_mp
@@ -216,6 +220,7 @@ class GameManager:
                 user_id=player2.id,
                 username=player2.username,
                 display_name=player2.display_name,
+                avatar_url=player2.avatar_url,
                 hp=room_settings.starting_hp,
                 skill_points=room_settings.starting_sp,
                 mana_points=room_settings.starting_mp

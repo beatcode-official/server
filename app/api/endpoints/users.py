@@ -547,13 +547,10 @@ async def google_login(
     """
     code = request.query_params.get("code")
     state = request.query_params.get("state")
-    print(code, "what")
-    print(state, "nice")
     if not code:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No code found")
     
     flow = create_google_flow(state=state)
-    print(flow)
 
     # Exchange code for tokens and retrieve user info
     flow.fetch_token(code=code)
@@ -562,7 +559,6 @@ async def google_login(
     user_info = oauth2_client.userinfo().get().execute()    
 
     # Extract relevant fields
-    print(user_info)
     google_id = user_info.get("id")
     email = user_info.get("email")
     name = user_info.get("name")

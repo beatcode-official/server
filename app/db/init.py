@@ -2,7 +2,7 @@ import json
 
 from core.config import settings
 from db.base import Base
-from db.models.problem import Problem
+from db.models.problem import Problem, Boilerplate, CompareFunc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
@@ -30,14 +30,29 @@ def init_db(test=False):
                 title=problem['title'],
                 source=problem['source'],
                 description=problem['description'],
+                explanation=problem['explanation'],
                 difficulty=problem['difficulty'],
                 sample_test_cases=problem['sample_test_cases'],
                 sample_test_results=problem['sample_test_results'],
                 hidden_test_cases=problem['hidden_test_cases'],
                 hidden_test_results=problem['hidden_test_results'],
-                boilerplate=problem['boilerplate'],
-                compare_func=problem['compare_func']
+                method_name=problem['method_name'],
             )
+
+            new_boilerplate = Boilerplate(
+                java=problem['boilerplate']['java'],
+                cpp=problem['boilerplate']['cpp'],
+                python=problem['boilerplate']['python'],
+            )
+
+            new_compare_func = CompareFunc(
+                java=problem['compare_func']['java'],
+                cpp=problem['compare_func']['cpp'],
+                python=problem['compare_func']['python'],
+            )
+
+            new_problem.boilerplate = new_boilerplate
+            new_problem.compare_func = new_compare_func
 
             session.add(new_problem)
 

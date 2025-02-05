@@ -1,10 +1,9 @@
 import random
 from typing import Dict, List, Optional
-
 from core.config import settings
 from db.models.problem import Problem
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 
 class ProblemManager:
@@ -47,9 +46,11 @@ class ProblemManager:
 
         :return: The problem with the specified ID, if it exists.
         """
-        return db.query(Problem).filter(
-            Problem.id == problem_id
-        ).first()
+        return (
+            db.query(Problem)
+            .filter(Problem.id == problem_id)
+            .first()
+        )
 
     @staticmethod
     async def get_problems_by_distribution(
@@ -91,7 +92,11 @@ class ProblemManager:
             "difficulty": problem.difficulty,
             "sample_test_cases": problem.sample_test_cases,
             "sample_test_results": problem.sample_test_results,
-            "boilerplate": problem.boilerplate,
+            "boilerplate": {
+                "java": problem.boilerplate.java,
+                "cpp": problem.boilerplate.cpp,
+                "python": problem.boilerplate.python,
+            }
         }
 
     @staticmethod
@@ -102,37 +107,37 @@ class ProblemManager:
         if settings.TESTING:
             return {
                 "hidden_test_cases": [
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(False)",
-                    "test(False)",
-                    "test(False)",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=false",
+                    "--arg1=false",
+                    "--arg1=false",
                 ],
                 "hidden_test_results": [
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "True",
-                    "True",
-                    "True",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "true",
+                    "true",
+                    "true",
                 ],
-                "compare_func": "return str(result) == expected",
+                # "compare_func": "return str(result) == expected",
                 "sample_test_cases": [
-                    "test(True)",
-                    "test(False)",
+                    "--arg1=true",
+                    "--arg2=false",
                 ],
                 "sample_test_results": [
-                    "False",
-                    "True",
+                    "false",
+                    "true",
                 ]
             }
 
@@ -141,5 +146,5 @@ class ProblemManager:
             "hidden_test_results": problem.hidden_test_results,
             "sample_test_cases": problem.sample_test_cases,
             "sample_test_results": problem.sample_test_results,
-            "compare_func": problem.compare_func,
+            # "compare_func": problem.compare_func,
         }

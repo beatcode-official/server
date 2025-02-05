@@ -1,99 +1,118 @@
 import json
 from typing import Dict, List
+from abc import ABC, abstractmethod
+from services.execution.templates import PYTHON_TEMPLATE, JAVA_TEMPLATE, CPP_TEMPLATE
 
-
-class TestGenerator:
+class TestGenerator(ABC):
     """
     A class to generate test runner code for a given solution code, test data and compare function.
     """
 
-    def generate_test_runner(self, code: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+    @abstractmethod
+    def generate_test_file(self, code: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
         """
         Generate test runner code for a given solution code, test data and compare function.
 
         :param code: The solution code.
+        :param method_name: The solution's main function name.
         :param test_data: The test data.
         :param compare_func: The compare function.
         """
-        compare_func = "\n    ".join(compare_func.splitlines())
-        return f"""
-import json
-import traceback
-from typing import *
+    
+    @abstractmethod
+    def get_file_extension(self, lang: str) -> str:
+        """
+        Get the file extension for the given language.
+        """        
 
-{code}
+class PythonTestGenerator(TestGenerator):
+    def generate_test_file(self, code: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+        test_data = self.format_test_data(method_name, test_data)
+        sample_data = self.format_test_data(method_name, sample_data)
+        return PYTHON_TEMPLATE.format(
+            code=code,
+            compare_func=compare_func,
+            test_data=json.dumps(test_data),
+            sample_data=json.dumps(sample_data),
+        )
+    
+    def format_test_data(self, method_name: str, test_data: List[Dict]):
+        formatted = []
+        for test in test_data:
+            segments = test["input"].split("--arg")
+            segments = [s.strip() for s in segments if s.strip()]
+            params = []
+            for s in segments:
+                if "=" in s:
+                    _, val = s.split("=", 1)
+                    params.append(val.strip())
+            formatted.append({
+                "input": f"{method_name}({', '.join(params)})",
+                "expected": test["expected"]
+            })
+        return formatted
 
-def compare_results(result: Any, expected: str) -> bool:
-    {compare_func}
+    def get_file_extension(self, lang: str) -> str:
+        return ".py"
+
+class JavaTestGenerator(TestGenerator):
+    def generate_test_file(self, code: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+        test_data = self.format_test_data(method_name, test_data)
+        sample_data = self.format_test_data(method_name, sample_data)
+        return JAVA_TEMPLATE.format(
+            code=code,
+            compare_func=compare_func,
+            test_data=json.dumps(test_data),
+            sample_data=json.dumps(sample_data),
+        )
     
-class TestResult:
-    def __init__(
-        self,
-        expected: str,
-        passed: bool,
-        output: Any = None,
-        error: str = None,
-        input_data: str = None,
-    ):
-        self.expected = expected
-        self.output = str(output) if output is not None else None
-        self.passed = passed
-        self.error = error
-        self.input_data = input_data
-        
-    def to_dict(self, include_input: bool = True):
-        result = {{
-            "expected": self.expected,
-            "output": self.output,
-            "passed": self.passed,
-            "error": self.error,
-        }}
-        if include_input:
-            result["input_data"] = self.input_data
-        return result
-        
-        
-def run_tests(solution, test_data, is_sample: bool = False):
-    results = []
+    def format_test_data(self, method_name: str, test_data: List[Dict]):
+        #TODO: Format array and objects
+        formatted = []
+        for test in test_data:
+            segments = test["input"].split("--arg")
+            segments = [s.strip() for s in segments if s.strip()]
+            params = []
+            for s in segments:
+                if "=" in s:
+                    _, val = s.split("=", 1)
+                    params.append(val.strip())
+            formatted.append({
+                "input": f"{method_name}({', '.join(params)})",
+                "expected": test["expected"]
+            })
+        return formatted
+
+    def get_file_extension(self, lang: str) -> str:
+        return ".java"
+
+class CppTestGenerator(TestGenerator):
+    def generate_test_file(self, code: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+        test_data = self.format_test_data(method_name, test_data)
+        sample_data = self.format_test_data(method_name, sample_data)
+        return CPP_TEMPLATE.format(
+            code=code,
+            compare_func=compare_func,
+            test_data=json.dumps(test_data),
+            sample_data=json.dumps(sample_data),
+        )
     
-    for test in test_data:
-        try:
-            result = eval(f"solution.{{test['input']}}")
-            passed = compare_results(result, test['expected'])
-            results.append(TestResult(
-                expected=test['expected'],
-                output=result,
-                passed=passed,
-                input_data=test['input'],
-            ).to_dict(include_input=is_sample))
-        except Exception as e:
-            results.append(TestResult(
-                expected=test['expected'],
-                passed=False,
-                error=traceback.format_exc(),
-                input_data=test['input'],
-            ).to_dict(include_input=is_sample))
-            
-    return {{
-        "test_results": results,
-        "summary": {{
-            "total_tests": len(results),
-            "passed_tests": len([r for r in results if r["passed"]]),
-        }}
-    }}
-    
-if __name__ == "__main__":
-    test_data = {json.dumps(test_data)}
-    sample_data = {json.dumps(sample_data)}
-    try:
-        solution = Solution()
-        hidden_results = run_tests(solution, test_data, is_sample=False)
-        sample_results = run_tests(solution, sample_data, is_sample=True)
-        results = {{
-            "hidden_results": hidden_results,
-            "sample_results": sample_results
-        }}
-        print("EXECUTION_RESULTS:", json.dumps(results))
-    except Exception as e:
-        print("GLOBAL_ERROR:\\n" + traceback.format_exc())
-"""
+    def format_test_data(self, method_name: str, test_data: List[Dict]):
+        #TODO: Format arrays and objects
+        formatted = []
+        for test in test_data:
+            segments = test["input"].split("--arg")
+            segments = [s.strip() for s in segments if s.strip()]
+            params = []
+            for s in segments:
+                if "=" in s:
+                    _, val = s.split("=", 1)
+                    params.append(val.strip())
+            formatted.append({
+                "input": f"{method_name}({', '.join(params)})",
+                "expected": test["expected"]
+            })
+        return formatted
+
+    def get_file_extension(self, lang: str) -> str:
+        return ".cpp"

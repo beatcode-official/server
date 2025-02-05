@@ -243,6 +243,8 @@ async def game_websocket(
             "data": game_view.model_dump()
         })
 
+        print(game_state.problems[0])
+
         # Send the current problem if the game is in progress
         if game_state.status == GameStatus.IN_PROGRESS and player.current_problem_index < len(game_state.problems):
             current_problem = ProblemManager.prepare_problem_for_client(
@@ -331,18 +333,21 @@ async def game_websocket(
 
                     # Execute the player's code on the hidden test cases
                     code = data["data"]["code"]
+                    lang = data["data"]["lang"] # java, cpp, python
                     problem_index = player.current_problem_index
                     problem = game_state.problems[problem_index]
 
                     validation_data = ProblemManager.get_problem_for_validation(problem)
                     result = await code_execution.execute_code(
                         code,
+                        validation_data["method_name"],
                         validation_data["hidden_test_cases"],
                         validation_data["hidden_test_results"],
                         validation_data["sample_test_cases"],
                         validation_data["sample_test_results"],
                         problem.difficulty,
-                        validation_data["compare_func"]
+                        validation_data["compare_func"],
+                        lang,
                     )
                     result = result.to_dict()
 

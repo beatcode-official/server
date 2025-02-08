@@ -21,7 +21,6 @@ class CodeExecutionService:
             "python": PythonTestGenerator(),
             "java": JavaTestGenerator(),
             "cpp": CppTestGenerator(),
-
         }
         easy, medium, hard = [
             int(x) for x in settings.MAX_CONCURRENT.split(",")
@@ -61,7 +60,7 @@ class CodeExecutionService:
         async with sem:  # blocks until a semaphore is available
 
             # Create a temporary file to store the test runner file.
-            with tempfile.NamedTemporaryFile(mode='w', suffix=gen.get_file_extension(), delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode='w', suffix=gen.get_file_extension(lang), delete=False) as f:
                 # Test data are pairs of test cases and its expected results.
                 test_data = [
                     {"input": tc, "expected": er}
@@ -71,11 +70,13 @@ class CodeExecutionService:
                     {"input": tc, "expected": er}
                     for tc, er in zip(sample_test_cases, sample_expected_results)
                 ]
-                f.write(gen.generate_test_file(code, method_name, test_data, sample_data, compare_func))
+                import pdb; pdb.set_trace()
+                base_name = os.path.basename(f.name).split('.')[0]
+                file_content = gen.generate_test_file(code, base_name, method_name, test_data, sample_data, compare_func)
+                f.write(file_content)
                 file_path = f.name
-
             try:
-                result = self.docker.run_container(file_path, difficulty)
+                result = self.docker.run_container(lang, file_path, difficulty)
 
                 # If all tests passed, get runtime analysis
                 if result.all_cleared() and not settings.TESTING:

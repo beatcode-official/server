@@ -146,5 +146,6 @@ class ProblemManager:
             "hidden_test_results": problem.hidden_test_results,
             "sample_test_cases": problem.sample_test_cases,
             "sample_test_results": problem.sample_test_results,
-            # "compare_func": problem.compare_func,
+            "method_name": problem.method_name,
+            "compare_func": problem.compare_func,
         }

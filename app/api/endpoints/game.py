@@ -346,7 +346,7 @@ async def game_websocket(
                         validation_data["sample_test_cases"],
                         validation_data["sample_test_results"],
                         problem.difficulty,
-                        validation_data["compare_func"],
+                        getattr(validation_data["compare_func"], lang),
                         lang,
                     )
                     result = result.to_dict()

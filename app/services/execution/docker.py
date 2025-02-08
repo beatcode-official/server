@@ -14,7 +14,11 @@ class DockerRunner:
 
     def __init__(self, client: docker.DockerClient):
         self.client = client
-        self.docker_image = settings.DOCKER_IMAGE
+        self.docker_image_map = {
+            "python": settings.DOCKER_IMAGE_PYTHON,
+            "java": settings.DOCKER_IMAGE_JAVA,
+            "cpp": settings.DOCKER_IMAGE_CPP,
+        }
         self.docker_cpu_limit = settings.DOCKER_CPU_LIMIT
         easy_mem, medium_mem, hard_mem = [
             int(x) for x in settings.DOCKER_MEMORY_LIMIT.split(",")
@@ -27,8 +31,37 @@ class DockerRunner:
             "medium": [medium_mem, medium_time],
             "hard": [hard_mem, hard_time],
         }
+    
+    def get_run_commands(self, lang: str, file_path: str) -> list:
+        """
+        Get the command to run the code in a Docker container.
 
-    def run_container(self, file_path: str, difficulty: str) -> ExecutionResult:
+        :param lang: The language of the code.
+        :param file_path: The path to the file to run.
+        :return: The command to run the code in a Docker container.
+        """
+        file_name = os.path.basename(file_path)
+        base_name = file_name.split('.')[0]
+    
+        if lang == "python":
+            return ["python", file_name]
+        
+        # Needs to compile first before running unlike Python
+        elif lang == "java":
+            return [
+                "sh", "-c",
+                f"javac -cp /lib/*:/code {file_name} && java -cp /lib/*:/code {base_name}"
+            ]
+        
+        elif lang == "cpp":
+            return [
+                "sh", "-c",
+                f"g++ -std=c++17 -o {base_name} {file_name} && ./{base_name}"
+            ]
+        
+        raise ValueError(f"Unsupported language: {lang}")
+
+    def run_container(self, lang: str, file_path: str, difficulty: str) -> ExecutionResult:
         """
         Run the code in a Docker container.
 
@@ -38,23 +71,27 @@ class DockerRunner:
         """
         # Get the memory and time limits for the difficulty level.
         memory_limit, time_limit = self._docker_settings[difficulty.lower()]
+        dir_path = os.path.dirname(file_path)
+        if not dir_path:
+            dir_path = "."
 
         try:
             # Run the container with the specified constraints
             container = self.client.containers.run(
-                self.docker_image,
-                ["python3", os.path.basename(file_path)],
+                self.docker_image_map[lang],
+                self.get_run_commands(lang, file_path),
                 volumes={
-                    os.path.dirname(file_path): {
+                    dir_path: {
                         "bind": "/code",  # bind the directory to /code in the container
-                        "mode": "ro",  # read only
+                        "mode": "rw",  # read write
                     }
                 },
                 working_dir="/code",
                 mem_limit=f"{memory_limit}m",
                 nano_cpus=int(self.docker_cpu_limit * 1e9),
                 network_disabled=True,
-                read_only=True,
+                privileged=False,
+                # read_only=True,
                 detach=True,  # run the container in the background
             )
 

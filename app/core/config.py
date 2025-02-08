@@ -48,11 +48,15 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int      # Time in days for the refresh token to expire
 
     # Code Execution
+    JAVA_PACKAGES: str                  # Packages to install for running Java codes
+    CPP_PACKAGES: str                   # Packages to install for running C++ codes
     MAX_CONCURRENT: str                 # Maximum number of problems that can be executed concurrently for each difficulty
     OPENAI_API_KEY: str                 # API key for OpenAI (Used for Runtime Analysis)
 
     # Docker Settings
-    DOCKER_IMAGE: str                   # Docker image to use for code execution
+    DOCKER_IMAGE_PYTHON: str            # Docker image for running Python code
+    DOCKER_IMAGE_JAVA: str              # Docker image for running Java code
+    DOCKER_IMAGE_CPP: str               # Docker image for running C++ code
     DOCKER_MEMORY_LIMIT: str            # Memory limit (mb) for problems
     DOCKER_TIME_LIMIT: str              # Time limit (ms) for problems
     DOCKER_CPU_LIMIT: float             # CPU limit (0-1.0) for each container

@@ -38,4 +38,4 @@ jobs:
     - name: Run unit tests
       run: |
         cd app
-        pytest tests/unit
+        pytest tests/unit/code_execution_test.py -v

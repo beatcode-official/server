@@ -58,7 +58,7 @@ def run_tests(solution, test_data, is_sample: bool = False):
         "test_results": results,
         "summary": {{
             "total_tests": len(results),
-            "passed_tests": len([r for r in results if r["passed"]),
+            "passed_tests": len([r for r in results if r["passed"]]),
         }}
     }}
     

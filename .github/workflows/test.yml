@@ -29,6 +29,13 @@ jobs:
     - name: Setup environment file
       run: cp .env.example .env
 
+    - name: Build Docker image
+      run: |
+        docker build -t beatcode-python ./docker/python/
+        docker build -t beatcode-java ./docker/java/
+        docker build -t beatcode-cpp ./docker/cpp/
+      working-directory: ./app
+
     - name: Run unit tests
       run: |
         cd app

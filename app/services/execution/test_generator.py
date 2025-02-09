@@ -42,7 +42,6 @@ class TestGenerator(ABC):
                 "input": f"{method_name}({', '.join(params)})",
                 "expected": test["expected"]
             })
-        # import pdb; pdb.set_trace()
         return formatted    
 
 class PythonTestGenerator(TestGenerator):

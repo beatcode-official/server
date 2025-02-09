@@ -88,10 +88,8 @@ import java.util.*;
 {code}
 
 public class {file_name} {{
-    private static JsonObject compareResults(Object result, Object expected) {{
-        JsonObject comparison = new JsonObject();
-        comparison.addProperty("passed", result.toString().equals(expected));
-        return comparison;
+    private static boolean compare(Object result, Object expected) {{
+        {compare_func}
     }}
 
     public static JsonArray runTests(Solution solution, JsonArray testData) {{
@@ -109,8 +107,8 @@ public class {file_name} {{
                 
                 Method method = Solution.class.getMethod("{method_name}", paramTypes);
                 Object output = method.invoke(solution, args);
-                JsonObject comparison = compareResults(output, parseValue(test.get("expected").getAsString()); // bad code alert
-                result.addProperty("passed", comparison.get("passed").getAsBoolean());
+                boolean passed = compare(output, parseValue(test.get("expected").getAsString()));
+                result.addProperty("passed", passed);
                 result.addProperty("output", gson.toJson(output));
             }} catch (Exception e) {{
                 result.addProperty("error", e.toString());
@@ -203,10 +201,12 @@ public class {file_name} {{
         return arguments.toArray();
     }}
 
-    private static List<Object> parseArray(String arrayContent) {{
+    private static Object[] parseArray(String arrayContent) {{
         List<Object> elements = new ArrayList<>();
-        if (arrayContent.trim().isEmpty()) return elements;
-        
+        if (arrayContent.trim().isEmpty()) {{
+            return new Object[0];
+        }}
+
         StringBuilder current = new StringBuilder();
         int depth = 0;
         boolean inString = false;
@@ -229,7 +229,7 @@ public class {file_name} {{
                 current.append(c);
             }} else if (!inString && c == ',' && depth == 0) {{
                 elements.add(parseValue(current.toString().trim()));
-                current = new StringBuilder();
+                current.setLength(0); // reset the StringBuilder
             }} else {{
                 current.append(c);
             }}
@@ -239,7 +239,7 @@ public class {file_name} {{
             elements.add(parseValue(current.toString().trim()));
         }}
 
-        return elements;
+        return elements.toArray(new Object[0]);
     }}
 
     private static Object parseValue(String value) {{
@@ -263,28 +263,28 @@ public class {file_name} {{
 
         // Handle arrays
         if (value.startsWith("[") && value.endsWith("]")) {{
-            List<Object> elements = parseArray(value.substring(1, value.length() - 1));
-            if (elements.isEmpty()) return new Object[0];
+            Object[] elements = parseArray(value.substring(1, value.length() - 1));
+            if (elements.length == 0) return elements;
             
             // Check if all elements are arrays
-            boolean allArrays = elements.stream()
+            boolean allArrays = Arrays.stream(elements)
                 .allMatch(e -> e != null && e.getClass().isArray());
             if (allArrays) {{
-                return elements.toArray();
+                return elements;
             }}
             
             // Check if all elements are integers
-            boolean allIntegers = elements.stream()
+            boolean allIntegers = Arrays.stream(elements)
                 .allMatch(e -> e instanceof Integer);
             if (allIntegers) {{
-                int[] result = new int[elements.size()];
-                for (int i = 0; i < elements.size(); i++) {{
-                    result[i] = (Integer)elements.get(i);
+                int[] result = new int[elements.length];
+                for (int i = 0; i < elements.length; i++) {{
+                    result[i] = (Integer)elements[i];
                 }}
                 return result;
             }}
             
-            return elements.toArray();
+            return elements;
         }}
 
         // Handle objects/maps
@@ -340,7 +340,11 @@ public class {file_name} {{
 
             System.out.println("EXECUTION_RESULTS:" + results);
         }} catch (Exception e) {{
-            System.out.println("GLOBAL_ERROR:\n" + e);
+            Throwable cause = e;
+            if (e instanceof InvocationTargetException && e.getCause() != null) {{
+                cause = e.getCause();
+            }}
+            System.out.println("GLOBAL_ERROR:\n" + cause.toString());
         }}
     }}
 }}

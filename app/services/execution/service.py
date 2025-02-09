@@ -70,7 +70,7 @@ class CodeExecutionService:
                     {"input": tc, "expected": er}
                     for tc, er in zip(sample_test_cases, sample_expected_results)
                 ]
-                import pdb; pdb.set_trace()
+                
                 base_name = os.path.basename(f.name).split('.')[0]
                 file_content = gen.generate_test_file(code, base_name, method_name, test_data, sample_data, compare_func)
                 f.write(file_content)

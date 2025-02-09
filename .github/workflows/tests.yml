@@ -1,0 +1,74 @@
+name: BeatCode Server Tests
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        services:
+            postgres:
+                image: postgres:latest
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: beatcode_test
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+        - uses: actions/checkout@v3
+
+        - name: Set up Python 3.11
+          uses: actions/setup-python@v3
+          with:
+            python-version: '3.11'
+
+        - name: Set up Docker
+          uses: docker/setup-buildx-action@v2
+
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+
+        - name: Copy environment file
+          run: |
+            cp .env.example .env
+            # Set test database configurations
+            echo "TEST_DB_USER=postgres" >> .env
+            echo "TEST_DB_PASSWORD=postgres" >> .env
+            echo "TEST_DB_HOST=localhost" >> .env
+            echo "TESTING=True" >> .env
+
+        - name: Initialize database
+          run: |
+            cd app
+            python -m db.init --drop --droptest
+
+        - name: Run unit tests
+          run: |
+            cd app
+            pytest tests/unit -v
+
+        - name: Start server for integration tests
+          run: |
+            cd app
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+            sleep 5  # Wait for server to start
+
+        - name: Run integration tests
+          run: |
+            cd app
+            python tests/integration/auth_test.py
+            python tests/integration/game_test.py
+            python tests/integration/room_test.py

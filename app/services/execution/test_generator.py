@@ -73,17 +73,20 @@ class JavaTestGenerator(TestGenerator):
 
     def get_file_extension(self, lang: str) -> str:
         return ".java"
+
+    def format_test_data(self, method_name: str, test_data: List[Dict]) -> List[Dict]:
+        return test_data
     
     def process_quotes(self, json_str: str) -> str:
         return json_str.replace('"', '\\"').replace('\\\\"', '\\\\\\"') # cursed code alert
 
 class CppTestGenerator(TestGenerator):
-    def generate_test_file(self, code: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+    def generate_test_file(self, code: str, file_name: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
         test_data = self.format_test_data(method_name, test_data)
         sample_data = self.format_test_data(method_name, sample_data)
         return CPP_TEMPLATE.format(
             code=code,
-            method_name=method_name,
+            method_name=method_name, 
             compare_func=compare_func,
             test_data=json.dumps(test_data),
             sample_data=json.dumps(sample_data),

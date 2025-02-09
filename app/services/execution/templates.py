@@ -78,15 +78,17 @@ if __name__ == "__main__":
         print("GLOBAL_ERROR:\\n" + traceback.format_exc())
 """
 
-JAVA_TEMPLATE = r"""import org.junit.*;
+JAVA_TEMPLATE = r"""
+import org.junit.*;
 import org.junit.runner.JUnitCore;
 import com.google.gson.*;
 import java.lang.reflect.*;
+import java.util.*;
 
 {code}
 
 public class {file_name} {{
-    private static JsonObject compareResults(Object result, String expected) {{
+    private static JsonObject compareResults(Object result, Object expected) {{
         JsonObject comparison = new JsonObject();
         comparison.addProperty("passed", result.toString().equals(expected));
         return comparison;
@@ -105,10 +107,9 @@ public class {file_name} {{
                 Class<?>[] paramTypes = getParameterTypes(inputStr);
                 Object[] args = parseArguments(inputStr);
                 
-                // Replace "maxProfit" with the method you want to test if needed.
-                Method method = Solution.class.getMethod("maxProfit", paramTypes);
+                Method method = Solution.class.getMethod("{method_name}", paramTypes);
                 Object output = method.invoke(solution, args);
-                JsonObject comparison = compareResults(output, test.get("expected").getAsString());
+                JsonObject comparison = compareResults(output, parseValue(test.get("expected").getAsString()); // bad code alert
                 result.addProperty("passed", comparison.get("passed").getAsBoolean());
                 result.addProperty("output", gson.toJson(output));
             }} catch (Exception e) {{
@@ -120,25 +121,192 @@ public class {file_name} {{
         return results;
     }}
 
+    private static Class<?> getArrayType(Object arr) {{
+        if (!arr.getClass().isArray()) {{
+            return arr.getClass();
+        }}
+        
+        Class<?> componentType = arr.getClass().getComponentType();
+        if (componentType.isPrimitive()) {{
+            return arr.getClass();
+        }}
+        
+        Object[] array = (Object[]) arr;
+        if (array.length == 0) {{
+            return Object[].class;
+        }}
+        
+        boolean allIntegers = true;
+        boolean allArrays = true;
+        
+        for (Object element : array) {{
+            if (element == null) continue;
+            if (!(element instanceof Integer)) allIntegers = false;
+            if (!element.getClass().isArray()) allArrays = false;
+        }}
+        
+        if (allIntegers) return int[].class;
+        if (allArrays) {{
+            Object firstNonNull = null;
+            for (Object element : array) {{
+                if (element != null) {{
+                    firstNonNull = element;
+                    break;
+                }}
+            }}
+            if (firstNonNull != null) {{
+                Class<?> deeperType = getArrayType(firstNonNull);
+                return Array.newInstance(deeperType.getComponentType(), 0).getClass();
+            }}
+        }}
+        return Object[].class;
+    }}
+
     private static Class<?>[] getParameterTypes(String input) {{
-        return new Class<?>[] {{ int[].class }};
+        Object[] args = parseArguments(input);
+        Class<?>[] types = new Class<?>[args.length];
+        for (int i = 0; i < args.length; i++) {{
+            if (args[i] == null) {{
+                types[i] = Object.class;
+            }} else if (args[i].getClass().isArray()) {{
+                types[i] = getArrayType(args[i]);
+            }} else if (args[i] instanceof Integer || args[i] instanceof Long) {{
+                types[i] = int.class;
+            }} else if (args[i] instanceof Double || args[i] instanceof Float) {{
+                types[i] = double.class;
+            }} else if (args[i] instanceof Boolean) {{
+                types[i] = boolean.class;
+            }} else if (args[i] instanceof Character) {{
+                types[i] = char.class;
+            }} else {{
+                types[i] = args[i].getClass();
+            }}
+        }}
+        return types;
     }}
 
     private static Object[] parseArguments(String input) {{
-        int startBracket = input.indexOf('[');
-        int endBracket = input.lastIndexOf(']');
-        if (startBracket != -1 && endBracket != -1) {{
-            String[] numStrs = input.substring(startBracket + 1, endBracket).split(",");
-            int[] nums = new int[numStrs.length];
-            for (int i = 0; i < numStrs.length; i++) {{
-                nums[i] = Integer.parseInt(numStrs[i].trim());
+        List<Object> arguments = new ArrayList<>();
+        String[] parts = input.split("--arg\\d+");
+
+        for (String part : parts) {{
+            if (part.trim().isEmpty()) continue;
+
+            String value = part.trim();
+            if (value.startsWith("=")) {{
+                value = value.substring(1).trim();
             }}
-            return new Object[] {{ nums }};
+
+            arguments.add(parseValue(value));
         }}
-        return new Object[0];
+
+        return arguments.toArray();
     }}
 
-    // This method now wraps the results in a "test_results" field and adds a "summary" field.
+    private static List<Object> parseArray(String arrayContent) {{
+        List<Object> elements = new ArrayList<>();
+        if (arrayContent.trim().isEmpty()) return elements;
+        
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        boolean inString = false;
+        char stringChar = 0;
+
+        for (char c : arrayContent.toCharArray()) {{
+            if (c == '"' || c == '\'') {{
+                if (!inString) {{
+                    inString = true;
+                    stringChar = c;
+                }} else if (c == stringChar) {{
+                    inString = false;
+                }}
+                current.append(c);
+            }} else if (!inString && (c == '[' || c == '{{')) {{
+                depth++;
+                current.append(c);
+            }} else if (!inString && (c == ']' || c == '}}')) {{
+                depth--;
+                current.append(c);
+            }} else if (!inString && c == ',' && depth == 0) {{
+                elements.add(parseValue(current.toString().trim()));
+                current = new StringBuilder();
+            }} else {{
+                current.append(c);
+            }}
+        }}
+
+        if (current.length() > 0) {{
+            elements.add(parseValue(current.toString().trim()));
+        }}
+
+        return elements;
+    }}
+
+    private static Object parseValue(String value) {{
+        value = value.trim();
+
+        // Keep quoted strings as is
+        if ((value.startsWith("'") && value.endsWith("'")) ||
+            (value.startsWith("\"") && value.endsWith("\""))) {{
+            return value.substring(1, value.length() - 1);
+        }}
+
+        // Handle null
+        if (value.equals("null")) {{
+            return null;
+        }}
+
+        // Handle boolean
+        if (value.equals("true") || value.equals("false")) {{
+            return Boolean.parseBoolean(value);
+        }}
+
+        // Handle arrays
+        if (value.startsWith("[") && value.endsWith("]")) {{
+            List<Object> elements = parseArray(value.substring(1, value.length() - 1));
+            if (elements.isEmpty()) return new Object[0];
+            
+            // Check if all elements are arrays
+            boolean allArrays = elements.stream()
+                .allMatch(e -> e != null && e.getClass().isArray());
+            if (allArrays) {{
+                return elements.toArray();
+            }}
+            
+            // Check if all elements are integers
+            boolean allIntegers = elements.stream()
+                .allMatch(e -> e instanceof Integer);
+            if (allIntegers) {{
+                int[] result = new int[elements.size()];
+                for (int i = 0; i < elements.size(); i++) {{
+                    result[i] = (Integer)elements.get(i);
+                }}
+                return result;
+            }}
+            
+            return elements.toArray();
+        }}
+
+        // Handle objects/maps
+        if (value.startsWith("{{") && value.endsWith("}}")) {{
+            Map<String, Object> map = new HashMap<>();
+            // TODO: Implement object parsing if needed
+            return map;
+        }}
+
+        // Handle numbers
+        try {{
+            if (value.contains(".")) {{
+                return Double.parseDouble(value);
+            }}
+            return Integer.parseInt(value);
+        }} catch (NumberFormatException e) {{
+            // If not a number, return as string
+            return value;
+        }}
+    }}
+
+    // Wraps the results in a "test_results" field and adds a "summary" field.
     private static JsonObject createResultObject(JsonArray results) {{
         JsonObject summary = new JsonObject();
         int totalTests = results.size();
@@ -176,8 +344,8 @@ public class {file_name} {{
         }}
     }}
 }}
-
 """
+
 
 CPP_TEMPLATE = r"""{code}
 

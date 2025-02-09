@@ -31,10 +31,9 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t beatcode-python ./docker/python/
-        docker build -t beatcode-java ./docker/java/
-        docker build -t beatcode-cpp ./docker/cpp/
-      working-directory: ./app
+        docker build -t beatcode-python -f ./docker/python/Dockerfile .
+        docker build -t beatcode-java -f ./docker/java/Dockerfile .
+        docker build -t beatcode-cpp -f ./docker/cpp/Dockerfile .
 
     - name: Run unit tests
       run: |

@@ -56,7 +56,7 @@ class DockerRunner:
         elif lang == "cpp":
             return [
                 "sh", "-c",
-                f"g++ -std=c++17 -o {base_name} {file_name} && ./{base_name}"
+                f"g++ -std=c++17 -o {base_name} {file_name} -ljsoncpp && ./{base_name}"
             ]
         
         raise ValueError(f"Unsupported language: {lang}")

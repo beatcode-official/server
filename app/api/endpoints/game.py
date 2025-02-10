@@ -243,8 +243,6 @@ async def game_websocket(
             "data": game_view.model_dump()
         })
 
-        print(game_state.problems[0])
-
         # Send the current problem if the game is in progress
         if game_state.status == GameStatus.IN_PROGRESS and player.current_problem_index < len(game_state.problems):
             current_problem = ProblemManager.prepare_problem_for_client(

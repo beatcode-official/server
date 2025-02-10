@@ -266,8 +266,7 @@ class Solution {
 
     @pytest.fixture
     def undefined_variable_solution(self):
-        return """
-class Solution {
+        return """class Solution {
     public int add(int a, int b) {
         return n;
     }
@@ -276,8 +275,7 @@ class Solution {
 
     @pytest.fixture
     def infinite_loop_solution(self):
-        return """
-class Solution {
+        return """class Solution {
     public int add(int a, int b) {
         while(true) {}
         return a + b;
@@ -464,6 +462,257 @@ class Solution {
             executor._execution_semaphores["medium"]._value > \
             executor._execution_semaphores["hard"]._value
 
+class TestCpp:
+    @pytest.fixture
+    def executor(self):
+        return CodeExecutionService()
+
+    @pytest.fixture
+    def valid_solution(self):
+        # A valid C++ solution with two methods: add and twoSum.
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        return a + b;
+    }
+    
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> seen;
+        for (int i = 0; i < nums.size(); i++) {
+            int complement = target - nums[i];
+            if (seen.find(complement) != seen.end()) {
+                return vector<int>{seen[complement], i};
+            }
+            seen[nums[i]] = i;
+        }
+        return vector<int>();
+    }
+};
+"""
+
+    @pytest.fixture
+    def invalid_syntax_solution(self):
+        # Missing a semicolon after the return statement.
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        return a + b  // Missing semicolon here
+    }
+};
+"""
+
+    @pytest.fixture
+    def undefined_variable_solution(self):
+        # Uses an undefined variable 'n'
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        return n; // 'n' is not defined
+    }
+};
+"""
+
+    @pytest.fixture
+    def infinite_loop_solution(self):
+        # Contains an infinite loop in add
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        while(true) {}
+        return a + b;
+    }
+};
+"""
+
+    @pytest.fixture
+    def memory_heavy_solution(self):
+        # Allocates a huge vector to trigger a memory limit error.
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        // Allocate 100 million integers initialized to 0.
+        vector<int> x(100000000, 0);
+        return a + b;
+    }
+};
+"""
+
+    @pytest.mark.asyncio
+    async def test_successful_execution(self, executor, valid_solution):
+        result = await executor.execute_code(
+            code=valid_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            expected_results=["3", "0", "0"],
+            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_expected_results=["3", "0", "0"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert result.success
+        assert len(result.test_results) == 3
+        assert all(test["passed"] for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_failed_test_cases(self, executor, valid_solution):
+        result = await executor.execute_code(
+            code=valid_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0"],
+            expected_results=["4", "1"],
+            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0"],
+            sample_expected_results=["3", "0"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert result.success
+        assert len(result.test_results) == 2
+        assert not any(test["passed"] for test in result.test_results)
+
+
+    @pytest.mark.asyncio
+    async def test_syntax_error(self, executor, invalid_syntax_solution):
+        result = await executor.execute_code(
+            code=invalid_syntax_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert not result.success
+
+    @pytest.mark.asyncio
+    async def test_undefined_error(self, executor, undefined_variable_solution):
+        result = await executor.execute_code(
+            code=undefined_variable_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2", "--arg1=2 --arg2=2"],
+            expected_results=["3", "4"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert not result.success
+
+    @pytest.mark.asyncio
+    async def test_type_error(self, executor, valid_solution):
+        result = await executor.execute_code(
+            code=valid_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2='2'", "--arg1=2 --arg2='2'"],
+            expected_results=["3", "4"],
+            sample_test_cases=["--arg1=1 --arg2='2'"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert result.success
+        assert not all(test["passed"] for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_timeout(self, executor, infinite_loop_solution):
+        result = await executor.execute_code(
+            code=infinite_loop_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert not result.success
+        assert "Time Limit Exceeded" in result.message
+
+    @pytest.mark.asyncio
+    async def test_memory_limit(self, executor, memory_heavy_solution):
+        result = await executor.execute_code(
+            code=memory_heavy_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert not result.success
+        assert "Memory Limit Exceeded" in result.message
+
+    @pytest.mark.asyncio
+    async def test_complex_problem(self, executor, valid_solution):
+        result = await executor.execute_code(
+            code=valid_solution,
+            method_name="twoSum",
+            test_cases=[
+                "--arg1=[2,7,11,15] --arg2=9",
+                "--arg1=[3,2,4] --arg2=6",
+                "--arg1=[3,3] --arg2=6"
+            ],
+            expected_results=[
+                "[0,1]",
+                "[1,2]",
+                "[0,1]"
+            ],
+            sample_test_cases=[
+                "--arg1=[2,7,11,15] --arg2=9",
+                "--arg1=[3,2,4] --arg2=6",
+                "--arg1=[3,3] --arg2=6"
+            ],
+            sample_expected_results=[
+                "[0,1]",
+                "[1,2]",
+                "[0,1]"
+            ],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp"
+        )
+        assert result.success
+        assert len(result.test_results) == 3
+        assert all(test["passed"] for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_executions(self, executor, valid_solution):
+        tasks = []
+        for _ in range(20):
+            tasks.append(
+                executor.execute_code(
+                    code=valid_solution,
+                    method_name="add",
+                    test_cases=["--arg1=1 --arg2=2"],
+                    expected_results=["3"],
+                    sample_test_cases=["--arg1=1 --arg2=2"],
+                    sample_expected_results=["3"],
+                    difficulty="hard",
+                    compare_func="return result == expected;",
+                    lang="cpp"
+                )
+            )
+        results = await asyncio.gather(*tasks)
+        assert all(r.success for r in results)
+        assert len(results) == 20
+
+    def test_different_difficulty_semaphores(self, executor):
+        assert executor._execution_semaphores["easy"]._value > \
+            executor._execution_semaphores["medium"]._value > \
+            executor._execution_semaphores["hard"]._value
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

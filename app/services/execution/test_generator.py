@@ -23,33 +23,19 @@ class TestGenerator(ABC):
     def get_file_extension(self, lang: str) -> str:
         """
         Get the file extension for the given language.
-        """  
-
-    def format_test_data(self, method_name: str, test_data: List[Dict]) -> List[Dict]:
         """
-        Format the test data to be used in the test runner code.
+    
+    def process_quotes(self, json_str: str) -> str:
         """
-        formatted = []
-        for test in test_data:
-            segments = test["input"].split("--arg")
-            segments = [s.strip() for s in segments if s.strip()]
-            params = []
-            for s in segments:
-                if "=" in s:
-                    _, val = s.split("=", 1)
-                    params.append(val.strip())
-            formatted.append({
-                "input": f"{method_name}({', '.join(params)})",
-                "expected": test["expected"]
-            })
-        return formatted    
+        Process quotes in a JSON string.
+        """
+        return json_str.replace('"', '\\"').replace('\\\\"', '\\\\\\"') # cursed code alert
 
 class PythonTestGenerator(TestGenerator):
     def generate_test_file(self, code: str, file_name: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
-        test_data = self.format_test_data(method_name, test_data)
-        sample_data = self.format_test_data(method_name, sample_data)
         return PYTHON_TEMPLATE.format(
             code=code,
+            method_name=method_name,
             compare_func=compare_func,
             test_data=json.dumps(test_data),
             sample_data=json.dumps(sample_data),
@@ -60,8 +46,6 @@ class PythonTestGenerator(TestGenerator):
 
 class JavaTestGenerator(TestGenerator):
     def generate_test_file(self, code: str, file_name: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
-        test_data = self.format_test_data(method_name, test_data)
-        sample_data = self.format_test_data(method_name, sample_data)
         return JAVA_TEMPLATE.format(
             code=code,
             file_name=file_name,
@@ -74,23 +58,33 @@ class JavaTestGenerator(TestGenerator):
     def get_file_extension(self, lang: str) -> str:
         return ".java"
 
-    def format_test_data(self, method_name: str, test_data: List[Dict]) -> List[Dict]:
-        return test_data
-    
-    def process_quotes(self, json_str: str) -> str:
-        return json_str.replace('"', '\\"').replace('\\\\"', '\\\\\\"') # cursed code alert
-
 class CppTestGenerator(TestGenerator):
     def generate_test_file(self, code: str, file_name: str, method_name: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
-        test_data = self.format_test_data(method_name, test_data)
-        sample_data = self.format_test_data(method_name, sample_data)
+        args_init, args_param = self.process_args(test_data[0]["input"])
         return CPP_TEMPLATE.format(
             code=code,
+            file_name=file_name,
             method_name=method_name, 
             compare_func=compare_func,
-            test_data=json.dumps(test_data),
-            sample_data=json.dumps(sample_data),
+            test_data=self.process_quotes(json.dumps(test_data)),
+            sample_data=self.process_quotes(json.dumps(sample_data)),
+            args_init=args_init,
+            args_param=args_param
         )
+
+    def process_args(self, args: str) -> (str, str):
+        args_list = args.split()
+        init_lines = []
+        params = []
+        for i in range(len(args_list)):
+            var_name = f"arg{i+1}"
+            line = f"auto {var_name} = args[{i}].get<typename arg_type<{i}, Method_t>::type>();"
+            init_lines.append(line)
+            params.append(var_name)
+        # initializing and inserting these auto arguments
+        args_init = "\n".join(init_lines)
+        args_param = ", ".join(params)
+        return args_init, args_param
 
     def get_file_extension(self, lang: str) -> str:
         return ".cpp"

@@ -45,8 +45,8 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(Arrays.stream(result).sorted().toArray(), Arrays.stream(eval(expected)).sorted().toArray());",
-      "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expected_vector;\n// Convert expected string to vector<int> (example using integer parsing)\nstd::stringstream ss(expected);\nint number;\nwhile (ss >> number) {\n  expected_vector.push_back(number);\n  if (ss.peek() == ',') {\n    ss.ignore();\n  }\n}\nstd::sort(expected_vector.begin(), expected_vector.end());\nreturn result == expected_vector;"
+      "java": "int[] expectedArray = gson.fromJson((String) expected, int[].class);\nArrays.sort((int[]) result);\nArrays.sort(expectedArray);\nreturn Arrays.equals((int[]) result, expectedArray);",
+      "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expected_vector;\nstd::stringstream ss(expected.asString());\nint number;\nwhile (ss >> number) {\n    expected_vector.push_back(number);\n    if (ss.peek() == ',') {\n        ss.ignore();\n    }\n}\nstd::sort(expected_vector.begin(), expected_vector.end());\nreturn result == expected_vector;"
     },
     "explanation": "https://www.youtube.com/watch?v=KLlXCFG5TnA&pp=ygUQTmVldENvZGUgVHdvIFN1bQ%3D%3D",
     "method_name": "twoSum"
@@ -97,8 +97,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n  return result.equals(evaluateExpression(expected));\n} catch (Exception e) {\n  return false;\n}\n\nString evaluateExpression(String expression) {\n  // This section requires a method to safely evaluate the expression in the expected string.\n  // Using a scripting engine or library for mathematical/eval expression such as \"javax.script.ScriptEngineManager\"\n  // would typically be safe and effective here.\n  ScriptEngineManager manager = new ScriptEngineManager();\n  ScriptEngine engine = manager.getEngineByName(\"js\"); // Using JavaScript for simple evaluation\n  try {\n    Object evaluatedResult = engine.eval(expression);\n    return String.valueOf(evaluatedResult);\n  } catch (ScriptException e) {\n    throw new RuntimeException(\"Error evaluating expression\", e);\n  }\n}",
-      "cpp": "#include <string>\n#include <unordered_map>\n#include <functional>\n\n// This function will evaluate a string expression and return the corresponding result\nbool evaluateExpression(double result, const std::string& expression) {\n    // Defining possible operations\n    std::unordered_map<char, std::function<double(double, double)>> operations = {\n        {'+', std::plus<double>()},\n        {'-', std::minus<double>()},\n        {'*', std::multiplies<double>()},\n        {'/', std::divides<double>()}\n    };\n\n    // Scan the expression to evaluate it\n    size_t pos = expression.find_first_of(\"+-*/\");\n    if (pos != std::string::npos) {\n        char op = expression[pos];\n        double left = std::stod(expression.substr(0, pos));\n        double right = std::stod(expression.substr(pos + 1));\n        double evalResult = operations[op](left, right);\n        return result == evalResult;\n    }\n\n    return false; // Return false if no operation found or invalid expression\n}\n\n// Usage:\n// bool isEqual = evaluateExpression(result, expected);"
+      "java": "return result.equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=yubRKwixN-U&pp=ygUaTmVldENvZGUgUGFsaW5kcm9tZSBOdW1iZXI%3D",
     "method_name": "isPalindrome"
@@ -147,8 +147,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    return result == (Boolean) engine.eval(expected);\n} catch (ScriptException e) {\n    e.printStackTrace();\n    return false;\n}",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=0sWShKIJoo4&pp=ygUeTmVldENvZGUgTG9uZ2VzdCBDb21tb24gUHJlZml4",
     "method_name": "longestCommonPrefix"
@@ -201,8 +201,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    // Assuming the expected is a Java expression as a string.\n    Object expectedResult = eval(expected); // Evaluate the expression\n    return result.equals(expectedResult);\n} catch (Exception e) {\n    return false; // Return false if there's any error in evaluation\n}",
-      "cpp": "#include <string>\n#include <stdexcept>\n#include <cmath>\n\nbool isNumber(const std::string& str) {\n    for (char const &c : str) {\n        if (std::isdigit(c) == 0) return false;\n    }\n    return true;\n}\n\ndouble calculateExpression(const std::string& expr);\n\ndouble evalExpression(const std::string& expr) {\n    return calculateExpression(expr);\n}\n\nbool compareFunction(const std::string& result, const std::string& expected) {\n    if (isNumber(result) && isNumber(expected)) {\n        return std::stod(result) == evalExpression(expected);\n    }\n    throw std::invalid_argument(\"Both inputs must be numeric in string format.\");\n}"
+      "java": "return result.equals(Boolean.parseBoolean((String) expected));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=WTzjTskDFMg&pp=ygUaTmVldENvZGUgVmFsaWQgUGFyZW50aGVzZXM%3D",
     "method_name": "isValid"
@@ -251,8 +251,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.parseInt(expected) == result;",
-      "cpp": "return result == static_cast<int>(expected);"
+      "java": "return Integer.parseInt(expected.toString()) == (int) result;",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=Gjkhm1gYIMw&pp=ygU7TmVldENvZGUgRmluZCB0aGUgSW5kZXggb2YgdGhlIEZpcnN0IE9jY3VycmVuY2UgaW4gYSBTdHJpbmc%3D",
     "method_name": "strStr"
@@ -304,7 +304,7 @@
     "compare_func": {
       "python": "return result == int(expected)",
       "java": "return Integer.valueOf(result).equals(Integer.valueOf(expected));",
-      "cpp": "return result == std::stoi(expected);"
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=K-RYzDZkzCI&pp=ygUfTmVldENvZGUgU2VhcmNoIEluc2VydCBQb3NpdGlvbg%3D%3D",
     "method_name": "searchInsert"
@@ -355,8 +355,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return result == Integer.parseInt(expected);",
-      "cpp": "return result == static_cast<int>(expected);"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=KT9rltZTybQ&pp=ygUcTmVldENvZGUgTGVuZ3RoIG9mIExhc3QgV29yZA%3D%3D",
     "method_name": "lengthOfLastWord"
@@ -407,8 +407,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return Arrays.equals((int[]) result, gson.fromJson((String) expected, int[].class));",
+      "cpp": "std::vector<int> expectedVec = jsonToValue<std::vector<int>>(expected);\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=jIaA8boiG1s&pp=ygURTmVldENvZGUgUGx1cyBPbmU%3D",
     "method_name": "plusOne"
@@ -457,8 +457,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return Objects.equals(result, expected);",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return Objects.equals((String) result, (String) expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=keuWJ47xG8g&pp=ygUTTmVldENvZGUgQWRkIEJpbmFyeQ%3D%3D",
     "method_name": "addBinary"
@@ -507,8 +507,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return result == Integer.parseInt(expected);",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return result == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=Y0lT9Fck7qI&pp=ygUYTmVldENvZGUgQ2xpbWJpbmcgU3RhaXJz",
     "method_name": "climbStairs"
@@ -559,8 +559,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=1pkOgXD63yU&pp=ygUoTmVldENvZGUgQmVzdCBUaW1lIHRvIEJ1eSBhbmQgU2VsbCBTdG9jaw%3D%3D",
     "method_name": "maxProfit"
@@ -611,8 +611,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=jJXJ16kPFWg&pp=ygUZTmVldENvZGUgVmFsaWQgUGFsaW5kcm9tZQ%3D%3D",
     "method_name": "isPalindrome"
@@ -663,8 +663,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <tuple>\n#include <utility>\n\n// Function to evaluate mathematical expressions from a string\n// Simple implementation just for demonstration, assumed input well-formed\nstd::pair<double, bool> evaluateExpression(const std::string& expr) {\n    std::istringstream iss(expr);\n    double result;\n    iss >> result;  // just evaluates the first number for simplicity\n    return std::make_pair(result, !iss.fail());\n}\n\ntemplate <typename T>\nbool compareFunction(T result, const std::string& expected) {\n    auto [evaluated, valid] = evaluateExpression(expected);\n    return valid && result == evaluated;\n}\n\n// Example usage\nint main() {\n    // Suppose we have result as double from some calculations\n    double result = 42.0;\n    std::string expected = \"42\";\n    \n    if (compareFunction(result, expected)) {\n        std::cout << \"Result matches the expected expression.\" << std::endl;\n    } else {\n        std::cout << \"Result does not match the expected expression.\" << std::endl;\n    }\n    \n    return 0;\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=X_vJDpCCuoA&pp=ygUhTmVldENvZGUgRXhjZWwgU2hlZXQgQ29sdW1uIFRpdGxl",
     "method_name": "convertToTitle"
@@ -715,8 +715,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return result.compare(expected) == 0;"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=ljz85bxOYJ0&pp=ygUVTmVldENvZGUgSGFwcHkgTnVtYmVy",
     "method_name": "isHappy"
@@ -767,8 +767,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.parseBoolean(result.toString()) == Boolean.parseBoolean(expected.toString());",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=7yF-U1hLEqQ&pp=ygUbTmVldENvZGUgSXNvbW9ycGhpYyBTdHJpbmdz",
     "method_name": "isIsomorphic"
@@ -819,8 +819,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=ypn0aZ0nrL4&pp=ygUeTmVldENvZGUgQ29udGFpbnMgRHVwbGljYXRlIElJ",
     "method_name": "containsNearbyDuplicate"
@@ -871,8 +871,8 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(Arrays.sort(result), Arrays.sort(new Gson().fromJson(expected, Object[].class)));",
-      "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expected_result;\neval(expected, expected_result); // Assume eval is a function that populates expected_result\nstd::sort(expected_result.begin(), expected_result.end());\nreturn result == expected_result;"
+      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = new Gson().fromJson((String) expected, List.class);\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "cpp": "std::vector<std::string> expected_result;\neval(expected, expected_result); // Assume eval is a function that populates expected_result\nstd::sort(result.begin(), result.end());\nstd::sort(expected_result.begin(), expected_result.end());\nreturn result == expected_result;"
     },
     "explanation": "https://www.youtube.com/watch?v=ZHJDwbfqoa8&pp=ygUXTmVldENvZGUgU3VtbWFyeSBSYW5nZXM%3D",
     "method_name": "summaryRanges"
@@ -923,8 +923,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase(expected.toString());",
+      "cpp": "return result.asBool() == (expected.asString() == \"true\");"
     },
     "explanation": "https://www.youtube.com/watch?v=H2bjttEV4Vc&pp=ygUVTmVldENvZGUgUG93ZXIgb2YgVHdv",
     "method_name": "isPowerOfTwo"
@@ -975,8 +975,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=M0Zay1Qr9ws&pp=ygUUTmVldENvZGUgVWdseSBOdW1iZXI%3D",
     "method_name": "isUgly"
@@ -1027,8 +1027,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).equals(Boolean.parseBoolean((String) expected));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=W_akoecmCbM&pp=ygUVTmVldENvZGUgV29yZCBQYXR0ZXJu",
     "method_name": "wordPattern"
@@ -1079,8 +1079,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == (expected.asString() == \"true\");"
     },
     "explanation": "https://www.youtube.com/watch?v=ndR2buBWVc8&pp=ygURTmVldENvZGUgTmltIEdhbWU%3D",
     "method_name": "canWinNim"
@@ -1131,8 +1131,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(std::string(result).compare(expected)) == 0;"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=M2P2BAFmLlo&pp=ygUXTmVldENvZGUgUG93ZXIgb2YgVGhyZWU%3D",
     "method_name": "isPowerOfThree"
@@ -1183,8 +1183,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return String.valueOf(result).toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return String.valueOf(result).equalsIgnoreCase(expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=qEYZPwnlM0U&pp=ygUWTmVldENvZGUgUG93ZXIgb2YgRm91cg%3D%3D",
     "method_name": "isPowerOfFour"
@@ -1233,8 +1233,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "#include <string>\n#include <stdexcept>\n#include <cstdlib>\n\nbool evaluateAndCompare(const std::string& result, const std::string& expected) {\n    try {\n        // Evaluate the expected expression\n        int expectedValue = std::stoi(expected);\n        int resultValue = std::stoi(result);\n        // Compare result and evaluated expected value\n        return resultValue == expectedValue;\n    } catch (const std::invalid_argument& e) {\n        // Handle conversion errors\n        return false;\n    } catch (const std::out_of_range& e) {\n        // Handle out of range errors\n        return false;\n    }\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=uHYjUMR3Tg8&pp=ygUjTmVldENvZGUgUmV2ZXJzZSBWb3dlbHMgb2YgYSBTdHJpbmc%3D",
     "method_name": "reverseVowels"
@@ -1283,7 +1283,7 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(result.toArray(), Arrays.stream(eval(expected)).sorted().toArray())",
+      "java": "int[] resultArray = (int[]) result;\nint[] expectedArray = gson.fromJson(expected, int[].class);\nArrays.sort(resultArray);\nArrays.sort(expectedArray);\nreturn Arrays.equals(resultArray, expectedArray);",
       "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expectedVec;\nistringstream iss(expected.substr(1, expected.size() - 2));\nint number;\nwhile (iss >> number) {\n    expectedVec.push_back(number);\n    if (iss.peek() == ',')\n        iss.ignore();\n}\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=fwUTXaMom6U&pp=ygUmTmVldENvZGUgSW50ZXJzZWN0aW9uIG9mIFR3byBBcnJheXMgSUk%3D",
@@ -1335,8 +1335,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Cg_wWPHJ2Sk&pp=ygUdTmVldENvZGUgVmFsaWQgUGVyZmVjdCBTcXVhcmU%3D",
     "method_name": "isPerfectSquare"
@@ -1387,8 +1387,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return Objects.equals(result, Integer.parseInt(expected));",
-      "cpp": "return (result == std::stoi(expected)); // assuming expected is a string representation of an integer"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=a4wqKR-znBE&pp=ygUcTmVldENvZGUgRmluZCB0aGUgRGlmZmVyZW5jZQ%3D%3D",
     "method_name": "findTheDifference"
@@ -1439,8 +1439,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=99RVfqklbCE&pp=ygUXTmVldENvZGUgSXMgU3Vic2VxdWVuY2U%3D",
     "method_name": "isSubsequence"
@@ -1491,7 +1491,7 @@
     },
     "compare_func": {
       "python": "def sorted_list_strings(lst):\n        return sorted([str(x) for x in eval(lst)])\n    return sorted(result) == sorted_list_strings(expected)",
-      "java": "try {\n    List<String> evalResult = Arrays.asList(eval(expected).replace(\"[\", \"\").replace(\"]\", \"\").split(\",\"));\n    List<String> resultAsString = result.stream().map(Object::toString).collect(Collectors.toList());\n    Collections.sort(resultAsString);\n    Collections.sort(evalResult);\n    return resultAsString.equals(evalResult);\n} catch (Exception e) {\n    return false;\n}",
+      "java": "try {\n    List<String> evalResult = Arrays.asList(eval(expected).replace(\"[\", \"\").replace(\"]\", \"\").replace(\"'\", \"\").split(\",\"));\n    List<String> resultAsString = result.stream().map(Object::toString).collect(Collectors.toList());\n    Collections.sort(resultAsString);\n    Collections.sort(evalResult);\n    return resultAsString.equals(evalResult);\n} catch (Exception e) {\n    return false;\n}",
       "cpp": "std::multiset<std::string> sorted_list_strings(const std::string& lst) {\n    std::multiset<std::string> sortedStrings;\n    std::string cleaned = lst;\n    // Remove leading/trailing whitespace\n    cleaned.erase(0, cleaned.find_first_not_of(\" \\t\\n\\r\"));\n    cleaned.erase(cleaned.find_last_not_of(\" \\t\\n\\r\") + 1);\n    \n    // Substitute all commas with spaces\n    std::replace(cleaned.begin(), cleaned.end(), ',', ' ');\n    std::stringstream ss(cleaned);\n    std::string item;\n    \n    while(ss >> item) {\n        sortedStrings.insert(item);\n    }\n    return sortedStrings;\n}\n\nreturn std::multiset<std::string>(result.begin(), result.end()) == sorted_list_strings(expected);"
     },
     "explanation": "https://www.youtube.com/watch?v=0BanwDe6cMY&pp=ygUVTmVldENvZGUgQmluYXJ5IFdhdGNo",
@@ -1543,8 +1543,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "boolean resultAsExpected = false;\ntry {\n    ScriptEngineManager mgr = new ScriptEngineManager();\n    ScriptEngine engine = mgr.getEngineByName(\"JavaScript\");\n    Object expectedVal = engine.eval(expected);\n    if (expectedVal instanceof Boolean) {\n        resultAsExpected = (boolean) expectedVal == result;\n    } else if (expectedVal instanceof Number) {\n        resultAsExpected = Double.compare(((Number) expectedVal).doubleValue(), ((Number) result).doubleValue()) == 0;\n    } else {\n        resultAsExpected = expectedVal.equals(result);\n    }\n} catch (ScriptException e) {\n    // Handle scripting evaluation errors if necessary\n}",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=I1HBykyZvbc&pp=ygUoTmVldENvZGUgQ29udmVydCBhIE51bWJlciB0byBIZXhhZGVjaW1hbA%3D%3D",
     "method_name": "toHex"
@@ -1595,8 +1595,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=_g9jrLuAphs&pp=ygUbTmVldENvZGUgTG9uZ2VzdCBQYWxpbmRyb21l",
     "method_name": "longestPalindrome"
@@ -1647,8 +1647,8 @@
     },
     "compare_func": {
       "python": "return str(result) == eval(expected)",
-      "java": "return result.toString().equals(String.valueOf(eval(expected)));",
-      "cpp": "bool compareFunction(const std::string &result, const std::string &expected) {\n    return result == expected;\n}\n"
+      "java": "return result.toString().equals(expected.toString());",
+      "cpp": "return result == expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=jziDtPZJ4fw&pp=ygUUTmVldENvZGUgQWRkIFN0cmluZ3M%3D",
     "method_name": "addStrings"
@@ -1699,8 +1699,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=5rHz_6s2Buw&pp=ygUYTmVldENvZGUgQXJyYW5naW5nIENvaW5z",
     "method_name": "arrangeCoins"
@@ -1751,8 +1751,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=JW8fgvoxPTg&pp=ygUXTmVldENvZGUgQXNzaWduIENvb2tpZXM%3D",
     "method_name": "findContentChildren"
@@ -1803,8 +1803,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=2qEmA76Unm4&pp=ygUjTmVldENvZGUgUmVwZWF0ZWQgU3Vic3RyaW5nIFBhdHRlcm4%3D",
     "method_name": "repeatedSubstringPattern"
@@ -1854,7 +1854,7 @@
     "compare_func": {
       "python": "return result == eval(expected)",
       "java": "return result.equals(expected);",
-      "cpp": "return result == std::stoi(expected);"
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=3KMlpe8eZ0E&pp=ygUfTmVldENvZGUgTGljZW5zZSBLZXkgRm9ybWF0dGluZw%3D%3D",
     "method_name": "licenseKeyFormatting"
@@ -1955,8 +1955,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=NejSCTIdd5k&pp=ygUYTmVldENvZGUgVGVlbW8gQXR0YWNraW5n",
     "method_name": "findPoisonedDuration"
@@ -2005,8 +2005,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    return result.equals(Class.forName(expected).getConstructor().newInstance());\n} catch (Exception e) {\n    return false;\n}",
-      "cpp": "try {\n    return result == std::stoi(expected);\n} catch(const std::invalid_argument &ia) {\n    return false;\n}\nreturn false;"
+      "java": "return result.equals(expected);",
+      "cpp": "try {\n    return result.asString() == expected.asString();\n} catch(const std::exception &e) {\n    return false;\n}"
     },
     "explanation": "https://www.youtube.com/watch?v=sbmq-efwOsA&pp=ygUPTmVldENvZGUgQmFzZSA3",
     "method_name": "convertToBase7"
@@ -2055,8 +2055,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=HLZLwjzIVGo&pp=ygUXTmVldENvZGUgUGVyZmVjdCBOdW1iZXI%3D",
     "method_name": "checkPerfectNumber"
@@ -2107,8 +2107,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    ScriptEngineManager manager = new ScriptEngineManager();\n    ScriptEngine engine = manager.getEngineByName(\"JavaScript\");\n    Object expectedValue = engine.eval(expected);\n    return result.equals(expectedValue);\n} catch (ScriptException e) {\n    e.printStackTrace();\n    return false;\n}",
-      "cpp": "try {\n    return result == std::stod(expected);\n} catch (const std::invalid_argument&) {\n    // Handle the case where the expected string is not a valid double\n    return false;\n} catch (const std::out_of_range&) {\n    // Handle the case where the number is out of double's range\n    return false;\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=Q2Tw6gcVEwc&pp=ygUaTmVldENvZGUgWmlnemFnIENvbnZlcnNpb24%3D",
     "method_name": "convert"
@@ -2157,8 +2157,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.parseInt(result) == expected;",
-      "cpp": "return result == static_cast<int>(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=UuiTKBwPgAo&pp=ygUiTmVldENvZGUgQ29udGFpbmVyIFdpdGggTW9zdCBXYXRlcg%3D%3D",
     "method_name": "maxArea"
@@ -2207,8 +2207,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return result == static_cast<int>(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=PXWT4wzkA6M&pp=ygUVTmVldENvZGUgM1N1bSBDbG9zZXN0",
     "method_name": "threeSumClosest"
@@ -2259,8 +2259,8 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return result == static_cast<int>(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=U8XENwh8Oy8&pp=ygUnTmVldENvZGUgU2VhcmNoIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5",
     "method_name": "search"
@@ -2311,8 +2311,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n  return Objects.equals(result, eval(expected));\n} catch (Exception e) {\n  return false;\n}",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "if (result instanceof int[] && expected instanceof String) {\n    int[] resultArray = (int[]) result;\n    String expectedStr = (String) expected;\n    // Parse the expected string to an int array\n    String[] parts = expectedStr.replaceAll(\"[()\\s]\", \"\").split(\",\");\n    int[] expectedArray = new int[parts.length];\n    for (int i = 0; i < parts.length; i++) {\n        expectedArray[i] = Integer.parseInt(parts[i]);\n    }\n    // Compare the arrays\n    return Arrays.equals(resultArray, expectedArray);\n}\nreturn false;",
+      "cpp": "if (result.isArray() && expected.isString()) {\n    // Convert expected string to a vector of integers\n    std::string expectedStr = expected.asString();\n    std::regex re(\"\\\\((-?\\\\d+),\\\\s*(-?\\\\d+)\\\\)\");\n    std::smatch match;\n    if (std::regex_search(expectedStr, match, re)) {\n        std::vector<int> expectedVec = {std::stoi(match[1]), std::stoi(match[2])};\n        // Convert result JSON array to a vector of integers\n        std::vector<int> resultVec;\n        for (const auto& elem : result) {\n            resultVec.push_back(elem.asInt());\n        }\n        // Compare the vectors\n        return resultVec == expectedVec;\n    }\n}\nreturn false;"
     },
     "explanation": "https://www.youtube.com/watch?v=4sQL7R5ySUU&pp=ygVATmVldENvZGUgRmluZCBGaXJzdCBhbmQgTGFzdCBQb3NpdGlvbiBvZiBFbGVtZW50IGluIFNvcnRlZCBBcnJheQ%3D%3D",
     "method_name": "searchRange"
@@ -2364,7 +2364,7 @@
     "compare_func": {
       "python": "return result == eval(expected)",
       "java": "return Objects.equals(result, expected);",
-      "cpp": "return result == std::stoi(expected);"
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=iP4RH2zespg&pp=ygUWTmVldENvZGUgQ291bnQgYW5kIFNheQ%3D%3D",
     "method_name": "countAndSay"
@@ -2415,8 +2415,8 @@
     },
     "compare_func": {
       "python": "return sorted([sorted(x) for x in result]) == eval(expected)",
-      "java": "Arrays.deepEquals(\n    result.stream().map(arr -> Arrays.stream(arr).sorted().toArray(Integer[]::new)).sorted((a1, a2) -> Arrays.compare(a1, a2)).toArray(Integer[][]::new), \n    Arrays.stream(expected).map(arr -> Arrays.stream(arr).sorted().toArray(Integer[]::new)).sorted((a1, a2) -> Arrays.compare(a1, a2)).toArray(Integer[][]::new)\n)",
-      "cpp": "std::vector<std::vector<int>> sortedResult;\nfor (const auto& vec : result) {\n    std::vector<int> sortedVec = vec;\n    std::sort(sortedVec.begin(), sortedVec.end());\n    sortedResult.push_back(sortedVec);\n}\nstd::sort(sortedResult.begin(), sortedResult.end());\nreturn sortedResult == expected;"
+      "java": "Integer[][] resultArray = (Integer[][]) result;\nInteger[][] expectedArray = (Integer[][]) expected;\n\n// Sort each individual list in the result\nfor (Integer[] arr : resultArray) {\n    Arrays.sort(arr);\n}\n// Sort the entire result array\nArrays.sort(resultArray, (a1, a2) -> Arrays.compare(a1, a2));\n\n// Sort each individual list in the expected\nfor (Integer[] arr : expectedArray) {\n    Arrays.sort(arr);\n}\n// Sort the entire expected array\nArrays.sort(expectedArray, (a1, a2) -> Arrays.compare(a1, a2));\n\n// Compare the sorted arrays\nreturn Arrays.deepEquals(resultArray, expectedArray);",
+      "cpp": "std::vector<std::vector<int>> sortedResult;\nfor (const auto& vec : result) {\n    std::vector<int> sortedVec = vec;\n    std::sort(sortedVec.begin(), sortedVec.end());\n    sortedResult.push_back(sortedVec);\n}\nstd::sort(sortedResult.begin(), sortedResult.end());\n\nstd::vector<std::vector<int>> sortedExpected;\nfor (const auto& vec : expected) {\n    std::vector<int> sortedVec = vec;\n    std::sort(sortedVec.begin(), sortedVec.end());\n    sortedExpected.push_back(sortedVec);\n}\nstd::sort(sortedExpected.begin(), sortedExpected.end());\n\nreturn sortedResult == sortedExpected;"
     },
     "explanation": "https://www.youtube.com/watch?v=FOyRpNUSFeA&pp=ygUbTmVldENvZGUgQ29tYmluYXRpb24gU3VtIElJ",
     "method_name": "combinationSum2"
@@ -2467,8 +2467,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "{\n    return result == std::stoi(expected);\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=1vZswirL8Y8&pp=ygUZTmVldENvZGUgTXVsdGlwbHkgU3RyaW5ncw%3D%3D",
     "method_name": "multiply"
@@ -2519,8 +2519,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "std::to_string(result) == expected;"
+      "java": "return Integer.parseInt((String) expected) == (int) result;",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=dJ7sWiOoK7g&pp=ygUVTmVldENvZGUgSnVtcCBHYW1lIElJ",
     "method_name": "jump"
@@ -2571,8 +2571,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=5WZl3MMT0Eg&pp=ygUZTmVldENvZGUgTWF4aW11bSBTdWJhcnJheQ%3D%3D",
     "method_name": "maxSubArray"
@@ -2621,8 +2621,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "List<Integer> resultList = (List<Integer>) result;\nList<Integer> expectedList = new Gson().fromJson((String) expected, new TypeToken<List<Integer>>() {}.getType());\nreturn resultList.equals(expectedList);",
+      "cpp": "std::vector<int> resultVec = jsonToValue<std::vector<int>>(result);\nstd::vector<int> expectedVec = jsonToValue<std::vector<int>>(expected);\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=BJnMZNwUk1M&pp=ygUWTmVldENvZGUgU3BpcmFsIE1hdHJpeA%3D%3D",
     "method_name": "spiralOrder"
@@ -2671,8 +2671,8 @@
     },
     "compare_func": {
       "python": "return str(sorted(result)) == str(eval(expected))",
-      "java": "return Arrays.toString(Arrays.stream(result).sorted().toArray()).equals(Arrays.toString(eval(expected)))",
-      "cpp": "std::string resultStr = std::accumulate(result.begin(), result.end(), std::string(), [](std::string a, int b) { return a + std::to_string(b) + \", \"; });\nresultStr.pop_back(); // Remove last comma\nresultStr.pop_back(); // Remove last space\nstd::string expectedStr = std::accumulate(expected.begin(), expected.end(), std::string(), [](std::string a, int b) { return a + std::to_string(b) + \", \"; });\nexpectedStr.pop_back(); // Remove last comma\nexpectedStr.pop_back(); // Remove last space\n\nstd::sort(result.begin(), result.end());\n\nreturn resultStr == expectedStr;"
+      "java": "int[][] resultArray = (int[][]) result;\nint[][] expectedArray = (int[][]) expected;\n\n// Sort both arrays of intervals\nArrays.sort(resultArray, (a, b) -> Integer.compare(a[0], b[0]));\nArrays.sort(expectedArray, (a, b) -> Integer.compare(a[0], b[0]));\n\n// Compare the sorted arrays\nreturn Arrays.deepEquals(resultArray, expectedArray);",
+      "cpp": "// Convert expected to a vector of vectors of ints\nstd::vector<std::vector<int>> expectedVec;\nfor (const auto& interval : expected) {\n    std::vector<int> temp;\n    for (const auto& num : interval) {\n        temp.push_back(num.asInt());\n    }\n    expectedVec.push_back(temp);\n}\n\n// Sort both result and expected vectors\nstd::sort(result.begin(), result.end());\nstd::sort(expectedVec.begin(), expectedVec.end());\n\n// Compare the sorted vectors\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=44H3cEC2fFM&pp=ygUYTmVldENvZGUgTWVyZ2UgSW50ZXJ2YWxz",
     "method_name": "merge"
@@ -2721,8 +2721,8 @@
     },
     "compare_func": {
       "python": "return str(sorted(result)) == str(eval(expected))",
-      "java": "return result.stream().sorted().toString().equals(String.valueOf(new ScriptEngineManager().getEngineByName(\"JavaScript\").eval(expected)))",
-      "cpp": "std::string sortedResult = result;\nstd::sort(sortedResult.begin(), sortedResult.end());\nstd::string evaluatedExpected = std::to_string(eval(expected));\nreturn sortedResult == evaluatedExpected;"
+      "java": "int[][] resultArray = (int[][]) result;\nint[][] expectedArray = new Gson().fromJson(expected.toString(), int[][].class);\n\n// Sort both arrays by the first element of each interval\nArrays.sort(resultArray, (a, b) -> Integer.compare(a[0], b[0]));\nArrays.sort(expectedArray, (a, b) -> Integer.compare(a[0], b[0]));\n\n// Compare the sorted arrays\nreturn Arrays.deepEquals(resultArray, expectedArray);",
+      "cpp": "// Convert result and expected to vectors of vectors of integers\nstd::vector<std::vector<int>> resultVec = jsonToValue<std::vector<std::vector<int>>>(result);\nstd::vector<std::vector<int>> expectedVec = jsonToValue<std::vector<std::vector<int>>>(expected);\n\n// Sort both vectors by the first element of each interval\nstd::sort(resultVec.begin(), resultVec.end(), [](const std::vector<int>& a, const std::vector<int>& b) {\n    return a[0] < b[0];\n});\nstd::sort(expectedVec.begin(), expectedVec.end(), [](const std::vector<int>& a, const std::vector<int>& b) {\n    return a[0] < b[0];\n});\n\n// Compare the sorted vectors\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=A8NUOmlwOlM&pp=ygUYTmVldENvZGUgSW5zZXJ0IEludGVydmFs",
     "method_name": "insert"
@@ -2771,8 +2771,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=d3UOz7zdE4I&pp=ygUYTmVldENvZGUgVW5pcXVlIFBhdGhzIElJ",
     "method_name": "uniquePathsWithObstacles"
@@ -2827,8 +2827,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n  return result == Integer.parseInt(expected);\n} catch (NumberFormatException e) {\n  return false;\n}",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=qYlHrAKJfyA&pp=ygUWTmVldENvZGUgU2ltcGxpZnkgUGF0aA%3D%3D",
     "method_name": "simplifyPath"
@@ -2879,8 +2879,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=XYi2-LPrwm4&pp=ygUWTmVldENvZGUgRWRpdCBEaXN0YW5jZQ%3D%3D",
     "method_name": "minDistance"
@@ -2931,8 +2931,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().equalsIgnoreCase(expected);",
-      "cpp": "return toLowerCase(result) == toLowerCase(expected); \n\nstd::string toLowerCase(const std::string &input) {\n    std::string lowercaseString;\n    for (char c : input) {\n        lowercaseString += std::tolower(c);\n    }\n    return lowercaseString;\n}"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Ber2pi2C0j0&pp=ygUbTmVldENvZGUgU2VhcmNoIGEgMkQgTWF0cml4",
     "method_name": "searchMatrix"
@@ -2983,8 +2983,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=pfiQ_PS1g8E&pp=ygUUTmVldENvZGUgV29yZCBTZWFyY2g%3D",
     "method_name": "exist"
@@ -3035,8 +3035,8 @@
     },
     "compare_func": {
       "python": "return sorted([sorted(x) for x in result]) == sorted(eval(expected))",
-      "java": "return Arrays.equals(\n    Arrays.stream(result)\n        .map(subArray -> Arrays.stream(subArray).sorted().toArray(String[]::new))\n        .sorted(new Comparator<>() {\n            public int compare(String[] a, String[] b) {\n                for (int i = 0; i < Math.min(a.length, b.length); i++) {\n                    int cmp = a[i].compareTo(b[i]);\n                    if (cmp != 0) {\n                        return cmp;\n                    }\n                }\n                return Integer.compare(a.length, b.length);\n            }\n        }).toArray(String[][]::new), \n    Arrays.stream(expected)\n        .sorted(new Comparator<>() {\n            public int compare(String[] a, String[] b) {\n                for (int i = 0; i < Math.min(a.length, b.length); i++) {\n                    int cmp = a[i].compareTo(b[i]);\n                    if (cmp != 0) {\n                        return cmp;\n                    }\n                }\n                return Integer.compare(a.length, b.length);\n            }\n        }).toArray(String[][]::new)\n);",
-      "cpp": "#include <algorithm>\n#include <vector>\n\nbool compareFunction(const std::vector<std::vector<int>>& result, const std::vector<std::vector<int>>& expected) {\n    auto sort_inner_vectors = [](std::vector<int>& vec) {\n        std::sort(vec.begin(), vec.end());\n    };\n\n    // Sort inner vectors of result\n    std::vector<std::vector<int>> sorted_result = result;\n    std::for_each(sorted_result.begin(), sorted_result.end(), sort_inner_vectors);\n    std::sort(sorted_result.begin(), sorted_result.end());\n\n    // Sort inner vectors of expected\n    std::vector<std::vector<int>> sorted_expected = expected;\n    std::for_each(sorted_expected.begin(), sorted_expected.end(), sort_inner_vectors);\n    std::sort(sorted_expected.begin(), sorted_expected.end());\n\n    return sorted_result == sorted_expected;\n}"
+      "java": "List<List<Integer>> resultList = (List<List<Integer>>) result;\nList<List<Integer>> expectedList = (List<List<Integer>>) expected;\n\nComparator<List<Integer>> listComparator = (a, b) -> {\n    int minLength = Math.min(a.size(), b.size());\n    for (int i = 0; i < minLength; i++) {\n        int cmp = Integer.compare(a.get(i), b.get(i));\n        if (cmp != 0) {\n            return cmp;\n        }\n    }\n    return Integer.compare(a.size(), b.size());\n};\n\nresultList.forEach(Collections::sort);\nexpectedList.forEach(Collections::sort);\n\nCollections.sort(resultList, listComparator);\nCollections.sort(expectedList, listComparator);\n\nreturn resultList.equals(expectedList);",
+      "cpp": "bool compareFunction(const std::vector<std::vector<int>>& result, const std::vector<std::vector<int>>& expected) {\n    auto sort_inner_vectors = [](std::vector<int>& vec) {\n        std::sort(vec.begin(), vec.end());\n    };\n\n    // Sort inner vectors of result\n    std::vector<std::vector<int>> sorted_result = result;\n    std::for_each(sorted_result.begin(), sorted_result.end(), sort_inner_vectors);\n    std::sort(sorted_result.begin(), sorted_result.end());\n\n    // Sort inner vectors of expected\n    std::vector<std::vector<int>> sorted_expected = expected;\n    std::for_each(sorted_expected.begin(), sorted_expected.end(), sort_inner_vectors);\n    std::sort(sorted_expected.begin(), sorted_expected.end());\n\n    return sorted_result == sorted_expected;\n}"
     },
     "explanation": "https://www.youtube.com/watch?v=Vn2v6ajA7U0&pp=ygUTTmVldENvZGUgU3Vic2V0cyBJSQ%3D%3D",
     "method_name": "subsetsWithDup"
@@ -3087,8 +3087,8 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(Arrays.stream(result).sorted().toArray(), Arrays.stream(eval(expected)).sorted().toArray());",
-      "cpp": "std::sort(result.begin(), result.end());\nstd::sort(expected.begin(), expected.end());\nreturn result == expected;"
+      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = (List<String>) expected;\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "cpp": "std::vector<std::string> expectedVec = jsonToValue<std::vector<std::string>>(expected);\nstd::sort(result.begin(), result.end());\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=61tN4YEdiTM&pp=ygUdTmVldENvZGUgUmVzdG9yZSBJUCBBZGRyZXNzZXM%3D",
     "method_name": "restoreIpAddresses"
@@ -3139,8 +3139,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "std::transform(result.begin(), result.end(), result.begin(), ::tolower);\nstd::transform(expected.begin(), expected.end(), expected.begin(), ::tolower);\nreturn result == expected;"
+      "java": "return ((Boolean) result).toString().toLowerCase().equals(expected.toString().toLowerCase());",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=3Rw3p9LrgvE&pp=ygUcTmVldENvZGUgSW50ZXJsZWF2aW5nIFN0cmluZw%3D%3D",
     "method_name": "isInterleave"
@@ -3189,8 +3189,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=OM1MTokvxs4&pp=ygURTmVldENvZGUgVHJpYW5nbGU%3D",
     "method_name": "minimumTotal"
@@ -3239,8 +3239,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=P6RZZMu_maU&pp=ygUlTmVldENvZGUgTG9uZ2VzdCBDb25zZWN1dGl2ZSBTZXF1ZW5jZQ%3D%3D",
     "method_name": "longestConsecutive"
@@ -3289,8 +3289,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return Integer.toString((Integer) result).equals(expected);",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=lJwbPZGo05A&pp=ygUUTmVldENvZGUgR2FzIFN0YXRpb24%3D",
     "method_name": "canCompleteCircuit"
@@ -3341,8 +3341,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return std::tolower(result) == std::tolower(expected);"
+      "java": "return ((Boolean) result).equals(Boolean.parseBoolean(expected.toString()));",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Sx9NNgInc3A&pp=ygUTTmVldENvZGUgV29yZCBCcmVhaw%3D%3D",
     "method_name": "wordBreak"
@@ -3393,8 +3393,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt((String) result) == Integer.parseInt((String) expected);",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=iu0082c4HDE&pp=ygUpTmVldENvZGUgRXZhbHVhdGUgUmV2ZXJzZSBQb2xpc2ggTm90YXRpb24%3D",
     "method_name": "evalRPN"
@@ -3445,8 +3445,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return result.equals(expected);",
+      "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=7kUEwiwwnlA&pp=ygUiTmVldENvZGUgUmV2ZXJzZSBXb3JkcyBpbiBhIFN0cmluZw%3D%3D",
     "method_name": "reverseWords"
@@ -3497,8 +3497,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return static_cast<int>(result) == static_cast<int>(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return static_cast<int>(result) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=nIVW4P8b1VA&pp=ygUtTmVldENvZGUgRmluZCBNaW5pbXVtIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5",
     "method_name": "findMin"
@@ -3547,8 +3547,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "return result == std::stoi(expected);"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=kMzJy9es7Hc&pp=ygUaTmVldENvZGUgRmluZCBQZWFrIEVsZW1lbnQ%3D",
     "method_name": "findPeakElement"
@@ -3597,8 +3597,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=imCKT3T2Oao&pp=ygUUTmVldENvZGUgTWF4aW11bSBHYXA%3D",
     "method_name": "maximumGap"
@@ -3649,8 +3649,8 @@
     },
     "compare_func": {
       "python": "return abs(float(result) - float(expected)) < 0.00001",
-      "java": "return Math.abs(Double.parseDouble(result) - Double.parseDouble(expected)) < 0.00001;",
-      "cpp": "return std::abs(std::stof(result) - std::stof(expected)) < 0.00001;"
+      "java": "return Math.abs((double) result - (double) expected) < 0.00001;",
+      "cpp": "return std::abs(result.asDouble() - expected.asDouble()) < 0.00001;"
     },
     "explanation": "https://www.youtube.com/watch?v=q6IEA26hvXc&pp=ygUkTmVldENvZGUgTWVkaWFuIG9mIFR3byBTb3J0ZWQgQXJyYXlz",
     "method_name": "findMedianSortedArrays"
@@ -3701,8 +3701,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return Integer.toString((Integer) result).equals(expected);",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=8g78yfzMlao&pp=ygUfTmVldENvZGUgRmlyc3QgTWlzc2luZyBQb3NpdGl2ZQ%3D%3D",
     "method_name": "firstMissingPositive"
@@ -3753,8 +3753,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    Object expectedValue = engine.eval(expected);\n    return result.equals(expectedValue);\n} catch (ScriptException e) {\n    // Handle exception, maybe log it or return false\n    return false;\n}",
-      "cpp": "#include <string>\n#include <iostream>\n#include <sstream>\n\nbool compareFunction(const std::string& result, const std::string& expected) {\n    std::istringstream iss(expected);\n    int n;\n    iss >> n;  // Assuming the expected value is an integer for direct evaluation after comparison\n    \n    return std::to_string(n) == result;  // Assuming result should also be a string representation of an integer\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result == expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=W9SIlE2jhBQ&pp=ygUdTmVldENvZGUgUGVybXV0YXRpb24gU2VxdWVuY2U%3D",
     "method_name": "getPermutation"
@@ -3805,8 +3805,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(eval(expected));",
-      "cpp": "#include <string>\n#include <sstream>\n\nbool compareFunction(const std::string& result, const std::string& expected) {\n    std::stringstream ss;\n    ss << expected;  \n\n    // Ensure that the expected string represents a valid number\n    double evalExpected;\n    if(!(ss >> evalExpected)) {\n        return false; // Invalid expected string\n    }\n\n    double evalResult;\n    std::stringstream resultStream(result);\n    if(!(resultStream >> evalResult)) {\n        return false; // Invalid result string\n    }\n\n    return evalResult == evalExpected;\n}"
+      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = (List<String>) expected;\nreturn resultList.equals(expectedList);",
+      "cpp": "std::vector<std::string> resultList = jsonToValue<std::vector<std::string>>(result);\nstd::vector<std::string> expectedList = jsonToValue<std::vector<std::string>>(expected);\nreturn resultList == expectedList;"
     },
     "explanation": "https://www.youtube.com/watch?v=TzMl4Z7pVh8&pp=ygUbTmVldENvZGUgVGV4dCBKdXN0aWZpY2F0aW9u",
     "method_name": "fullJustify"
@@ -3857,8 +3857,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    Object evaluatedExpected = evaluate(expected);\n    return result.equals(evaluatedExpected);\n} catch (ScriptException e) {\n    e.printStackTrace();\n    return false;\n}",
-      "cpp": "#include <string>\n#include <sstream>\n#include <cmath>\n\nbool compareFunction(const std::string& result, const std::string& expected) {\n    std::istringstream expectedStream(expected);\n    double expectedValue;\n    if (!(expectedStream >> expectedValue)) {\n        // Handling the case if expected cannot be evaluated as a double\n        return false;\n    }\n\n    std::istringstream resultStream(result);\n    double resultValue;\n    if (!(resultStream >> resultValue)) {\n        // Handling the case if result cannot be evaluated as a double\n        return false;\n    }\n\n    // Checking if the result and evaluated expected value are approximately equal for floating point comparisons\n    return std::fabs(resultValue - expectedValue) < 1e-9; // Adjust the tolerance as needed\n}"
+      "java": "return result.equals(expected);",
+      "cpp": "return result == expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=jSto0O4AJbM&pp=ygUhTmVldENvZGUgTWluaW11bSBXaW5kb3cgU3Vic3RyaW5n",
     "method_name": "minWindow"
@@ -3907,8 +3907,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=zx5Sw9130L0&pp=ygUnTmVldENvZGUgTGFyZ2VzdCBSZWN0YW5nbGUgaW4gSGlzdG9ncmFt",
     "method_name": "largestRectangleArea"
@@ -3959,8 +3959,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=tOylVCugy9k&pp=ygUaTmVldENvZGUgTWF4aW1hbCBSZWN0YW5nbGU%3D",
     "method_name": "maximalRectangle"
@@ -4011,8 +4011,8 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return result.toString().toLowerCase().equals(expected.toLowerCase());",
-      "cpp": "return tolower(result) == tolower(expected);"
+      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=MDmZm_aVDF8&pp=ygUYTmVldENvZGUgU2NyYW1ibGUgU3RyaW5n",
     "method_name": "isScramble"
@@ -4061,8 +4061,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt((String) result) == Integer.parseInt((String) expected);",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=-RDzMJ33nx8&pp=ygUeTmVldENvZGUgRGlzdGluY3QgU3Vic2VxdWVuY2Vz",
     "method_name": "numDistinct"
@@ -4113,8 +4113,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=37s1_xBiqH0&pp=ygUsTmVldENvZGUgQmVzdCBUaW1lIHRvIEJ1eSBhbmQgU2VsbCBTdG9jayBJSUk%3D",
     "method_name": "maxProfit"
@@ -4165,8 +4165,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=h9iTnkgv05E&pp=ygUUTmVldENvZGUgV29yZCBMYWRkZXI%3D",
     "method_name": "ladderLength"
@@ -4217,8 +4217,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=1IzCRCcK17A&pp=ygUOTmVldENvZGUgQ2FuZHk%3D",
     "method_name": "candy"
@@ -4270,7 +4270,7 @@
     "compare_func": {
       "python": "def normalize(s): return sorted([x.strip() for x in eval(s)])\n    return normalize(str(result)) == normalize(expected)",
       "java": "String normalize(String s) {\n    return Arrays.stream(s.trim().substring(1, s.length() - 1).split(\",\"))\n                  .map(String::trim)\n                  .sorted()\n                  .collect(Collectors.joining(\",\"));\n}\n\nString resultNormalized = normalize(result.toString());\nString expectedNormalized = normalize(expected);\nreturn resultNormalized.equals(expectedNormalized);",
-      "cpp": "#include <vector>\n#include <string>\n#include <algorithm>\n#include <cctype> // for isspace\n\nstd::string trim(const std::string& str) {\n    size_t first = str.find_first_not_of(\" \");\n    if (first == std::string::npos) return \"\";\n    size_t last = str.find_last_not_of(\" \");\n    return str.substr(first, (last-first+1));\n}\n\nstd::vector<std::string> normalize(const std::string& s) {\n    std::vector<std::string> elements;\n    // Assuming the input format can be parsed as a comma-separated string\n    size_t pos = 0;\n    size_t comma_pos;\n    while ((comma_pos = s.find(\",\", pos)) != std::string::npos) {\n        elements.push_back(trim(s.substr(pos, comma_pos - pos)));\n        pos = comma_pos + 1;\n    }\n    elements.push_back(trim(s.substr(pos)));\n    std::sort(elements.begin(), elements.end());\n    return elements;\n}\n\n// Comparison\nnormalize(std::to_string(result)) == normalize(expected)"
+      "cpp": "std::vector<std::string> resultVec = jsonToValue<std::vector<std::string>>(result);\nstd::vector<std::string> expectedVec = jsonToValue<std::vector<std::string>>(expected);\nstd::sort(resultVec.begin(), resultVec.end());\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=QgLKdluDo08&pp=ygUWTmVldENvZGUgV29yZCBCcmVhayBJSQ%3D%3D",
     "method_name": "wordBreak"
@@ -4321,8 +4321,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return String.valueOf(result).equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=oUnF7o88_Xc&pp=ygUwTmVldENvZGUgRmluZCBNaW5pbXVtIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5IElJ",
     "method_name": "findMin"
@@ -4373,8 +4373,8 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return result.toString().equals(expected);",
-      "cpp": "return std::to_string(result) == expected;"
+      "java": "return ((Integer) result).toString().equals(expected);",
+      "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=NshLjAWa03c&pp=ygUrTmVldENvZGUgQmVzdCBUaW1lIHRvIEJ1eSBhbmQgU2VsbCBTdG9jayBJVg%3D%3D",
     "method_name": "maxProfit"
@@ -4423,8 +4423,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    return Double.compare(result, Double.parseDouble(expected)) == 0;\n} catch (NumberFormatException e) {\n    return result.equals(expected);\n}",
-      "cpp": "# include <cstdlib>\n#include <iostream>\n\nreturn std::system((\"echo \" + result + \" | \").c_str()) == std::system((\"echo \" + expected + \" | python\").c_str());"
+      "java": "if (result instanceof List && expected instanceof String) {\n    // Parse the expected string as a list of lists of integers\n    Gson gson = new Gson();\n    List<List<Integer>> expectedList = gson.fromJson((String) expected, new TypeToken<List<List<Integer>>>() {}.getType());\n    // Cast the result to a list of lists of integers\n    List<List<Integer>> resultList = (List<List<Integer>>) result;\n    // Compare the two lists\n    return resultList.equals(expectedList);\n} else {\n    return result.equals(expected);\n}",
+      "cpp": "if (result.isArray() && expected.isString()) {\n    // Parse the expected string as a JSON array\n    Json::Value expectedJson;\n    Json::CharReaderBuilder builder;\n    std::string errors;\n    std::unique_ptr<Json::CharReader> reader(builder.newCharReader());\n    if (!reader->parse(expected.asCString(), expected.asCString() + expected.asString().length(), &expectedJson, &errors)) {\n        throw std::runtime_error(\"Failed to parse expected JSON: \" + errors);\n    }\n    \n    // Sort both result and expectedJson\n    auto sortJsonArray = [](Json::Value& array) {\n        std::sort(array.begin(), array.end(), [](const Json::Value& a, const Json::Value& b) {\n            if (a[0] != b[0]) return a[0].asInt() < b[0].asInt();\n            return a[1].asInt() < b[1].asInt();\n        });\n    };\n    \n    sortJsonArray(result);\n    sortJsonArray(expectedJson);\n    \n    // Compare the sorted arrays\n    return result == expectedJson;\n} else {\n    return result == expected;\n}"
     },
     "explanation": "https://www.youtube.com/watch?v=XhzHXj7wrwo&pp=ygUcTmVldENvZGUgVGhlIFNreWxpbmUgUHJvYmxlbQ%3D%3D",
     "method_name": "getSkyline"
@@ -4475,8 +4475,8 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result) == Integer.parseInt(expected);",
-      "cpp": "return std::stoi(result) == std::stoi(expected);"
+      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=zsJ-J08Qgdk&pp=ygUZTmVldENvZGUgQmFzaWMgQ2FsY3VsYXRvcg%3D%3D",
     "method_name": "calculate"
@@ -4525,8 +4525,8 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "try {\n    /* If the expected string is a valid expression, evaluate it */\n    Object evaluatedExpected = javax.script.ScriptEngineManager()\n                                 .getEngineByName(\"nashorn\")\n                                 .eval(expected);\n    return result.equals(evaluatedExpected);\n} catch (Exception e) {\n    // In case of any exception during evaluation, return false;\n    return false;\n}",
-      "cpp": "return result == std::atoi(expected.c_str());"
+      "java": "if (result instanceof int[] && expected instanceof String) {\n    // Parse the expected string as a JSON array\n    Gson gson = new Gson();\n    int[] expectedArray = gson.fromJson((String) expected, int[].class);\n    // Compare the arrays\n    return Arrays.equals((int[]) result, expectedArray);\n}\nreturn false;",
+      "cpp": "if (result.isArray() && expected.isArray()) {\n    std::vector<int> resultVec;\n    std::vector<int> expectedVec;\n    for (const auto& val : result) {\n        resultVec.push_back(val.asInt());\n    }\n    for (const auto& val : expected) {\n        expectedVec.push_back(val.asInt());\n    }\n    return resultVec == expectedVec;\n}\nreturn false;"
     },
     "explanation": "https://www.youtube.com/watch?v=DfljaUwZsOk&pp=ygUfTmVldENvZGUgU2xpZGluZyBXaW5kb3cgTWF4aW11bQ%3D%3D",
     "method_name": "maxSlidingWindow"
@@ -4577,8 +4577,8 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(\n    Arrays.stream(result.split(\",\")).sorted().toArray(),\n    Arrays.stream(eval(expected).split(\",\")).sorted().toArray()\n);",
-      "cpp": "std::vector<int> sorted_result = result;\nstd::vector<int> sorted_expected = expected;\n\nstd::sort(sorted_result.begin(), sorted_result.end());\nstd::sort(sorted_expected.begin(), sorted_expected.end());\n\nreturn sorted_result == sorted_expected;"
+      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = (List<String>) expected;\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "cpp": "std::vector<std::string> sorted_result = result.as<std::vector<std::string>>();\nstd::vector<std::string> sorted_expected = expected.as<std::vector<std::string>>();\n\nstd::sort(sorted_result.begin(), sorted_result.end());\nstd::sort(sorted_expected.begin(), sorted_expected.end());\n\nreturn sorted_result == sorted_expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=tunRDBsP7OQ&pp=ygUhTmVldENvZGUgRXhwcmVzc2lvbiBBZGQgT3BlcmF0b3Jz",
     "method_name": "addOperators"
@@ -4629,8 +4629,8 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "return Arrays.equals(Arrays.stream(result).sorted().toArray(), Arrays.stream(eval(expected)).sorted().toArray());",
-      "cpp": "std::sort(result.begin(), result.end());\nstd::vector<std::string> expectedVec;\nstd::istringstream iss(expected);\nstd::string token;\nwhile (std::getline(iss, token, ',')) {\n    expectedVec.push_back(token);\n}\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
+      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = (List<String>) expected;\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "cpp": "std::sort(result.begin(), result.end());\nstd::vector<std::string> expectedVec;\nstd::istringstream iss(expected.asString().substr(1, expected.asString().size() - 2));\nstd::string token;\nwhile (std::getline(iss, token, ',')) {\n    token.erase(remove(token.begin(), token.end(), '\\''), token.end());\n    expectedVec.push_back(token);\n}\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=mgQ4O9iUEbg&pp=ygUjTmVldENvZGUgUmVtb3ZlIEludmFsaWQgUGFyZW50aGVzZXM%3D",
     "method_name": "removeInvalidParentheses"

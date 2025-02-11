@@ -69,22 +69,34 @@ def init_db(test=False):
     return engine
 
 
-def drop_db(test=False):
+def drop_all_db(test=False):
     engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
 
     if database_exists(engine.url):
         Base.metadata.drop_all(bind=engine)
         print("Dropped all tables")
 
+def drop_db(table_names, test=False):
+    engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
+    if database_exists(engine.url):
+        table_list = [Base.metadata.tables[name] for name in table_names.split(',')]
+        Base.metadata.drop_all(bind=engine, tables=table_list)
+        print(f"Dropped tables: {table_names}")
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--drop",
+        "--dropall",
         action="store_true",
         help="Drop existing tables before creation"
+    )
+
+    parser.add_argument(
+        "--drop",
+        type=str,
+        help="Drop specific tables (comma-separated, ex: --drop=table1,table2)"
     )
 
     parser.add_argument(
@@ -95,10 +107,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if args.dropall:
+        drop_all_db()
     if args.drop:
-        drop_db()
+        drop_db(args.drop)
     if args.droptest:
-        drop_db(test=True)
+        drop_all_db(test=True)
 
     init_db()
     init_db(test=True)

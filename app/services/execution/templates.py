@@ -114,14 +114,15 @@ public class {file_name} {{
             
             try {{
                 String inputStr = test.get("input").getAsString();
-                Class<?>[] paramTypes = getParameterTypes(inputStr);
                 Object[] args = parseArguments(inputStr);
+                Class<?>[] paramTypes = getParameterTypes(args);
                 
                 Method method = Solution.class.getMethod("{method_name}", paramTypes);
                 Object output = method.invoke(solution, args);
                 boolean passed = compare(output, parseValue(test.get("expected").getAsString()));
                 result.addProperty("passed", passed);
                 result.addProperty("output", gson.toJson(output));
+                result.addProperty("expected", test.get("expected").getAsString());
             }} catch (Exception e) {{
                 result.addProperty("error", e.toString());
                 result.addProperty("passed", false);
@@ -135,61 +136,78 @@ public class {file_name} {{
         if (!arr.getClass().isArray()) {{
             return arr.getClass();
         }}
-        
-        Class<?> componentType = arr.getClass().getComponentType();
-        if (componentType.isPrimitive()) {{
-            return arr.getClass();
-        }}
+
+        Class<?> arrClass = arr.getClass();
+        if (arrClass == int[].class) return int[].class;
+        if (arrClass == double[].class) return double[].class;
+        if (arrClass == boolean[].class) return boolean[].class;
+        if (arrClass == char[].class) return char[].class;
+        if (arrClass == long[].class) return long[].class;
+        if (arrClass == float[].class) return float[].class;
+        if (arrClass == byte[].class) return byte[].class;
+        if (arrClass == short[].class) return short[].class;
         
         Object[] array = (Object[]) arr;
         if (array.length == 0) {{
             return Object[].class;
         }}
-        
-        boolean allIntegers = true;
-        boolean allArrays = true;
-        
+
+        // Find the most specific common type among non-null elements
+        Class<?> commonType = null;
         for (Object element : array) {{
-            if (element == null) continue;
-            if (!(element instanceof Integer)) allIntegers = false;
-            if (!element.getClass().isArray()) allArrays = false;
-        }}
-        
-        if (allIntegers) return int[].class;
-        if (allArrays) {{
-            Object firstNonNull = null;
-            for (Object element : array) {{
-                if (element != null) {{
-                    firstNonNull = element;
-                    break;
+            if (element != null) {{
+                Class<?> currentType = element.getClass();
+                if (commonType == null) {{
+                    commonType = currentType;
+                }} else {{
+                    // Find the most specific common superclass
+                    while (!commonType.isAssignableFrom(currentType)) {{
+                        commonType = commonType.getSuperclass();
+                        if (commonType == null) {{
+                            return Object[].class;
+                        }}
+                    }}
                 }}
             }}
-            if (firstNonNull != null) {{
-                Class<?> deeperType = getArrayType(firstNonNull);
-                return Array.newInstance(deeperType.getComponentType(), 0).getClass();
-            }}
         }}
-        return Object[].class;
+
+        // If all elements are null or no common type found
+        if (commonType == null) {{
+            return Object[].class;
+        }}
+
+        // Handle primitive wrapper types
+        if (commonType == Integer.class) return int[].class;
+        if (commonType == Double.class) return double[].class;
+        if (commonType == Boolean.class) return boolean[].class;
+        if (commonType == Character.class) return char[].class;
+        if (commonType == Long.class) return long[].class;
+        if (commonType == Float.class) return float[].class;
+        if (commonType == Byte.class) return byte[].class;
+        if (commonType == Short.class) return short[].class;
+
+        // For other types, return appropriate array type
+        return Array.newInstance(commonType, 0).getClass();
     }}
 
-    private static Class<?>[] getParameterTypes(String input) {{
-        Object[] args = parseArguments(input);
+    private static Class<?>[] getParameterTypes(Object[] args) {{
         Class<?>[] types = new Class<?>[args.length];
         for (int i = 0; i < args.length; i++) {{
             if (args[i] == null) {{
                 types[i] = Object.class;
             }} else if (args[i].getClass().isArray()) {{
                 types[i] = getArrayType(args[i]);
-            }} else if (args[i] instanceof Integer || args[i] instanceof Long) {{
-                types[i] = int.class;
-            }} else if (args[i] instanceof Double || args[i] instanceof Float) {{
-                types[i] = double.class;
-            }} else if (args[i] instanceof Boolean) {{
-                types[i] = boolean.class;
-            }} else if (args[i] instanceof Character) {{
-                types[i] = char.class;
             }} else {{
-                types[i] = args[i].getClass();
+                Class<?> type = args[i].getClass();
+                if (type == Integer.class) type = int.class;
+                if (type == Double.class) type = double.class;
+                if (type == Boolean.class) type = boolean.class;
+                if (type == Character.class) type = char.class;
+                if (type == Long.class) type = long.class;
+                if (type == Float.class) type = float.class;
+                if (type == Byte.class) type = byte.class;
+                if (type == Short.class) type = short.class;
+                types[i] = type;
             }}
         }}
         return types;
@@ -251,7 +269,7 @@ public class {file_name} {{
             elements.add(parseValue(current.toString().trim()));
         }}
 
-        return elements.toArray(new Object[0]);
+        return elements.toArray();
     }}
 
     private static Object parseValue(String value) {{
@@ -275,28 +293,20 @@ public class {file_name} {{
 
         // Handle arrays
         if (value.startsWith("[") && value.endsWith("]")) {{
-            Object[] elements = parseArray(value.substring(1, value.length() - 1));
-            if (elements.length == 0) return elements;
-            
-            // Check if all elements are arrays
-            boolean allArrays = Arrays.stream(elements)
-                .allMatch(e -> e != null && e.getClass().isArray());
-            if (allArrays) {{
-                return elements;
-            }}
-            
-            // Check if all elements are integers
-            boolean allIntegers = Arrays.stream(elements)
-                .allMatch(e -> e instanceof Integer);
-            if (allIntegers) {{
-                int[] result = new int[elements.length];
-                for (int i = 0; i < elements.length; i++) {{
-                    result[i] = (Integer)elements[i];
+            Object[] parsed = parseArray(value.substring(1, value.length() - 1));
+            Class<?> arrayType = getArrayType(parsed);
+
+            // Convert to the appropriate array type
+            int length = parsed.length;
+            Object typedArray = Array.newInstance(arrayType.getComponentType(), length);
+
+            for (int i = 0; i < length; i++) {{
+                if (parsed[i] != null) {{
+                    Array.set(typedArray, i, parsed[i]);
                 }}
-                return result;
             }}
-            
-            return elements;
+
+            return typedArray;
         }}
 
         // Handle objects/maps

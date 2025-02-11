@@ -31,10 +31,10 @@ class RuntimeAnalysisService:
 
         try:
             completion = await self.client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a code analysis assistant. Analyze the code and provide ONLY the time complexity in Big O notation (e.g. O(n), O(n^2)). No other text or explanations."},
-                    {"role": "user", "content": f"Analyze this code:\n\n```python\n{code}\n```"}
+                    {"role": "user", "content": f"Analyze this code:\n\n```\n{code}\n```"}
                 ],
                 response_format=RuntimeAnalysis,
                 temperature=0

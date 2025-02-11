@@ -45,7 +45,7 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "int[] expectedArray = gson.fromJson((String) expected, int[].class);\nArrays.sort((int[]) result);\nArrays.sort(expectedArray);\nreturn Arrays.equals((int[]) result, expectedArray);",
+      "java": "return Arrays.equals((int[]) result, (int []) expected);",
       "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expected_vector;\nstd::stringstream ss(expected.asString());\nint number;\nwhile (ss >> number) {\n    expected_vector.push_back(number);\n    if (ss.peek() == ',') {\n        ss.ignore();\n    }\n}\nstd::sort(expected_vector.begin(), expected_vector.end());\nreturn result == expected_vector;"
     },
     "explanation": "https://www.youtube.com/watch?v=KLlXCFG5TnA&pp=ygUQTmVldENvZGUgVHdvIFN1bQ%3D%3D",
@@ -201,7 +201,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(Boolean.parseBoolean((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=WTzjTskDFMg&pp=ygUaTmVldENvZGUgVmFsaWQgUGFyZW50aGVzZXM%3D",
@@ -408,7 +408,7 @@
     "compare_func": {
       "python": "return str(result) == expected",
       "java": "return Arrays.equals((int[]) result, gson.fromJson((String) expected, int[].class));",
-      "cpp": "std::vector<int> expectedVec = jsonToValue<std::vector<int>>(expected);\nreturn result == expectedVec;"
+      "cpp": "return result == expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=jIaA8boiG1s&pp=ygURTmVldENvZGUgUGx1cyBPbmU%3D",
     "method_name": "plusOne"

@@ -97,7 +97,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return result.equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=yubRKwixN-U&pp=ygUaTmVldENvZGUgUGFsaW5kcm9tZSBOdW1iZXI%3D",
@@ -251,7 +251,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.parseInt(expected.toString()) == (int) result;",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=Gjkhm1gYIMw&pp=ygU7TmVldENvZGUgRmluZCB0aGUgSW5kZXggb2YgdGhlIEZpcnN0IE9jY3VycmVuY2UgaW4gYSBTdHJpbmc%3D",
@@ -303,7 +303,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return Integer.valueOf(result).equals(Integer.valueOf(expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=K-RYzDZkzCI&pp=ygUfTmVldENvZGUgU2VhcmNoIEluc2VydCBQb3NpdGlvbg%3D%3D",
@@ -355,7 +355,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=KT9rltZTybQ&pp=ygUcTmVldENvZGUgTGVuZ3RoIG9mIExhc3QgV29yZA%3D%3D",
@@ -407,7 +407,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return Arrays.equals((int[]) result, gson.fromJson((String) expected, int[].class));",
+      "java": "return Arrays.equals((int[]) result, (int []) expected);",
       "cpp": "return result == expected;"
     },
     "explanation": "https://www.youtube.com/watch?v=jIaA8boiG1s&pp=ygURTmVldENvZGUgUGx1cyBPbmU%3D",
@@ -457,7 +457,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return Objects.equals((String) result, (String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=keuWJ47xG8g&pp=ygUTTmVldENvZGUgQWRkIEJpbmFyeQ%3D%3D",
@@ -507,7 +507,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return result == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=Y0lT9Fck7qI&pp=ygUYTmVldENvZGUgQ2xpbWJpbmcgU3RhaXJz",
@@ -559,7 +559,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=1pkOgXD63yU&pp=ygUoTmVldENvZGUgQmVzdCBUaW1lIHRvIEJ1eSBhbmQgU2VsbCBTdG9jaw%3D%3D",
@@ -582,7 +582,7 @@
     ],
     "hidden_test_cases": [
       "--arg1=\"\"",
-      "--arg1=\". --arg2=\"",
+      "--arg1=\".,\"",
       "--arg1=\"0P\"",
       "--arg1=\"abc123cba\"",
       "--arg1=\"Race a Car\"",
@@ -590,7 +590,7 @@
       "--arg1=\"12321\"",
       "--arg1=\"Never odd or even\"",
       "--arg1=\"a\"",
-      "--arg1=\". --arg2=a --arg3=.\""
+      "--arg1=\".,a,.\""
     ],
     "hidden_test_results": [
       "true",
@@ -611,7 +611,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=jJXJ16kPFWg&pp=ygUZTmVldENvZGUgVmFsaWQgUGFsaW5kcm9tZQ%3D%3D",
@@ -715,7 +715,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=ljz85bxOYJ0&pp=ygUVTmVldENvZGUgSGFwcHkgTnVtYmVy",
@@ -767,7 +767,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.parseBoolean(result.toString()) == Boolean.parseBoolean(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=7yF-U1hLEqQ&pp=ygUbTmVldENvZGUgSXNvbW9ycGhpYyBTdHJpbmdz",
@@ -819,7 +819,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=ypn0aZ0nrL4&pp=ygUeTmVldENvZGUgQ29udGFpbnMgRHVwbGljYXRlIElJ",
@@ -836,8 +836,8 @@
       "--arg1=[]"
     ],
     "sample_test_results": [
-      "['0->2','4->5','7']",
-      "['0','2->4','6','8->9']",
+      "[\"0->2\",\"4->5\",\"7\"]",
+      "[\"0\",\"2->4\",\"6\",\"8->9\"]",
       "[]"
     ],
     "hidden_test_cases": [
@@ -853,16 +853,16 @@
       "--arg1=[-2147483648,2147483647]"
     ],
     "hidden_test_results": [
-      "['1']",
-      "['1->2']",
-      "['1','3','5','7']",
-      "['1->5']",
-      "['-1->2']",
-      "['-5->-3','-1->0','2']",
-      "['1','3']",
-      "['1->2','4','6->8']",
-      "['0->1','3','5->7','9']",
-      "['-2147483648','2147483647']"
+      "[\"1\"]",
+      "[\"1->2\"]",
+      "[\"1\",\"3\",\"5\",\"7\"]",
+      "[\"1->5\"]",
+      "[\"-1->2\"]",
+      "[\"-5->-3\",\"-1->0\",\"2\"]",
+      "[\"1\",\"3\"]",
+      "[\"1->2\",\"4\",\"6->8\"]",
+      "[\"0->1\",\"3\",\"5->7\",\"9\"]",
+      "[\"-2147483648\",\"2147483647\"]"
     ],
     "boilerplate": {
       "python": "class Solution:\n    def summaryRanges(self, nums: List[int]) -> List[str]:\n        ",
@@ -871,7 +871,7 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = new Gson().fromJson((String) expected, List.class);\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "java": "return result.equals(expected);",
       "cpp": "std::vector<std::string> expected_result;\neval(expected, expected_result); // Assume eval is a function that populates expected_result\nstd::sort(result.begin(), result.end());\nstd::sort(expected_result.begin(), expected_result.end());\nreturn result == expected_result;"
     },
     "explanation": "https://www.youtube.com/watch?v=ZHJDwbfqoa8&pp=ygUXTmVldENvZGUgU3VtbWFyeSBSYW5nZXM%3D",
@@ -923,7 +923,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == (expected.asString() == \"true\");"
     },
     "explanation": "https://www.youtube.com/watch?v=H2bjttEV4Vc&pp=ygUVTmVldENvZGUgUG93ZXIgb2YgVHdv",
@@ -975,7 +975,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=M0Zay1Qr9ws&pp=ygUUTmVldENvZGUgVWdseSBOdW1iZXI%3D",
@@ -1027,7 +1027,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).equals(Boolean.parseBoolean((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=W_akoecmCbM&pp=ygUVTmVldENvZGUgV29yZCBQYXR0ZXJu",
@@ -1079,7 +1079,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == (expected.asString() == \"true\");"
     },
     "explanation": "https://www.youtube.com/watch?v=ndR2buBWVc8&pp=ygURTmVldENvZGUgTmltIEdhbWU%3D",
@@ -1131,7 +1131,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=M2P2BAFmLlo&pp=ygUXTmVldENvZGUgUG93ZXIgb2YgVGhyZWU%3D",
@@ -1183,7 +1183,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return String.valueOf(result).equalsIgnoreCase(expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=qEYZPwnlM0U&pp=ygUWTmVldENvZGUgUG93ZXIgb2YgRm91cg%3D%3D",
@@ -1210,7 +1210,7 @@
       "--arg1='xyz'",
       "--arg1='AEIOU'",
       "--arg1='aeiou'",
-      "--arg1='. --arg2=!'",
+      "--arg1='.,!'",
       "--arg1='Aa'",
       "--arg1='LEetcOde'"
     ],
@@ -1283,7 +1283,7 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "int[] resultArray = (int[]) result;\nint[] expectedArray = gson.fromJson(expected, int[].class);\nArrays.sort(resultArray);\nArrays.sort(expectedArray);\nreturn Arrays.equals(resultArray, expectedArray);",
+      "java": "if (result instanceof Unknown || expected instanceof Unknown) {\n            return true;\n        }\n\n        if (result == null || expected == null) {\n            return result == expected;\n        }\n\n        if (result.getClass().isArray()) {\n            if (!expected.getClass().isArray()) {\n                return false;\n            }\n            int length = Array.getLength(result);\n            if (length != Array.getLength(expected)) {\n                return false;\n            }\n            // Convert arrays to lists for sorting\n            List<Object> resultList = new ArrayList<>();\n            List<Object> expectedList = new ArrayList<>();\n            for (int i = 0; i < length; i++) {\n                resultList.add(Array.get(result, i));\n                expectedList.add(Array.get(expected, i));\n            }\n            Collections.sort(resultList, Comparator.comparing(Object::toString));\n            Collections.sort(expectedList, Comparator.comparing(Object::toString));\n            for (int i = 0; i < length; i++) {\n                if (!compare(resultList.get(i), expectedList.get(i))) {\n                    return false;\n                }\n            }\n            return true;\n        }\n\n        if (result instanceof List && expected instanceof List) {\n            if (!(expected instanceof List)) {\n                return false;\n            }\n            List<?> resultList = new ArrayList<>((List<?>) result);\n            List<?> expectedList = new ArrayList<>((List<?>) expected);\n            if (resultList.size() != expectedList.size()) {\n                return false;\n            }\n            // Sort both lists\n            Collections.sort((List)resultList, Comparator.comparing(Object::toString));\n            Collections.sort((List)expectedList, Comparator.comparing(Object::toString));\n            for (int i = 0; i < resultList.size(); i++) {\n                if (!compare(resultList.get(i), expectedList.get(i))) {\n                    return false;\n                }\n            }\n            return true;\n        }\n\n        return result.equals(expected);",
       "cpp": "std::sort(result.begin(), result.end());\nstd::vector<int> expectedVec;\nistringstream iss(expected.substr(1, expected.size() - 2));\nint number;\nwhile (iss >> number) {\n    expectedVec.push_back(number);\n    if (iss.peek() == ',')\n        iss.ignore();\n}\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=fwUTXaMom6U&pp=ygUmTmVldENvZGUgSW50ZXJzZWN0aW9uIG9mIFR3byBBcnJheXMgSUk%3D",
@@ -1335,7 +1335,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Cg_wWPHJ2Sk&pp=ygUdTmVldENvZGUgVmFsaWQgUGVyZmVjdCBTcXVhcmU%3D",
@@ -1439,7 +1439,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=99RVfqklbCE&pp=ygUXTmVldENvZGUgSXMgU3Vic2VxdWVuY2U%3D",
@@ -1491,7 +1491,7 @@
     },
     "compare_func": {
       "python": "def sorted_list_strings(lst):\n        return sorted([str(x) for x in eval(lst)])\n    return sorted(result) == sorted_list_strings(expected)",
-      "java": "try {\n    List<String> evalResult = Arrays.asList(eval(expected).replace(\"[\", \"\").replace(\"]\", \"\").replace(\"'\", \"\").split(\",\"));\n    List<String> resultAsString = result.stream().map(Object::toString).collect(Collectors.toList());\n    Collections.sort(resultAsString);\n    Collections.sort(evalResult);\n    return resultAsString.equals(evalResult);\n} catch (Exception e) {\n    return false;\n}",
+      "java": "if (result == null && expected == null) {\n            return true;\n        }\n        if (result == null || expected == null) {\n            return false;\n        }\n\n        List<String> resultList;\n        List<String> expectedList;\n\n        if (result instanceof List) {\n            resultList = (List<String>) result;\n        } else if (result instanceof String[]) {\n            resultList = Arrays.asList((String[]) result);\n        } else {\n            return false;\n        }\n\n        if (expected instanceof List) {\n            expectedList = (List<String>) expected;\n        } else if (expected instanceof String[]) {\n            expectedList = Arrays.asList((String[]) expected);\n        } else {\n            return false;\n        }\n\n        if (resultList.size() != expectedList.size()) {\n            return false;\n        }\n        List<String> sortedResult = new ArrayList<>(resultList);\n        List<String> sortedExpected = new ArrayList<>(expectedList);\n        Collections.sort(sortedResult);\n        Collections.sort(sortedExpected);\n        return sortedResult.equals(sortedExpected);\n",
       "cpp": "std::multiset<std::string> sorted_list_strings(const std::string& lst) {\n    std::multiset<std::string> sortedStrings;\n    std::string cleaned = lst;\n    // Remove leading/trailing whitespace\n    cleaned.erase(0, cleaned.find_first_not_of(\" \\t\\n\\r\"));\n    cleaned.erase(cleaned.find_last_not_of(\" \\t\\n\\r\") + 1);\n    \n    // Substitute all commas with spaces\n    std::replace(cleaned.begin(), cleaned.end(), ',', ' ');\n    std::stringstream ss(cleaned);\n    std::string item;\n    \n    while(ss >> item) {\n        sortedStrings.insert(item);\n    }\n    return sortedStrings;\n}\n\nreturn std::multiset<std::string>(result.begin(), result.end()) == sorted_list_strings(expected);"
     },
     "explanation": "https://www.youtube.com/watch?v=0BanwDe6cMY&pp=ygUVTmVldENvZGUgQmluYXJ5IFdhdGNo",
@@ -1595,7 +1595,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=_g9jrLuAphs&pp=ygUbTmVldENvZGUgTG9uZ2VzdCBQYWxpbmRyb21l",
@@ -1699,7 +1699,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=5rHz_6s2Buw&pp=ygUYTmVldENvZGUgQXJyYW5naW5nIENvaW5z",
@@ -1751,7 +1751,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=JW8fgvoxPTg&pp=ygUXTmVldENvZGUgQXNzaWduIENvb2tpZXM%3D",
@@ -1803,7 +1803,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=2qEmA76Unm4&pp=ygUjTmVldENvZGUgUmVwZWF0ZWQgU3Vic3RyaW5nIFBhdHRlcm4%3D",
@@ -1905,7 +1905,7 @@
     },
     "compare_func": {
       "python": "expected = eval(expected); return result[0]*result[1] == expected[0]*expected[1] and result[0] >= result[1] and abs(result[0]-result[1]) <= abs(expected[0]-expected[1])",
-      "java": "String[] expectedComponents = expected.split(\",\");\nint[] expectedArray = {Integer.parseInt(expectedComponents[0].trim()), Integer.parseInt(expectedComponents[1].trim())};\n\nboolean conditionsMet = (result[0] * result[1] == expectedArray[0] * expectedArray[1]) &&\n                        (result[0] >= result[1]) &&\n                        (Math.abs(result[0] - result[1]) <= Math.abs(expectedArray[0] - expectedArray[1]));\n\nreturn conditionsMet;",
+      "java": "if (result == null && expected == null) return true;\n    if (result == null || expected == null) return false;\n    try {\n        int[] r = (int[])result;\n        int[] e = (int[])expected;\n        return r.length == e.length && Arrays.equals(r, e);\n    } catch (ClassCastException ex) {\n        return false;\n    }",
       "cpp": "// Assuming `result` and `expected` are both arrays of integers with size 2\nauto resultProduct = result[0] * result[1];\nauto expectedProduct = expected[0] * expected[1];\nauto resultDiff = std::abs(result[0] - result[1]);\nauto expectedDiff = std::abs(expected[0] - expected[1]);\n\nreturn resultProduct == expectedProduct && result[0] >= result[1] && resultDiff <= expectedDiff;"
     },
     "explanation": "https://www.youtube.com/watch?v=-Lb4SvVyPCM&pp=ygUgTmVldENvZGUgQ29uc3RydWN0IHRoZSBSZWN0YW5nbGU%3D",
@@ -1955,7 +1955,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=NejSCTIdd5k&pp=ygUYTmVldENvZGUgVGVlbW8gQXR0YWNraW5n",
@@ -2055,7 +2055,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return Boolean.valueOf(result.toString()).equals(Boolean.valueOf(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=HLZLwjzIVGo&pp=ygUXTmVldENvZGUgUGVyZmVjdCBOdW1iZXI%3D",
@@ -2081,7 +2081,7 @@
       "--arg1='HELLO' --arg2=1",
       "--arg1='WORLD' --arg2=5",
       "--arg1='TEST.TEST' --arg2=3",
-      "--arg1='A --arg2=B --arg3=C' --arg4=2",
+      "--arg1='A,B,C' --arg2=2",
       "--arg1='abcdefghijklmnop' --arg2=4",
       "--arg1='ANTHROPIC' --arg2=3",
       "--arg1='Testing123' --arg2=2",
@@ -2157,7 +2157,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=UuiTKBwPgAo&pp=ygUiTmVldENvZGUgQ29udGFpbmVyIFdpdGggTW9zdCBXYXRlcg%3D%3D",
@@ -2207,7 +2207,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=PXWT4wzkA6M&pp=ygUVTmVldENvZGUgM1N1bSBDbG9zZXN0",
@@ -2259,7 +2259,7 @@
     },
     "compare_func": {
       "python": "return result == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=U8XENwh8Oy8&pp=ygUnTmVldENvZGUgU2VhcmNoIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5",
@@ -2276,9 +2276,9 @@
       "--arg1=[] --arg2=0"
     ],
     "sample_test_results": [
-      "(3, 4)",
-      "(-1, -1)",
-      "(-1, -1)"
+      "[3,4]",
+      "[-1,-1]",
+      "[-1,-1]"
     ],
     "hidden_test_cases": [
       "--arg1=[1] --arg2=1",
@@ -2293,16 +2293,16 @@
       "--arg1=[1,2,3,4,5,5,5,5,6] --arg2=5"
     ],
     "hidden_test_results": [
-      "(0, 0)",
-      "(0, 3)",
-      "(2, 2)",
-      "(4, 6)",
-      "(2, 2)",
-      "(-1, -1)",
-      "(-1, -1)",
-      "(3, 4)",
-      "(2, 4)",
-      "(4, 7)"
+      "[0,0]",
+      "[0,3]",
+      "[2,2]",
+      "[4,6]",
+      "[2,2]",
+      "[-1,-1]",
+      "[-1,-1]",
+      "[3,4]",
+      "[2,4]",
+      "[4,7]"
     ],
     "boilerplate": {
       "python": "class Solution:\n    def searchRange(self, nums: List[int], target: int) -> List[int]:\n        ",
@@ -2311,7 +2311,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "if (result instanceof int[] && expected instanceof String) {\n    int[] resultArray = (int[]) result;\n    String expectedStr = (String) expected;\n    // Parse the expected string to an int array\n    String[] parts = expectedStr.replaceAll(\"[()\\s]\", \"\").split(\",\");\n    int[] expectedArray = new int[parts.length];\n    for (int i = 0; i < parts.length; i++) {\n        expectedArray[i] = Integer.parseInt(parts[i]);\n    }\n    // Compare the arrays\n    return Arrays.equals(resultArray, expectedArray);\n}\nreturn false;",
+      "java": "if (result == null && expected == null) {\n            return true;\n        }\n        if (result == null || expected == null) {\n            return false;\n        }\n        if (result.getClass().isArray() && expected.getClass().isArray()) {\n            int[] arr1 = (int[]) result;\n            int[] arr2 = (int[]) expected;\n            if (arr1.length != arr2.length) {\n                return false;\n            }\n            for (int i = 0; i < arr1.length; i++) {\n                if (arr1[i] != arr2[i]) {\n                    return false;\n                }\n            }\n            return true;\n        }\n        return result.equals(expected);",
       "cpp": "if (result.isArray() && expected.isString()) {\n    // Convert expected string to a vector of integers\n    std::string expectedStr = expected.asString();\n    std::regex re(\"\\\\((-?\\\\d+),\\\\s*(-?\\\\d+)\\\\)\");\n    std::smatch match;\n    if (std::regex_search(expectedStr, match, re)) {\n        std::vector<int> expectedVec = {std::stoi(match[1]), std::stoi(match[2])};\n        // Convert result JSON array to a vector of integers\n        std::vector<int> resultVec;\n        for (const auto& elem : result) {\n            resultVec.push_back(elem.asInt());\n        }\n        // Compare the vectors\n        return resultVec == expectedVec;\n    }\n}\nreturn false;"
     },
     "explanation": "https://www.youtube.com/watch?v=4sQL7R5ySUU&pp=ygVATmVldENvZGUgRmluZCBGaXJzdCBhbmQgTGFzdCBQb3NpdGlvbiBvZiBFbGVtZW50IGluIFNvcnRlZCBBcnJheQ%3D%3D",
@@ -2363,7 +2363,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return Objects.equals(result, expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asString() == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=iP4RH2zespg&pp=ygUWTmVldENvZGUgQ291bnQgYW5kIFNheQ%3D%3D",
@@ -2415,7 +2415,7 @@
     },
     "compare_func": {
       "python": "return sorted([sorted(x) for x in result]) == eval(expected)",
-      "java": "Integer[][] resultArray = (Integer[][]) result;\nInteger[][] expectedArray = (Integer[][]) expected;\n\n// Sort each individual list in the result\nfor (Integer[] arr : resultArray) {\n    Arrays.sort(arr);\n}\n// Sort the entire result array\nArrays.sort(resultArray, (a1, a2) -> Arrays.compare(a1, a2));\n\n// Sort each individual list in the expected\nfor (Integer[] arr : expectedArray) {\n    Arrays.sort(arr);\n}\n// Sort the entire expected array\nArrays.sort(expectedArray, (a1, a2) -> Arrays.compare(a1, a2));\n\n// Compare the sorted arrays\nreturn Arrays.deepEquals(resultArray, expectedArray);",
+      "java": "if (result == null && expected == null) {\n            return true;\n        }\n        if (result == null || expected == null) {\n            return false;\n        }\n\n        if (result instanceof List<?> && expected instanceof List<?>) {\n            List<?> list1 = (List<?>) result;\n            List<?> list2 = (List<?>) expected;\n\n            if (list1.size() != list2.size()) {\n                return false;\n            }\n\n            // More robust comparison for nested lists and different element types\n            for (int i = 0; i < list1.size(); i++) {\n                \n                System.out.println(\"Type of list1.get(i): \" + list1.get(i).getClass().getName());\n                System.out.println(\"Type of list2.get(i): \" + list2.get(i).getClass().getName());\n                if (!compare(list1.get(i), list2.get(i))) { // Recursive call\n                    return false;\n                }\n            }\n            return true; // Lists are equal if all elements are equal\n        } else if (result instanceof Integer && expected instanceof String) {\n            Integer intResult = (Integer) result;\n            String strExpected = (String) expected;\n            return intResult.toString().equals(strExpected);\n        } else if (result instanceof String && expected instanceof Integer) {\n            return compare(expected, result);\n        }\n\n        // Handle other types (including primitive wrappers) directly\n        return result.equals(expected);",
       "cpp": "std::vector<std::vector<int>> sortedResult;\nfor (const auto& vec : result) {\n    std::vector<int> sortedVec = vec;\n    std::sort(sortedVec.begin(), sortedVec.end());\n    sortedResult.push_back(sortedVec);\n}\nstd::sort(sortedResult.begin(), sortedResult.end());\n\nstd::vector<std::vector<int>> sortedExpected;\nfor (const auto& vec : expected) {\n    std::vector<int> sortedVec = vec;\n    std::sort(sortedVec.begin(), sortedVec.end());\n    sortedExpected.push_back(sortedVec);\n}\nstd::sort(sortedExpected.begin(), sortedExpected.end());\n\nreturn sortedResult == sortedExpected;"
     },
     "explanation": "https://www.youtube.com/watch?v=FOyRpNUSFeA&pp=ygUbTmVldENvZGUgQ29tYmluYXRpb24gU3VtIElJ",
@@ -2519,7 +2519,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return Integer.parseInt((String) expected) == (int) result;",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=dJ7sWiOoK7g&pp=ygUVTmVldENvZGUgSnVtcCBHYW1lIElJ",
@@ -2571,7 +2571,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=5WZl3MMT0Eg&pp=ygUZTmVldENvZGUgTWF4aW11bSBTdWJhcnJheQ%3D%3D",
@@ -2621,7 +2621,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "List<Integer> resultList = (List<Integer>) result;\nList<Integer> expectedList = new Gson().fromJson((String) expected, new TypeToken<List<Integer>>() {}.getType());\nreturn resultList.equals(expectedList);",
+      "java": "return result.equals(expected);",
       "cpp": "std::vector<int> resultVec = jsonToValue<std::vector<int>>(result);\nstd::vector<int> expectedVec = jsonToValue<std::vector<int>>(expected);\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=BJnMZNwUk1M&pp=ygUWTmVldENvZGUgU3BpcmFsIE1hdHJpeA%3D%3D",
@@ -2721,7 +2721,7 @@
     },
     "compare_func": {
       "python": "return str(sorted(result)) == str(eval(expected))",
-      "java": "int[][] resultArray = (int[][]) result;\nint[][] expectedArray = new Gson().fromJson(expected.toString(), int[][].class);\n\n// Sort both arrays by the first element of each interval\nArrays.sort(resultArray, (a, b) -> Integer.compare(a[0], b[0]));\nArrays.sort(expectedArray, (a, b) -> Integer.compare(a[0], b[0]));\n\n// Compare the sorted arrays\nreturn Arrays.deepEquals(resultArray, expectedArray);",
+      "java": "if (result == null && expected == null) {\n            return true;\n        }\n        if (result == null || expected == null) {\n            return false;\n        }\n\n        if (result instanceof int[][] && expected instanceof int[][]) {\n            int[][] arr1 = (int[][]) result;\n            int[][] arr2 = (int[][]) expected;\n\n            if (arr1.length != arr2.length) {\n                return false;\n            }\n\n            for (int i = 0; i < arr1.length; i++) {\n                if (!Arrays.equals(arr1[i], arr2[i])) { // Correct comparison for int[]\n                    return false;\n                }\n            }\n            return true;\n        }\n        return result.equals(expected);",
       "cpp": "// Convert result and expected to vectors of vectors of integers\nstd::vector<std::vector<int>> resultVec = jsonToValue<std::vector<std::vector<int>>>(result);\nstd::vector<std::vector<int>> expectedVec = jsonToValue<std::vector<std::vector<int>>>(expected);\n\n// Sort both vectors by the first element of each interval\nstd::sort(resultVec.begin(), resultVec.end(), [](const std::vector<int>& a, const std::vector<int>& b) {\n    return a[0] < b[0];\n});\nstd::sort(expectedVec.begin(), expectedVec.end(), [](const std::vector<int>& a, const std::vector<int>& b) {\n    return a[0] < b[0];\n});\n\n// Compare the sorted vectors\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=A8NUOmlwOlM&pp=ygUYTmVldENvZGUgSW5zZXJ0IEludGVydmFs",
@@ -2771,7 +2771,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=d3UOz7zdE4I&pp=ygUYTmVldENvZGUgVW5pcXVlIFBhdGhzIElJ",
@@ -2879,7 +2879,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=XYi2-LPrwm4&pp=ygUWTmVldENvZGUgRWRpdCBEaXN0YW5jZQ%3D%3D",
@@ -2931,7 +2931,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Ber2pi2C0j0&pp=ygUbTmVldENvZGUgU2VhcmNoIGEgMkQgTWF0cml4",
@@ -2983,7 +2983,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=pfiQ_PS1g8E&pp=ygUUTmVldENvZGUgV29yZCBTZWFyY2g%3D",
@@ -3035,7 +3035,7 @@
     },
     "compare_func": {
       "python": "return sorted([sorted(x) for x in result]) == sorted(eval(expected))",
-      "java": "List<List<Integer>> resultList = (List<List<Integer>>) result;\nList<List<Integer>> expectedList = (List<List<Integer>>) expected;\n\nComparator<List<Integer>> listComparator = (a, b) -> {\n    int minLength = Math.min(a.size(), b.size());\n    for (int i = 0; i < minLength; i++) {\n        int cmp = Integer.compare(a.get(i), b.get(i));\n        if (cmp != 0) {\n            return cmp;\n        }\n    }\n    return Integer.compare(a.size(), b.size());\n};\n\nresultList.forEach(Collections::sort);\nexpectedList.forEach(Collections::sort);\n\nCollections.sort(resultList, listComparator);\nCollections.sort(expectedList, listComparator);\n\nreturn resultList.equals(expectedList);",
+      "java": "if ((result instanceof Integer) && (expected instanceof String)) {\n            Integer intResult = (Integer) result;\n            String strExpected = (String) expected;\n            return intResult.toString().equals(strExpected);\n        } else if ((result instanceof String) && (expected instanceof Integer)) {\n            return compare(expected, result);\n        } else if (result instanceof Integer && expected instanceof Integer) {\n            return result.equals(expected);\n        }\n\n        List<?> resultList = (List<?>) result;\n        List<?> expectedList = (List<?>) expected;\n\n        if (resultList.size()!= expectedList.size()) {\n            return false;\n        }\n\n        for (int i = 0; i < resultList.size(); i++) {\n            Object resultItem = resultList.get(i);\n            Object expectedItem = expectedList.get(i);\n\n            if (!compare(resultItem, expectedItem)) {\n                return false;\n            }\n        }\n\n        return true;",
       "cpp": "bool compareFunction(const std::vector<std::vector<int>>& result, const std::vector<std::vector<int>>& expected) {\n    auto sort_inner_vectors = [](std::vector<int>& vec) {\n        std::sort(vec.begin(), vec.end());\n    };\n\n    // Sort inner vectors of result\n    std::vector<std::vector<int>> sorted_result = result;\n    std::for_each(sorted_result.begin(), sorted_result.end(), sort_inner_vectors);\n    std::sort(sorted_result.begin(), sorted_result.end());\n\n    // Sort inner vectors of expected\n    std::vector<std::vector<int>> sorted_expected = expected;\n    std::for_each(sorted_expected.begin(), sorted_expected.end(), sort_inner_vectors);\n    std::sort(sorted_expected.begin(), sorted_expected.end());\n\n    return sorted_result == sorted_expected;\n}"
     },
     "explanation": "https://www.youtube.com/watch?v=Vn2v6ajA7U0&pp=ygUTTmVldENvZGUgU3Vic2V0cyBJSQ%3D%3D",
@@ -3087,7 +3087,7 @@
     },
     "compare_func": {
       "python": "return sorted(result) == sorted(eval(expected))",
-      "java": "List<String> resultList = (List<String>) result;\nList<String> expectedList = (List<String>) expected;\nCollections.sort(resultList);\nCollections.sort(expectedList);\nreturn resultList.equals(expectedList);",
+      "java": "if (result == null && expected == null) {\n                return true;\n            }\n            if (result == null || expected == null) {\n                return false;\n            }\n\n            // Handle List comparison\n            if (result instanceof List && expected instanceof List) {\n                List<?> resultList = (List<?>) result;\n                List<?> expectedList = (List<?>) expected;\n\n                if (resultList.size() != expectedList.size()) {\n                    return false;\n                }\n\n                // Create sorted copies of both lists for comparison\n                List<String> sortedResult = new ArrayList<>();\n                List<String> sortedExpected = new ArrayList<>();\n\n                for (Object item : resultList) {\n                    sortedResult.add(item.toString());\n                }\n                for (Object item : expectedList) {\n                    sortedExpected.add(item.toString());\n                }\n\n                Collections.sort(sortedResult);\n                Collections.sort(sortedExpected);\n\n                return sortedResult.equals(sortedExpected);\n            }\n            return result.equals(expected);",
       "cpp": "std::vector<std::string> expectedVec = jsonToValue<std::vector<std::string>>(expected);\nstd::sort(result.begin(), result.end());\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn result == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=61tN4YEdiTM&pp=ygUdTmVldENvZGUgUmVzdG9yZSBJUCBBZGRyZXNzZXM%3D",
@@ -3139,7 +3139,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().toLowerCase().equals(expected.toString().toLowerCase());",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=3Rw3p9LrgvE&pp=ygUcTmVldENvZGUgSW50ZXJsZWF2aW5nIFN0cmluZw%3D%3D",
@@ -3189,7 +3189,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=OM1MTokvxs4&pp=ygURTmVldENvZGUgVHJpYW5nbGU%3D",
@@ -3239,7 +3239,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=P6RZZMu_maU&pp=ygUlTmVldENvZGUgTG9uZ2VzdCBDb25zZWN1dGl2ZSBTZXF1ZW5jZQ%3D%3D",
@@ -3289,7 +3289,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return Integer.toString((Integer) result).equals(expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=lJwbPZGo05A&pp=ygUUTmVldENvZGUgR2FzIFN0YXRpb24%3D",
@@ -3341,7 +3341,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).equals(Boolean.parseBoolean(expected.toString()));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=Sx9NNgInc3A&pp=ygUTTmVldENvZGUgV29yZCBCcmVhaw%3D%3D",
@@ -3393,7 +3393,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt((String) result) == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=iu0082c4HDE&pp=ygUpTmVldENvZGUgRXZhbHVhdGUgUmV2ZXJzZSBQb2xpc2ggTm90YXRpb24%3D",
@@ -3497,7 +3497,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return static_cast<int>(result) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=nIVW4P8b1VA&pp=ygUtTmVldENvZGUgRmluZCBNaW5pbXVtIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5",
@@ -3547,7 +3547,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=kMzJy9es7Hc&pp=ygUaTmVldENvZGUgRmluZCBQZWFrIEVsZW1lbnQ%3D",
@@ -3597,7 +3597,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=imCKT3T2Oao&pp=ygUUTmVldENvZGUgTWF4aW11bSBHYXA%3D",
@@ -3701,7 +3701,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return Integer.toString((Integer) result).equals(expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=8g78yfzMlao&pp=ygUfTmVldENvZGUgRmlyc3QgTWlzc2luZyBQb3NpdGl2ZQ%3D%3D",
@@ -3907,7 +3907,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=zx5Sw9130L0&pp=ygUnTmVldENvZGUgTGFyZ2VzdCBSZWN0YW5nbGUgaW4gSGlzdG9ncmFt",
@@ -3959,7 +3959,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=tOylVCugy9k&pp=ygUaTmVldENvZGUgTWF4aW1hbCBSZWN0YW5nbGU%3D",
@@ -4011,7 +4011,7 @@
     },
     "compare_func": {
       "python": "return str(result).lower() == expected.lower()",
-      "java": "return ((Boolean) result).toString().equalsIgnoreCase((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asBool() == expected.asBool();"
     },
     "explanation": "https://www.youtube.com/watch?v=MDmZm_aVDF8&pp=ygUYTmVldENvZGUgU2NyYW1ibGUgU3RyaW5n",
@@ -4061,7 +4061,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt((String) result) == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=-RDzMJ33nx8&pp=ygUeTmVldENvZGUgRGlzdGluY3QgU3Vic2VxdWVuY2Vz",
@@ -4113,7 +4113,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == expected.asInt();"
     },
     "explanation": "https://www.youtube.com/watch?v=37s1_xBiqH0&pp=ygUsTmVldENvZGUgQmVzdCBUaW1lIHRvIEJ1eSBhbmQgU2VsbCBTdG9jayBJSUk%3D",
@@ -4165,7 +4165,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).equals(Integer.parseInt((String) expected));",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=h9iTnkgv05E&pp=ygUUTmVldENvZGUgV29yZCBMYWRkZXI%3D",
@@ -4217,7 +4217,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return std::to_string(result.asInt()) == expected.asString();"
     },
     "explanation": "https://www.youtube.com/watch?v=1IzCRCcK17A&pp=ygUOTmVldENvZGUgQ2FuZHk%3D",
@@ -4269,7 +4269,7 @@
     },
     "compare_func": {
       "python": "def normalize(s): return sorted([x.strip() for x in eval(s)])\n    return normalize(str(result)) == normalize(expected)",
-      "java": "String normalize(String s) {\n    return Arrays.stream(s.trim().substring(1, s.length() - 1).split(\",\"))\n                  .map(String::trim)\n                  .sorted()\n                  .collect(Collectors.joining(\",\"));\n}\n\nString resultNormalized = normalize(result.toString());\nString expectedNormalized = normalize(expected);\nreturn resultNormalized.equals(expectedNormalized);",
+      "java": "if (result == null && expected == null) {\n            return true;\n        }\n        if (result == null || expected == null) {\n            return false;\n        }\n\n        if (result instanceof List<?> && expected instanceof List<?>) {\n            List<?> resultList = (List<?>) result;\n            List<?> expectedList = (List<?>) expected;\n\n            if (resultList.size()!= expectedList.size()) {\n                return false;\n            }\n\n            for (int i = 0; i < resultList.size(); i++) {\n                if (!Objects.deepEquals(resultList.get(i), expectedList.get(i))) {\n                    return false;\n                }\n            }\n            return true;\n        } else {\n            return Objects.deepEquals(result, expected);\n        }",
       "cpp": "std::vector<std::string> resultVec = jsonToValue<std::vector<std::string>>(result);\nstd::vector<std::string> expectedVec = jsonToValue<std::vector<std::string>>(expected);\nstd::sort(resultVec.begin(), resultVec.end());\nstd::sort(expectedVec.begin(), expectedVec.end());\nreturn resultVec == expectedVec;"
     },
     "explanation": "https://www.youtube.com/watch?v=QgLKdluDo08&pp=ygUWTmVldENvZGUgV29yZCBCcmVhayBJSQ%3D%3D",
@@ -4321,7 +4321,7 @@
     },
     "compare_func": {
       "python": "return str(result) == expected",
-      "java": "return ((Integer) result).intValue() == Integer.parseInt((String) expected);",
+      "java": "return result.equals(expected);",
       "cpp": "return result.asInt() == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=oUnF7o88_Xc&pp=ygUwTmVldENvZGUgRmluZCBNaW5pbXVtIGluIFJvdGF0ZWQgU29ydGVkIEFycmF5IElJ",
@@ -4423,7 +4423,7 @@
     },
     "compare_func": {
       "python": "return result == eval(expected)",
-      "java": "if (result instanceof List && expected instanceof String) {\n    // Parse the expected string as a list of lists of integers\n    Gson gson = new Gson();\n    List<List<Integer>> expectedList = gson.fromJson((String) expected, new TypeToken<List<List<Integer>>>() {}.getType());\n    // Cast the result to a list of lists of integers\n    List<List<Integer>> resultList = (List<List<Integer>>) result;\n    // Compare the two lists\n    return resultList.equals(expectedList);\n} else {\n    return result.equals(expected);\n}",
+      "java": "if (result == null && expected == null) return true;\n    if (result == null || expected == null) return false;\n    \n    if (result instanceof List && expected instanceof List) {\n        List<?> resList = (List<?>) result;\n        List<?> expList = (List<?>) expected;\n        if (resList.size() != expList.size()) return false;\n        for (int i = 0; i < resList.size(); i++) {\n            if (!compare(resList.get(i), expList.get(i))) return false;\n        }\n        return true;\n    } else if (expected instanceof Unknown) {\n        try {\n            Object parsed = parseValue(((Unknown) expected).get(), result.getClass());\n            return compare(result, parsed);\n        } catch (Exception e) {\n            return false;\n        }\n    }\n    return result.equals(expected);",
       "cpp": "if (result.isArray() && expected.isString()) {\n    // Parse the expected string as a JSON array\n    Json::Value expectedJson;\n    Json::CharReaderBuilder builder;\n    std::string errors;\n    std::unique_ptr<Json::CharReader> reader(builder.newCharReader());\n    if (!reader->parse(expected.asCString(), expected.asCString() + expected.asString().length(), &expectedJson, &errors)) {\n        throw std::runtime_error(\"Failed to parse expected JSON: \" + errors);\n    }\n    \n    // Sort both result and expectedJson\n    auto sortJsonArray = [](Json::Value& array) {\n        std::sort(array.begin(), array.end(), [](const Json::Value& a, const Json::Value& b) {\n            if (a[0] != b[0]) return a[0].asInt() < b[0].asInt();\n            return a[1].asInt() < b[1].asInt();\n        });\n    };\n    \n    sortJsonArray(result);\n    sortJsonArray(expectedJson);\n    \n    // Compare the sorted arrays\n    return result == expectedJson;\n} else {\n    return result == expected;\n}"
     },
     "explanation": "https://www.youtube.com/watch?v=XhzHXj7wrwo&pp=ygUcTmVldENvZGUgVGhlIFNreWxpbmUgUHJvYmxlbQ%3D%3D",
@@ -4475,7 +4475,7 @@
     },
     "compare_func": {
       "python": "return int(result) == int(expected)",
-      "java": "return Integer.parseInt(result.toString()) == Integer.parseInt(expected.toString());",
+      "java": "return result.equals(expected);",
       "cpp": "return std::stoi(result.asString()) == std::stoi(expected.asString());"
     },
     "explanation": "https://www.youtube.com/watch?v=zsJ-J08Qgdk&pp=ygUZTmVldENvZGUgQmFzaWMgQ2FsY3VsYXRvcg%3D%3D",

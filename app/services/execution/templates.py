@@ -100,6 +100,23 @@ import java.util.*;
 {code}
 
 public class {file_name} {{
+    private static class Unknown {{
+        private final String value;
+
+        public Unknown(String value) {{
+            this.value = value;
+        }}
+
+        public String get() {{
+            return value;
+        }}
+
+        @Override
+        public String toString() {{
+            return value;
+        }}
+    }}
+
     private static boolean compare(Object result, Object expected) {{
         {compare_func}
     }}
@@ -107,19 +124,38 @@ public class {file_name} {{
     public static JsonArray runTests(Solution solution, JsonArray testData) {{
         JsonArray results = new JsonArray();
         Gson gson = new Gson();
-        
+
+        Method[] methods = Solution.class.getMethods();
+        Method targetMethod = null;
+
+        for (Method method : methods) {{
+            if (method.getName().equals("{method_name}")) {{
+                if (targetMethod == null) {{
+                    targetMethod = method;
+                }} else {{
+                    throw new RuntimeException("Multiple '{method_name}' methods found. Cannot determine which to use.");
+                }}
+            }}
+        }}
+
+        if (targetMethod == null) {{
+            throw new RuntimeException("Method '{method_name}' not found.");
+        }}
+
+        Class<?>[] paramTypes = targetMethod.getParameterTypes();
+        Class<?> returnType = targetMethod.getReturnType();
+
         for (JsonElement testElement : testData) {{
             JsonObject test = testElement.getAsJsonObject();
             JsonObject result = new JsonObject();
-            
+
             try {{
                 String inputStr = test.get("input").getAsString();
-                Object[] args = parseArguments(inputStr);
-                Class<?>[] paramTypes = getParameterTypes(args);
-                
-                Method method = Solution.class.getMethod("{method_name}", paramTypes);
-                Object output = method.invoke(solution, args);
-                boolean passed = compare(output, parseValue(test.get("expected").getAsString()));
+                Object[] args = parseArguments(inputStr, paramTypes);
+                Object output = targetMethod.invoke(solution, args);
+                Object expected = parseValue(test.get("expected").getAsString(), returnType);
+
+                boolean passed = compare(output, expected);
                 result.addProperty("passed", passed);
                 result.addProperty("output", gson.toJson(output));
                 result.addProperty("expected", test.get("expected").getAsString());
@@ -132,90 +168,163 @@ public class {file_name} {{
         return results;
     }}
 
-    private static Class<?> getArrayType(Object arr) {{
-        if (!arr.getClass().isArray()) {{
-            return arr.getClass();
+
+    private static Object parsePrimitiveArray(String arrayContent, Class<?> componentType) {{
+        if (arrayContent.trim().isEmpty()) {{
+            return Array.newInstance(componentType, 0);
         }}
 
-        Class<?> arrClass = arr.getClass();
-        if (arrClass == int[].class) return int[].class;
-        if (arrClass == double[].class) return double[].class;
-        if (arrClass == boolean[].class) return boolean[].class;
-        if (arrClass == char[].class) return char[].class;
-        if (arrClass == long[].class) return long[].class;
-        if (arrClass == float[].class) return float[].class;
-        if (arrClass == byte[].class) return byte[].class;
-        if (arrClass == short[].class) return short[].class;
-        
-        Object[] array = (Object[]) arr;
-        if (array.length == 0) {{
-            return Object[].class;
+        String[] elements = arrayContent.split("\\s*,\\s*");
+        Object array = Array.newInstance(componentType, elements.length);
+
+        for (int i = 0; i < elements.length; i++) {{
+            String element = elements[i].trim();
+            if (componentType == int.class) {{
+                Array.setInt(array, i, Integer.parseInt(element));
+            }} else if (componentType == long.class) {{
+                Array.setLong(array, i, Long.parseLong(element));
+            }} else if (componentType == double.class) {{
+                Array.setDouble(array, i, Double.parseDouble(element));
+            }} else if (componentType == float.class) {{
+                Array.setFloat(array, i, Float.parseFloat(element));
+            }} else if (componentType == boolean.class) {{
+                Array.setBoolean(array, i, Boolean.parseBoolean(element));
+            }} else if (componentType == byte.class) {{
+                Array.setByte(array, i, Byte.parseByte(element));
+            }} else if (componentType == short.class) {{
+                Array.setShort(array, i, Short.parseShort(element));
+            }} else if (componentType == char.class) {{
+                Array.setChar(array, i, element.charAt(0));
+            }} else {{
+                throw new IllegalArgumentException("Unsupported primitive type: " + componentType);
+            }}
+        }}
+        return array;
+    }}
+
+    private static Object parseValue(String value, Class<?> targetType) {{
+        if (value == null || value.trim().equals("null")) {{
+            return null;
         }}
 
-        // Find the most specific common type among non-null elements
-        Class<?> commonType = null;
-        for (Object element : array) {{
-            if (element != null) {{
-                Class<?> currentType = element.getClass();
-                if (commonType == null) {{
-                    commonType = currentType;
+        value = value.trim();
+
+        // Handle unknown
+        if (targetType == Unknown.class) {{
+            return new Unknown(value);
+        }}
+
+        // Handle arrays
+        if (targetType.isArray()) {{
+            if (!value.startsWith("[") || !value.endsWith("]")) {{
+                throw new IllegalArgumentException("Expected array value, got: " + value);
+            }}
+
+            String arrayContent = value.substring(1, value.length() - 1);
+            Class<?> componentType = targetType.getComponentType();
+
+            if (componentType.isPrimitive()) {{
+                return parsePrimitiveArray(arrayContent, componentType);
+            }} else {{
+                Object[] parsed = parseArray(arrayContent, componentType);
+                Object typedArray = Array.newInstance(componentType, parsed.length);
+                System.arraycopy(parsed, 0, typedArray, 0, parsed.length);
+                return typedArray;
+            }}
+        }}
+
+        // Handle strings
+        if (targetType == String.class) {{
+            if ((value.startsWith("\"") && value.endsWith("\"")) || 
+                (value.startsWith("'") && value.endsWith("'"))) {{
+                return value.substring(1, value.length() - 1);
+            }}
+            return value;
+        }}
+
+        // Handle List type
+        if (List.class.isAssignableFrom(targetType)) {{
+            if (!value.startsWith("[") || !value.endsWith("]")) {{
+                throw new IllegalArgumentException("Expected list value, got: " + value);
+            }}
+            // Parse the content within the brackets recursively 
+            // Passing String.class so that nested lists are also parsed correctly.
+            Object[] parsed = parseArray(value.substring(1, value.length() - 1), Unknown.class);
+            List<Object> list = new ArrayList<>();
+            for (Object item : parsed) {{
+                if (item instanceof Unknown) {{
+                    list.add(parseValueWithoutType(item.toString()));
                 }} else {{
-                    // Find the most specific common superclass
-                    while (!commonType.isAssignableFrom(currentType)) {{
-                        commonType = commonType.getSuperclass();
-                        if (commonType == null) {{
-                            return Object[].class;
-                        }}
-                    }}
+                    list.add(item);
                 }}
             }}
+            return list;
         }}
 
-        // If all elements are null or no common type found
-        if (commonType == null) {{
-            return Object[].class;
+        // Handle primitive types and their wrappers
+        if (targetType == boolean.class || targetType == Boolean.class) {{
+            return Boolean.parseBoolean(value);
+        }}
+        if (targetType == int.class || targetType == Integer.class) {{
+            return Integer.parseInt(value);
+        }}
+        if (targetType == long.class || targetType == Long.class) {{
+            return Long.parseLong(value);
+        }}
+        if (targetType == double.class || targetType == Double.class) {{
+            return Double.parseDouble(value);
+        }}
+        if (targetType == float.class || targetType == Float.class) {{
+            return Float.parseFloat(value);
+        }}
+        if (targetType == byte.class || targetType == Byte.class) {{
+            return Byte.parseByte(value);
+        }}
+        if (targetType == short.class || targetType == Short.class) {{
+            return Short.parseShort(value);
+        }}
+        if (targetType == char.class || targetType == Character.class) {{
+            String trimmed = value.trim().substring(1, value.length() - 1);
+            if (trimmed.length() != 1) {{
+                throw new IllegalArgumentException("Cannot convert to char: " + value);
+            }}
+            return trimmed.charAt(0);
         }}
 
-        // Handle primitive wrapper types
-        if (commonType == Integer.class) return int[].class;
-        if (commonType == Double.class) return double[].class;
-        if (commonType == Boolean.class) return boolean[].class;
-        if (commonType == Character.class) return char[].class;
-        if (commonType == Long.class) return long[].class;
-        if (commonType == Float.class) return float[].class;
-        if (commonType == Byte.class) return byte[].class;
-        if (commonType == Short.class) return short[].class;
-
-        // For other types, return appropriate array type
-        return Array.newInstance(commonType, 0).getClass();
+        throw new IllegalArgumentException("Unsupported type: " + targetType.getName());
     }}
 
-    private static Class<?>[] getParameterTypes(Object[] args) {{
-        Class<?>[] types = new Class<?>[args.length];
-        for (int i = 0; i < args.length; i++) {{
-            if (args[i] == null) {{
-                types[i] = Object.class;
-            }} else if (args[i].getClass().isArray()) {{
-                types[i] = getArrayType(args[i]);
-            }} else {{
-                Class<?> type = args[i].getClass();
-                if (type == Integer.class) type = int.class;
-                if (type == Double.class) type = double.class;
-                if (type == Boolean.class) type = boolean.class;
-                if (type == Character.class) type = char.class;
-                if (type == Long.class) type = long.class;
-                if (type == Float.class) type = float.class;
-                if (type == Byte.class) type = byte.class;
-                if (type == Short.class) type = short.class;
-                types[i] = type;
+    // Bad code alert
+    private static Object parseValueWithoutType(String value) {{
+        value = value.trim();
+
+        if (value.startsWith("[") && value.endsWith("]")) {{
+            return parseValue(value, List.class);
+        }} else if (value.startsWith("\"") && value.endsWith("\"") || value.startsWith("'") && value.endsWith("'")) {{
+            return parseValue(value, String.class);
+        }} else if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {{
+            return parseValue(value, Boolean.class);
+        }} else if (value.matches("-?\\d+(\\.\\d+)?")) {{
+            if (value.contains(".")) {{
+                try {{
+                    return parseValue(value, Double.class);
+                }} catch (IllegalArgumentException ex) {{
+                    return parseValue(value, Float.class);
+                }}
+            }}
+            try {{
+                return parseValue(value, Integer.class);
+            }} catch (IllegalArgumentException ex) {{
+                return parseValue(value, Long.class);
             }}
         }}
-        return types;
+        return value;
     }}
 
-    private static Object[] parseArguments(String input) {{
+    private static Object[] parseArguments(String input, Class<?>[] paramTypes) {{
         List<Object> arguments = new ArrayList<>();
         String[] parts = input.split("--arg\\d+");
+        int argIndex = 0;
 
         for (String part : parts) {{
             if (part.trim().isEmpty()) continue;
@@ -225,16 +334,25 @@ public class {file_name} {{
                 value = value.substring(1).trim();
             }}
 
-            arguments.add(parseValue(value));
+            if (argIndex >= paramTypes.length) {{
+                throw new IllegalArgumentException("More arguments provided than parameter types");
+            }}
+
+            arguments.add(parseValue(value, paramTypes[argIndex]));
+            argIndex++;
+        }}
+
+        if (argIndex != paramTypes.length) {{
+            throw new IllegalArgumentException("Not enough arguments provided for parameter types");
         }}
 
         return arguments.toArray();
     }}
 
-    private static Object[] parseArray(String arrayContent) {{
+    private static Object[] parseArray(String arrayContent, Class<?> componentType) {{
         List<Object> elements = new ArrayList<>();
         if (arrayContent.trim().isEmpty()) {{
-            return new Object[0];
+            return (Object[]) Array.newInstance(componentType, 0);
         }}
 
         StringBuilder current = new StringBuilder();
@@ -257,75 +375,24 @@ public class {file_name} {{
             }} else if (!inString && (c == ']' || c == '}}')) {{
                 depth--;
                 current.append(c);
-            }} else if (!inString && c == ',' && depth == 0) {{
-                elements.add(parseValue(current.toString().trim()));
-                current.setLength(0); // reset the StringBuilder
+            }} else if (c == ',' && depth == 0) {{
+                if (inString) {{
+                    elements.add(current.toString().substring(1, current.length() - 1));
+                }} else {{
+                    elements.add(parseValue(current.toString().trim(), componentType));
+                }}
+                current.setLength(0);
             }} else {{
                 current.append(c);
             }}
         }}
 
         if (current.length() > 0) {{
-            elements.add(parseValue(current.toString().trim()));
+            elements.add(parseValue(current.toString().trim(), componentType));
         }}
 
-        return elements.toArray();
-    }}
-
-    private static Object parseValue(String value) {{
-        value = value.trim();
-
-        // Keep quoted strings as is
-        if ((value.startsWith("'") && value.endsWith("'")) ||
-            (value.startsWith("\"") && value.endsWith("\""))) {{
-            return value.substring(1, value.length() - 1);
-        }}
-
-        // Handle null
-        if (value.equals("null")) {{
-            return null;
-        }}
-
-        // Handle boolean
-        if (value.equals("true") || value.equals("false")) {{
-            return Boolean.parseBoolean(value);
-        }}
-
-        // Handle arrays
-        if (value.startsWith("[") && value.endsWith("]")) {{
-            Object[] parsed = parseArray(value.substring(1, value.length() - 1));
-            Class<?> arrayType = getArrayType(parsed);
-
-            // Convert to the appropriate array type
-            int length = parsed.length;
-            Object typedArray = Array.newInstance(arrayType.getComponentType(), length);
-
-            for (int i = 0; i < length; i++) {{
-                if (parsed[i] != null) {{
-                    Array.set(typedArray, i, parsed[i]);
-                }}
-            }}
-
-            return typedArray;
-        }}
-
-        // Handle objects/maps
-        if (value.startsWith("{{") && value.endsWith("}}")) {{
-            Map<String, Object> map = new HashMap<>();
-            // TODO: Implement object parsing if needed
-            return map;
-        }}
-
-        // Handle numbers
-        try {{
-            if (value.contains(".")) {{
-                return Double.parseDouble(value);
-            }}
-            return Integer.parseInt(value);
-        }} catch (NumberFormatException e) {{
-            // If not a number, return as string
-            return value;
-        }}
+        Object[] result = (Object[]) Array.newInstance(componentType, elements.size());
+        return elements.toArray(result);
     }}
 
     // Wraps the results in a "test_results" field and adds a "summary" field.
@@ -353,8 +420,10 @@ public class {file_name} {{
             Gson gson = new Gson();
             Solution solution = new Solution();
 
-            JsonArray testData = gson.fromJson("{test_data}", JsonArray.class);
-            JsonArray sampleData = gson.fromJson("{sample_data}", JsonArray.class);
+            String testStr = {test_data};
+            String sampleStr = {sample_data};
+            JsonArray testData = gson.fromJson(testStr, JsonArray.class);
+            JsonArray sampleData = gson.fromJson(sampleStr, JsonArray.class);
 
             JsonObject results = new JsonObject();
             results.add("hidden_results", createResultObject(runTests(solution, testData)));

@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from core.config import settings
 from db.models.problem import Problem
 from services.execution.service import CodeExecutionService
@@ -16,31 +16,44 @@ sync_db_url = settings.DATABASE_URL
 engine = create_engine(sync_db_url)
 SessionLocal = sessionmaker(bind=engine)
 
+
 class CodeGenerationResponse(BaseModel):
     python: str = Field(..., description="Solution in Python")
     java: str = Field(..., description="Solution in Java")
     cpp: str = Field(..., description="Solution in C++")
 
+
 class CodeGenerationService:
     def __init__(self, api_key: str):
-        self.client = AsyncOpenAI(api_key=api_key) if api_key != 'your_api_key_here' else None
+        self.client = (
+            AsyncOpenAI(api_key=api_key) if api_key != "your_api_key_here" else None
+        )
 
-    async def generate_code(self, title: str, description: str, boilerplate: str) -> CodeGenerationResponse:
+    async def generate_code(
+        self, title: str, description: str, boilerplate: str
+    ) -> CodeGenerationResponse:
         if not self.client:
             return CodeGenerationResponse()
         try:
             completion = await self.client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a code generation assistant. Generate correct solutions in python, java, and c++."},
-                    {"role": "user", "content": f"Title: {title}\nProblem description:\n{description}\nBoilerplates:\n{boilerplate.python}\n{boilerplate.java}\n{boilerplate.cpp}\nReturn only JSON with python, java, and cpp fields."}
+                    {
+                        "role": "system",
+                        "content": "You are a code generation assistant. Generate correct solutions in python, java, and c++.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Title: {title}\nProblem description:\n{description}\nBoilerplates:\n{boilerplate.python}\n{boilerplate.java}\n{boilerplate.cpp}\nReturn only JSON with python, java, and cpp fields.",
+                    },
                 ],
                 response_format=CodeGenerationResponse,
-                temperature=0
+                temperature=0,
             )
             return completion.choices[0].message.parsed
         except:
             return CodeGenerationResponse()
+
 
 def get_compare_func(problem: Problem, lang: str) -> str:
     if lang == "python":
@@ -50,6 +63,7 @@ def get_compare_func(problem: Problem, lang: str) -> str:
     elif lang == "cpp":
         return problem.compare_func.cpp
 
+
 @pytest.fixture
 def db():
     session = SessionLocal()
@@ -57,6 +71,7 @@ def db():
         yield session
     finally:
         session.close()
+
 
 @pytest.mark.asyncio
 async def test_code_validation_all_problems(db: Session):
@@ -67,16 +82,18 @@ async def test_code_validation_all_problems(db: Session):
     print(f"Validating {len(problems)} problems")
     for problem in problems:
         print(f"Validating problem: {problem.title}")
-        code_res = await code_generator.generate_code(problem.title, problem.description, problem.boilerplate)
+        code_res = await code_generator.generate_code(
+            problem.title, problem.description, problem.boilerplate
+        )
         for lang, snippet in [
-            ("python", code_res.python), 
-            ("java", code_res.java), 
-            ("cpp", code_res.cpp)
+            ("python", code_res.python),
+            ("java", code_res.java),
+            ("cpp", code_res.cpp),
         ]:
             print(f"Validating {lang} code")
             if snippet.strip():
                 result = await executor.execute_code(
-                    code=snippet, 
+                    code=snippet,
                     lang=lang,
                     method_name=problem.method_name,
                     test_cases=problem.hidden_test_cases,
@@ -84,7 +101,7 @@ async def test_code_validation_all_problems(db: Session):
                     sample_test_cases=problem.sample_test_cases,
                     sample_expected_results=problem.sample_test_results,
                     difficulty=problem.difficulty,
-                    compare_func=get_compare_func(problem, lang)
+                    compare_func=get_compare_func(problem, lang),
                 )
                 if not result.success:
                     print(snippet)

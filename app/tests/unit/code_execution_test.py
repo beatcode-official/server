@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from services.execution.service import CodeExecutionService
 # fmt: on
 
+
 class TestPython:
     @pytest.fixture
     def executor(self):
@@ -74,10 +75,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
             expected_results=["3", "0", "0"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert result.success
@@ -91,10 +96,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0"],
             expected_results=["4", "1"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert result.success
@@ -109,10 +118,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2"],
             expected_results=["3"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert not result.success
@@ -125,10 +138,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2", "--arg1=2 --arg2=2"],
             expected_results=["3", "4"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert result.success
@@ -143,10 +160,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2"],
             expected_results=["3"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert not result.success
@@ -159,10 +180,14 @@ class Solution:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2"],
             expected_results=["3"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
-            compare_func="return result == int(expected)"
+            compare_func="return result == int(expected)",
         )
 
         assert not result.success
@@ -176,25 +201,17 @@ class Solution:
             test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            expected_results=["[0,1]", "[1,2]", "[0,1]"],
             sample_test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            sample_expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            sample_expected_results=["[0,1]", "[1,2]", "[0,1]"],
             difficulty="easy",
-            compare_func="return sorted(result) == sorted(eval(expected))"
+            compare_func="return sorted(result) == sorted(eval(expected))",
         )
 
         assert result.success
@@ -214,7 +231,7 @@ class Solution:
                     sample_test_cases=["--arg1=1 --arg2=2"],
                     sample_expected_results=["3"],
                     difficulty="hard",
-                    compare_func="return result == int(expected)"
+                    compare_func="return result == int(expected)",
                 )
             )
 
@@ -223,9 +240,12 @@ class Solution:
         assert len(results) == 20
 
     def test_different_difficulty_semaphores(self, executor):
-        assert executor._execution_semaphores["easy"]._value > \
-            executor._execution_semaphores["medium"]._value > \
-            executor._execution_semaphores["hard"]._value
+        assert (
+            executor._execution_semaphores["easy"]._value
+            > executor._execution_semaphores["medium"]._value
+            > executor._execution_semaphores["hard"]._value
+        )
+
 
 class TestJava:
     @pytest.fixture
@@ -304,11 +324,15 @@ class Solution {
             method_name="add",
             test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
             expected_results=["3", "0", "0"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert result.success
@@ -326,7 +350,7 @@ class Solution {
             sample_expected_results=["3", "0"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert result.success
@@ -345,7 +369,7 @@ class Solution {
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert not result.success
@@ -362,7 +386,7 @@ class Solution {
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert not result.success
@@ -379,7 +403,7 @@ class Solution {
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert not result.success
@@ -396,7 +420,7 @@ class Solution {
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-            lang="java"
+            lang="java",
         )
 
         assert all("error" in test for test in result.test_results)
@@ -409,26 +433,18 @@ class Solution {
             test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            expected_results=["[0,1]", "[1,2]", "[0,1]"],
             sample_test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            sample_expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            sample_expected_results=["[0,1]", "[1,2]", "[0,1]"],
             difficulty="easy",
             compare_func="return Arrays.equals((int[]) result, (int[]) expected);",
-            lang="java"
+            lang="java",
         )
 
         assert result.success
@@ -449,18 +465,21 @@ class Solution {
                     sample_expected_results=["3"],
                     difficulty="hard",
                     compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
-                    lang="java"
+                    lang="java",
                 )
             )
 
         results = await asyncio.gather(*tasks)
         assert all(r.success for r in results)
         assert len(results) == 20
-    
+
     def test_different_difficulty_semaphores(self, executor):
-        assert executor._execution_semaphores["easy"]._value > \
-            executor._execution_semaphores["medium"]._value > \
-            executor._execution_semaphores["hard"]._value
+        assert (
+            executor._execution_semaphores["easy"]._value
+            > executor._execution_semaphores["medium"]._value
+            > executor._execution_semaphores["hard"]._value
+        )
+
 
 class TestCpp:
     @pytest.fixture
@@ -549,11 +568,15 @@ public:
             method_name="add",
             test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
             expected_results=["3", "0", "0"],
-            sample_test_cases=["--arg1=1 --arg2=2", "--arg1=0 --arg2=0", "--arg1=-1 --arg2=1"],
+            sample_test_cases=[
+                "--arg1=1 --arg2=2",
+                "--arg1=0 --arg2=0",
+                "--arg1=-1 --arg2=1",
+            ],
             sample_expected_results=["3", "0", "0"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert result.success
         assert len(result.test_results) == 3
@@ -570,12 +593,11 @@ public:
             sample_expected_results=["3", "0"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert result.success
         assert len(result.test_results) == 2
         assert not any(test["passed"] for test in result.test_results)
-
 
     @pytest.mark.asyncio
     async def test_syntax_error(self, executor, invalid_syntax_solution):
@@ -588,7 +610,7 @@ public:
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert not result.success
 
@@ -603,7 +625,7 @@ public:
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert not result.success
 
@@ -618,7 +640,7 @@ public:
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert result.success
         assert not all(test["passed"] for test in result.test_results)
@@ -634,7 +656,7 @@ public:
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert not result.success
         assert "Time Limit Exceeded" in result.message
@@ -650,7 +672,7 @@ public:
             sample_expected_results=["3"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert not result.success
         assert "Memory Limit Exceeded" in result.message
@@ -663,26 +685,18 @@ public:
             test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            expected_results=["[0,1]", "[1,2]", "[0,1]"],
             sample_test_cases=[
                 "--arg1=[2,7,11,15] --arg2=9",
                 "--arg1=[3,2,4] --arg2=6",
-                "--arg1=[3,3] --arg2=6"
+                "--arg1=[3,3] --arg2=6",
             ],
-            sample_expected_results=[
-                "[0,1]",
-                "[1,2]",
-                "[0,1]"
-            ],
+            sample_expected_results=["[0,1]", "[1,2]", "[0,1]"],
             difficulty="easy",
             compare_func="return result == expected;",
-            lang="cpp"
+            lang="cpp",
         )
         assert result.success
         assert len(result.test_results) == 3
@@ -702,7 +716,7 @@ public:
                     sample_expected_results=["3"],
                     difficulty="hard",
                     compare_func="return result == expected;",
-                    lang="cpp"
+                    lang="cpp",
                 )
             )
         results = await asyncio.gather(*tasks)
@@ -710,9 +724,12 @@ public:
         assert len(results) == 20
 
     def test_different_difficulty_semaphores(self, executor):
-        assert executor._execution_semaphores["easy"]._value > \
-            executor._execution_semaphores["medium"]._value > \
-            executor._execution_semaphores["hard"]._value
+        assert (
+            executor._execution_semaphores["easy"]._value
+            > executor._execution_semaphores["medium"]._value
+            > executor._execution_semaphores["hard"]._value
+        )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -119,5 +119,6 @@ async def test_get_problems_by_distribution_empty_distribution(db: Session):
     result = await ProblemManager.get_problems_by_distribution(db, distribution)
     assert len(result) == 0
 
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

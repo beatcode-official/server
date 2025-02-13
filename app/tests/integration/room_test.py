@@ -18,15 +18,10 @@ from tests.integration.functions import *
 # Important: Make sure server is in test mode.
 assert settings.TESTING, "Server is not in testing mode"
 # Clear database before hand with "python -m db.init --droptest"
-subprocess.run(
-    ["python", "-m", "db.init", "--droptest"],
-    stdout=subprocess.DEVNULL
-)
+subprocess.run(["python", "-m", "db.init", "--droptest"], stdout=subprocess.DEVNULL)
 
 # Global Variables
-SKIP = [
-
-]
+SKIP = []
 print(f"Skipping tests: {SKIP}")
 
 # Test 1
@@ -34,8 +29,12 @@ if 1 not in SKIP:
     print("Running test 1: Room Creation Tests", end=" ", flush=True)
 
     async def test1():
-        auth_headers1 = await make_user("rtest1", "rtest1@email.com", "password", "RTester 1")
-        auth_headers2 = await make_user("rtest2", "rtest2@email.com", "password", "RTester 2")
+        auth_headers1 = await make_user(
+            "rtest1", "rtest1@email.com", "password", "RTester 1"
+        )
+        auth_headers2 = await make_user(
+            "rtest2", "rtest2@email.com", "password", "RTester 2"
+        )
 
         session = requests.Session()
 
@@ -64,7 +63,6 @@ if 1 not in SKIP:
             "starting_sp": 200,
             "starting_mp": 200,
             "mana_recharge": 50,
-
         }
         room_data3 = await create_room(auth_headers2, session, settings=custom_settings)
         assert "room_code" in room_data3
@@ -108,7 +106,9 @@ if 2 not in SKIP:
     print("Running test 2: Room Fetching Tests", end=" ", flush=True)
 
     async def test2():
-        auth_headers = await make_user("rtest3", "rtest3@email.com", "password", "RTester 3")
+        auth_headers = await make_user(
+            "rtest3", "rtest3@email.com", "password", "RTester 3"
+        )
         session = requests.Session()
 
         # Create a room
@@ -134,8 +134,12 @@ if 3 not in SKIP:
     print("Running test 3: Room Settings Update Tests", end=" ", flush=True)
 
     async def test3():
-        auth_headers1 = await make_user("rtest4", "rtest4@email.com", "password", "RTester 4")
-        auth_headers2 = await make_user("rtest5", "rtest5@email.com", "password", "RTester 5")
+        auth_headers1 = await make_user(
+            "rtest4", "rtest4@email.com", "password", "RTester 4"
+        )
+        auth_headers2 = await make_user(
+            "rtest5", "rtest5@email.com", "password", "RTester 5"
+        )
         session = requests.Session()
 
         # Create a room
@@ -158,21 +162,33 @@ if 3 not in SKIP:
             "starting_mp": 200,
             "mana_recharge": 50,
         }
-        update_result = await update_room_settings(room_code, auth_headers1, session, new_settings)
+        update_result = await update_room_settings(
+            room_code, auth_headers1, session, new_settings
+        )
 
-        assert "message" in update_result and update_result["message"] == "Settings updated successfully"
+        assert (
+            "message" in update_result
+            and update_result["message"] == "Settings updated successfully"
+        )
 
         room_info = await get_room(room_code, auth_headers1)
         assert room_info["settings"] == new_settings
 
         # Test: Update as non-host
-        update_result = await update_room_settings(room_code, auth_headers2, session, new_settings)
-        assert "detail" in update_result and update_result["detail"] == "Only the host can update room settings"
+        update_result = await update_room_settings(
+            room_code, auth_headers2, session, new_settings
+        )
+        assert (
+            "detail" in update_result
+            and update_result["detail"] == "Only the host can update room settings"
+        )
 
         await leave_room(room_code, auth_headers1)
 
         # Test: Update non-existent room
-        update_result = await update_room_settings("INVALID", auth_headers1, session, new_settings)
+        update_result = await update_room_settings(
+            "INVALID", auth_headers1, session, new_settings
+        )
         assert "detail" in update_result and update_result["detail"] == "Room not found"
 
     asyncio.run(test3())
@@ -183,14 +199,20 @@ if 4 not in SKIP:
     print("Running test 4: Lobby WebSocket Tests", end=" ", flush=True)
 
     async def test4():
-        auth_headers1 = await make_user("rtest6", "rtest6@email.com", "password", "RTester 6")
-        auth_headers2 = await make_user("rtest7", "rtest7@email.com", "password", "RTester 7")
+        auth_headers1 = await make_user(
+            "rtest6", "rtest6@email.com", "password", "RTester 6"
+        )
+        auth_headers2 = await make_user(
+            "rtest7", "rtest7@email.com", "password", "RTester 7"
+        )
         session = requests.Session()
 
         lobby_url = f"{WS_BASE_URL}/rooms/lobby"
 
         # Test: Connect to lobby
-        async with websockets.connect(lobby_url, subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as lobby_ws:
+        async with websockets.connect(
+            lobby_url, subprotocols=[f"access_token|{extract_token(auth_headers1)}"]
+        ) as lobby_ws:
             # Initial empty room list
             message = await get_latest_message(lobby_ws)
             assert message["type"] == "room_list"
@@ -218,13 +240,18 @@ if 4 not in SKIP:
                 "starting_mp": 200,
                 "mana_recharge": 50,
             }
-            await update_room_settings(room_data["room_code"], auth_headers2, session, new_settings)
+            await update_room_settings(
+                room_data["room_code"], auth_headers2, session, new_settings
+            )
             message = await get_latest_message(lobby_ws)
             assert message["type"] == "room_list", "Wrong message type"
             assert message["rooms"][0]["settings"]["problem_count"] == 5
 
             # Player joins and check broadcast
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_data['room_code']}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as _:
+            async with websockets.connect(
+                f"{WS_BASE_URL}/rooms/{room_data['room_code']}",
+                subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+            ) as _:
                 message = await get_latest_message(lobby_ws)
                 assert message["type"] == "room_list"
                 assert message["rooms"][0]["player_count"] == 2
@@ -248,14 +275,23 @@ if 5 not in SKIP:
     print("Running test 5: Room WebSocket Basic Tests", end=" ", flush=True)
 
     async def test5():
-        auth_headers1 = await make_user("rtest8", "rtest8@email.com", "password", "RTester 8")
-        auth_headers2 = await make_user("rtest9", "rtest9@email.com", "password", "RTester 9")
-        auth_headers3 = await make_user("rtest10", "rtest10@email.com", "password", "RTester 10")
+        auth_headers1 = await make_user(
+            "rtest8", "rtest8@email.com", "password", "RTester 8"
+        )
+        auth_headers2 = await make_user(
+            "rtest9", "rtest9@email.com", "password", "RTester 9"
+        )
+        auth_headers3 = await make_user(
+            "rtest10", "rtest10@email.com", "password", "RTester 10"
+        )
         session = requests.Session()
 
         # Test: Connect to non-existent room
         try:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/INVALID", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as ws:
+            async with websockets.connect(
+                f"{WS_BASE_URL}/rooms/INVALID",
+                subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+            ) as ws:
                 await ws.recv()
             assert False
         except ConnectionClosedError as e:
@@ -266,8 +302,14 @@ if 5 not in SKIP:
         room_code = room_data["room_code"]
 
         # Connect host and guest
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
+        async with websockets.connect(
+            f"{WS_BASE_URL}/rooms/{room_code}",
+            subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+        ) as host_ws:
+            async with websockets.connect(
+                f"{WS_BASE_URL}/rooms/{room_code}",
+                subprotocols=[f"access_token|{extract_token(auth_headers2)}"],
+            ) as guest_ws:
                 # Test: Verify initial room state messages
                 host_state = await get_latest_message(host_ws)
                 guest_state = await get_latest_message(guest_ws)
@@ -279,7 +321,10 @@ if 5 not in SKIP:
 
                 # Test: Connect to full room
                 try:
-                    async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers3)}"]) as third_ws:
+                    async with websockets.connect(
+                        f"{WS_BASE_URL}/rooms/{room_code}",
+                        subprotocols=[f"access_token|{extract_token(auth_headers3)}"],
+                    ) as third_ws:
                         await asyncio.wait_for(third_ws.recv(), timeout=1)
                 except asyncio.TimeoutError:
                     assert False
@@ -297,16 +342,26 @@ if 6 not in SKIP:
     print("Running test 6: Room Ready State and Game Start Tests", end=" ", flush=True)
 
     async def test6():
-        auth_headers1 = await make_user("rtest11", "rtest11@email.com", "password", "RTester 11")
-        auth_headers2 = await make_user("rtest12", "rtest12@email.com", "password", "RTester 12")
+        auth_headers1 = await make_user(
+            "rtest11", "rtest11@email.com", "password", "RTester 11"
+        )
+        auth_headers2 = await make_user(
+            "rtest12", "rtest12@email.com", "password", "RTester 12"
+        )
         session = requests.Session()
 
         # Create room with custom settings
         room_data = await create_room(auth_headers1, session)
         room_code = room_data["room_code"]
 
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
+        async with websockets.connect(
+            f"{WS_BASE_URL}/rooms/{room_code}",
+            subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+        ) as host_ws:
+            async with websockets.connect(
+                f"{WS_BASE_URL}/rooms/{room_code}",
+                subprotocols=[f"access_token|{extract_token(auth_headers2)}"],
+            ) as guest_ws:
                 # Clear initial messages
                 await get_latest_message(host_ws)
                 await get_latest_message(guest_ws)
@@ -321,13 +376,18 @@ if 6 not in SKIP:
                 await guest_ws.send(json.dumps({"type": "toggle_ready"}))
                 host_state = await get_latest_message(host_ws)
                 await get_latest_message(guest_ws)
-                assert host_state["data"]["host_ready"] and host_state["data"]["guest_ready"]
+                assert (
+                    host_state["data"]["host_ready"]
+                    and host_state["data"]["guest_ready"]
+                )
 
                 # Test: Start game without being host
                 await guest_ws.send(json.dumps({"type": "start_game"}))
                 error_msg = await get_latest_message(guest_ws)
                 assert error_msg["type"] == "error"
-                assert "Only the host can start the game" in error_msg["data"]["message"]
+                assert (
+                    "Only the host can start the game" in error_msg["data"]["message"]
+                )
 
                 # Test: Start game as host
                 await host_ws.send(json.dumps({"type": "start_game"}))
@@ -344,16 +404,19 @@ if 6 not in SKIP:
 
                 # Test: Create room while in game
                 room_data2 = await create_room(auth_headers1, session)
-                assert "detail" in room_data2 and room_data2["detail"] == "Already in a room"
+                assert (
+                    "detail" in room_data2
+                    and room_data2["detail"] == "Already in a room"
+                )
 
                 # Both players connect to game
                 async with websockets.connect(
                     f"{WS_BASE_URL}/game/play/{game_id}",
-                    subprotocols=[f"access_token|{extract_token(auth_headers1)}"]
+                    subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
                 ) as p1:
                     async with websockets.connect(
                         f"{WS_BASE_URL}/game/play/{game_id}",
-                        subprotocols=[f"access_token|{extract_token(auth_headers2)}"]
+                        subprotocols=[f"access_token|{extract_token(auth_headers2)}"],
                     ):
                         await send_forfeit(p1)
 
@@ -365,8 +428,12 @@ if 7 not in SKIP:
     print("Running test 7: Room Chat and Game Integration Tests", end=" ", flush=True)
 
     async def test7():
-        auth_headers1 = await make_user("rtest13", "rtest13@email.com", "password", "RTester 13")
-        auth_headers2 = await make_user("rtest14", "rtest14@email.com", "password", "RTester 14")
+        auth_headers1 = await make_user(
+            "rtest13", "rtest13@email.com", "password", "RTester 13"
+        )
+        auth_headers2 = await make_user(
+            "rtest14", "rtest14@email.com", "password", "RTester 14"
+        )
         session = requests.Session()
 
         settings = {
@@ -388,18 +455,23 @@ if 7 not in SKIP:
         room_data = await create_room(auth_headers1, session, settings=settings)
         room_code = room_data["room_code"]
 
-        async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as host_ws:
-            async with websockets.connect(f"{WS_BASE_URL}/rooms/{room_code}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]) as guest_ws:
+        async with websockets.connect(
+            f"{WS_BASE_URL}/rooms/{room_code}",
+            subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+        ) as host_ws:
+            async with websockets.connect(
+                f"{WS_BASE_URL}/rooms/{room_code}",
+                subprotocols=[f"access_token|{extract_token(auth_headers2)}"],
+            ) as guest_ws:
                 # Clear initial messages
                 await get_latest_message(host_ws)
                 await get_latest_message(guest_ws)
 
                 # Test: Chat functionality
                 chat_message = "Hello, this is a test message!"
-                await host_ws.send(json.dumps({
-                    "type": "chat",
-                    "data": {"message": chat_message}
-                }))
+                await host_ws.send(
+                    json.dumps({"type": "chat", "data": {"message": chat_message}})
+                )
 
                 host_chat = await get_latest_message(host_ws)
                 guest_chat = await get_latest_message(guest_ws)
@@ -421,8 +493,14 @@ if 7 not in SKIP:
                 game_id = game_start_host["data"]["game_id"]
 
                 # Connect to game and verify settings
-                async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", subprotocols=[f"access_token|{extract_token(auth_headers1)}"]) as p1:
-                    async with websockets.connect(f"{WS_BASE_URL}/game/play/{game_id}", subprotocols=[f"access_token|{extract_token(auth_headers2)}"]):
+                async with websockets.connect(
+                    f"{WS_BASE_URL}/game/play/{game_id}",
+                    subprotocols=[f"access_token|{extract_token(auth_headers1)}"],
+                ) as p1:
+                    async with websockets.connect(
+                        f"{WS_BASE_URL}/game/play/{game_id}",
+                        subprotocols=[f"access_token|{extract_token(auth_headers2)}"],
+                    ):
                         game_state = await get_until(p1, "game_state")
 
                         # Test if started game has correct settings
@@ -476,9 +554,13 @@ if 7 not in SKIP:
                         await use_ability(p1, "deletio")
 
                         game_state = await get_latest_message(p1)
-                        assert game_state["data"]["your_hp"] == 560  # HP should stay the same
+                        assert (
+                            game_state["data"]["your_hp"] == 560
+                        )  # HP should stay the same
                         assert game_state["data"]["skill_points"] == 180
-                        assert game_state["data"]["mana_points"] == 200 - 15 + 50 * 4 - 5
+                        assert (
+                            game_state["data"]["mana_points"] == 200 - 15 + 50 * 4 - 5
+                        )
 
                         await send_code(p1, ALL_SOLUTION)
                         await asyncio.sleep(3)

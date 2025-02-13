@@ -17,7 +17,9 @@ class RuntimeAnalysisService:
     """
 
     def __init__(self, api_key: str):
-        self.client = AsyncOpenAI(api_key=api_key) if api_key != 'your_api_key_here' else None
+        self.client = (
+            AsyncOpenAI(api_key=api_key) if api_key != "your_api_key_here" else None
+        )
 
     async def analyze_code(self, code: str) -> Optional[str]:
         """
@@ -33,11 +35,17 @@ class RuntimeAnalysisService:
             completion = await self.client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a code analysis assistant. Analyze the code and provide ONLY the time complexity in Big O notation (e.g. O(n), O(n^2)). No other text or explanations."},
-                    {"role": "user", "content": f"Analyze this code:\n\n```\n{code}\n```"}
+                    {
+                        "role": "system",
+                        "content": "You are a code analysis assistant. Analyze the code and provide ONLY the time complexity in Big O notation (e.g. O(n), O(n^2)). No other text or explanations.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Analyze this code:\n\n```\n{code}\n```",
+                    },
                 ],
                 response_format=RuntimeAnalysis,
-                temperature=0
+                temperature=0,
             )
             return completion.choices[0].message.parsed.complexity
         except Exception as e:

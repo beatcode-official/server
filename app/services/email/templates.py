@@ -2,6 +2,7 @@ class EmailTemplates:
     """
     A static class to generate email templates.
     """
+
     @staticmethod
     def verification_email(verify_url: str) -> str:
         """

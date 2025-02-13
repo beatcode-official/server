@@ -30,9 +30,7 @@ class GameManager:
         self.timeout_tasks: Dict[str, asyncio.Task] = {}
         self.db_sessions: Dict[str, Session] = {}
         self.hp_deduction = settings.HP_DEDUCTION_BASE
-        easy, medium, hard = [
-            float(x) for x in settings.HP_MULTIPLIER.split(",")
-        ]
+        easy, medium, hard = [float(x) for x in settings.HP_MULTIPLIER.split(",")]
         self.hp_multiplier = {
             "easy": easy,
             "medium": medium,
@@ -50,7 +48,8 @@ class GameManager:
         player = game_state.player1 if is_player1 else game_state.player2
         opponent = game_state.player2 if is_player1 else game_state.player1
         rating_change = (
-            game_state.player1_rating_change if is_player1
+            game_state.player1_rating_change
+            if is_player1
             else game_state.player2_rating_change
         )
 
@@ -188,7 +187,11 @@ class GameManager:
             distribution = {
                 "easy": int(room_settings.prob_easy * room_settings.problem_count),
                 "medium": int(room_settings.prob_medium * room_settings.problem_count),
-                "hard": int(room_settings.problem_count - int(room_settings.prob_easy * room_settings.problem_count) - int(room_settings.prob_medium * room_settings.problem_count))
+                "hard": int(
+                    room_settings.problem_count
+                    - int(room_settings.prob_easy * room_settings.problem_count)
+                    - int(room_settings.prob_medium * room_settings.problem_count)
+                ),
             }
         else:
             distribution = defaultdict(int)
@@ -201,7 +204,9 @@ class GameManager:
                 else:
                     distribution["hard"] += 1
 
-        problems = await ProblemManager.get_problems_by_distribution(db, dict(distribution))
+        problems = await ProblemManager.get_problems_by_distribution(
+            db, dict(distribution)
+        )
 
         # Create the corresponding game state object
         game = GameState(
@@ -214,7 +219,7 @@ class GameManager:
                 avatar_url=player1.avatar_url,
                 hp=room_settings.starting_hp,
                 skill_points=room_settings.starting_sp,
-                mana_points=room_settings.starting_mp
+                mana_points=room_settings.starting_mp,
             ),
             player2=PlayerState(
                 user_id=player2.id,
@@ -223,7 +228,7 @@ class GameManager:
                 avatar_url=player2.avatar_url,
                 hp=room_settings.starting_hp,
                 skill_points=room_settings.starting_sp,
-                mana_points=room_settings.starting_mp
+                mana_points=room_settings.starting_mp,
             ),
             problems=problems,
             start_time=time.time(),
@@ -232,11 +237,11 @@ class GameManager:
                 "hp_multiplier": {
                     "easy": room_settings.hp_multiplier_easy,
                     "medium": room_settings.hp_multiplier_medium,
-                    "hard": room_settings.hp_multiplier_hard
+                    "hard": room_settings.hp_multiplier_hard,
                 },
                 "base_hp_deduction": room_settings.base_hp_deduction,
-                "mana_recharge": room_settings.mana_recharge
-            }
+                "mana_recharge": room_settings.mana_recharge,
+            },
         )
 
         self.active_games[game_id] = game
@@ -260,7 +265,9 @@ class GameManager:
         game_id = self.player_to_game.get(player_id)
         return self.active_games.get(game_id) if game_id else None
 
-    def calculate_hp_deduction(self, test_cases_solved: int, difficulty: str, game_state: GameState) -> int:
+    def calculate_hp_deduction(
+        self, test_cases_solved: int, difficulty: str, game_state: GameState
+    ) -> int:
         """
         # SUBJECT TO CHANGE
         Calculates the HP deduction for a player based on the number of test cases solved and the problem difficulty.
@@ -271,14 +278,21 @@ class GameManager:
         :return: The HP deduction.
         """
         # Use custom base deduction if available, otherwise use default
-        if game_state.custom_settings and 'base_hp_deduction' in game_state.custom_settings:
-            base_deduction = game_state.custom_settings['base_hp_deduction'] * test_cases_solved
+        if (
+            game_state.custom_settings
+            and "base_hp_deduction" in game_state.custom_settings
+        ):
+            base_deduction = (
+                game_state.custom_settings["base_hp_deduction"] * test_cases_solved
+            )
         else:
             base_deduction = self.hp_deduction * test_cases_solved
 
         # Use custom multipliers if available, otherwise use default
-        if game_state.custom_settings and 'hp_multiplier' in game_state.custom_settings:
-            multiplier = game_state.custom_settings['hp_multiplier'].get(difficulty.lower(), 1)
+        if game_state.custom_settings and "hp_multiplier" in game_state.custom_settings:
+            multiplier = game_state.custom_settings["hp_multiplier"].get(
+                difficulty.lower(), 1
+            )
         else:
             multiplier = self.hp_multiplier.get(difficulty.lower(), 1)
 
@@ -311,9 +325,10 @@ class GameManager:
         # Only update the player's state if they have made progress
         if test_cases_solved > prev_solved:
             hp_deduction = self.calculate_hp_deduction(
-                test_cases_solved - prev_solved,  # Deduct HP based on new test cases solved only
+                test_cases_solved
+                - prev_solved,  # Deduct HP based on new test cases solved only
                 current_problem.difficulty,
-                game
+                game,
             )
             opponent.hp = max(0, opponent.hp - hp_deduction)
             player.partial_progress[player.current_problem_index] = test_cases_solved
@@ -348,10 +363,10 @@ class GameManager:
 
         # If one player's HP reaches 0 or one player has solved all problems the game ends
         if (
-            game.player1.hp <= 0 or
-            game.player2.hp <= 0 or
-            game.player1.problems_solved == len(game.problems) or
-            game.player2.problems_solved == len(game.problems)
+            game.player1.hp <= 0
+            or game.player2.hp <= 0
+            or game.player1.problems_solved == len(game.problems)
+            or game.player2.problems_solved == len(game.problems)
         ):
             game.winner = await self.get_winner(game)
 
@@ -360,11 +375,7 @@ class GameManager:
 
         return False
 
-    async def handle_game_end(
-        self,
-        game_state: GameState,
-        db: Session
-    ):
+    async def handle_game_end(self, game_state: GameState, db: Session):
         """
         Handle the end of a game like saving the match data and cleaning up the game
 
@@ -394,9 +405,13 @@ class GameManager:
             end_time=time.time(),
             match_type=game_state.match_type,
             winner_id=(
-                game_state.player1.user_id if game_state.winner == game_state.player1.username
-                else game_state.player2.user_id if game_state.winner == game_state.player2.username
-                else None
+                game_state.player1.user_id
+                if game_state.winner == game_state.player1.username
+                else (
+                    game_state.player2.user_id
+                    if game_state.winner == game_state.player2.username
+                    else None
+                )
             ),
             problems=[p.id for p in game_state.problems],
             player1_rating_change=game_state.player1_rating_change,
@@ -412,8 +427,12 @@ class GameManager:
 
         # Find the room this game belongs to
         room = next(
-            (room for room in room_service.rooms.values() if room.game_id == game_state.id),
-            None
+            (
+                room
+                for room in room_service.rooms.values()
+                if room.game_id == game_state.id
+            ),
+            None,
         )
 
         # If room exists, reset its status
@@ -427,34 +446,40 @@ class GameManager:
                 room.host_id: db.query(User).filter(User.id == room.host_id).first(),
             }
             if room.guest_id:
-                users[room.guest_id] = db.query(User).filter(
-                    User.id == room.guest_id
-                ).first()
+                users[room.guest_id] = (
+                    db.query(User).filter(User.id == room.guest_id).first()
+                )
 
             # Broadcast updated room state
-            await room.broadcast({
-                "type": "room_update",
-                "data": room_service.create_room_view(room, users).model_dump()
-            })
+            await room.broadcast(
+                {
+                    "type": "room_update",
+                    "data": room_service.create_room_view(room, users).model_dump(),
+                }
+            )
 
         # Broadcast the match result to the players
-        await game_state.player1.send_event(GameEvent(
-            type="match_end",
-            data=self.create_game_view(game_state, game_state.player1.user_id).model_dump()
-        ))
+        await game_state.player1.send_event(
+            GameEvent(
+                type="match_end",
+                data=self.create_game_view(
+                    game_state, game_state.player1.user_id
+                ).model_dump(),
+            )
+        )
 
-        await game_state.player2.send_event(GameEvent(
-            type="match_end",
-            data=self.create_game_view(game_state, game_state.player2.user_id).model_dump()
-        ))
+        await game_state.player2.send_event(
+            GameEvent(
+                type="match_end",
+                data=self.create_game_view(
+                    game_state, game_state.player2.user_id
+                ).model_dump(),
+            )
+        )
 
         await self.cleanup_game(game_state.id)
 
-    async def handle_ranked_match_end(
-        self,
-        game_state: GameState,
-        db: Session
-    ):
+    async def handle_ranked_match_end(self, game_state: GameState, db: Session):
         """
         Handle the end of a ranked match including rating calculations
 
@@ -464,8 +489,16 @@ class GameManager:
         # Skip rating calculation if the game is a draw
         if game_state.winner:
             # Get winner and loser states
-            winner = game_state.player1 if game_state.winner == game_state.player1.username else game_state.player2
-            loser = game_state.player2 if game_state.winner == game_state.player1.username else game_state.player1
+            winner = (
+                game_state.player1
+                if game_state.winner == game_state.player1.username
+                else game_state.player2
+            )
+            loser = (
+                game_state.player2
+                if game_state.winner == game_state.player1.username
+                else game_state.player1
+            )
 
             # Get users from database
             winner_user = db.query(User).filter(User.id == winner.user_id).first()
@@ -473,15 +506,11 @@ class GameManager:
 
             # Calculate rating change
             winner_change = self.matchmaker.ranked_service.calculate_rating_change(
-                winner_user.rating,
-                loser_user.rating,
-                True
+                winner_user.rating, loser_user.rating, True
             )
 
             loser_change = self.matchmaker.ranked_service.calculate_rating_change(
-                loser_user.rating,
-                winner_user.rating,
-                False
+                loser_user.rating, winner_user.rating, False
             )
 
             # Update ratings
@@ -489,8 +518,16 @@ class GameManager:
             loser_user.rating = max(0, loser_user.rating + loser_change)
 
             # Save rating changes
-            game_state.player1_rating_change = winner_change if game_state.winner == game_state.player1.username else loser_change if loser_user.rating > 0 else 0
-            game_state.player2_rating_change = winner_change if game_state.winner == game_state.player2.username else loser_change if loser_user.rating > 0 else 0
+            game_state.player1_rating_change = (
+                winner_change
+                if game_state.winner == game_state.player1.username
+                else loser_change if loser_user.rating > 0 else 0
+            )
+            game_state.player2_rating_change = (
+                winner_change
+                if game_state.winner == game_state.player2.username
+                else loser_change if loser_user.rating > 0 else 0
+            )
 
     async def forfeit_game(self, game_id: str, player_id: int):
         """

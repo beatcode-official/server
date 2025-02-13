@@ -10,11 +10,10 @@ class ProblemManager:
     """
     A static class to handle all the operations related to fetching and preparing problems for the other services.
     """
+
     @staticmethod
     async def get_random_problems(
-        db: Session,
-        difficulty: str,
-        count: int
+        db: Session, difficulty: str, count: int
     ) -> List[Problem]:
         """
         Get a specified number of problems of a specific difficulty level randomly.
@@ -34,10 +33,7 @@ class ProblemManager:
         )
 
     @staticmethod
-    async def get_problem_by_id(
-        db: Session,
-        problem_id: int
-    ) -> Optional[Problem]:
+    async def get_problem_by_id(db: Session, problem_id: int) -> Optional[Problem]:
         """
         Get a problem by its ID.
 
@@ -46,17 +42,11 @@ class ProblemManager:
 
         :return: The problem with the specified ID, if it exists.
         """
-        return (
-            db.query(Problem)
-            .filter(Problem.id == problem_id)
-            .first()
-        )
+        return db.query(Problem).filter(Problem.id == problem_id).first()
 
     @staticmethod
     async def get_problems_by_distribution(
-        db: Session,
-        distribution: Dict[str, int],
-        shuffle: bool = False
+        db: Session, distribution: Dict[str, int], shuffle: bool = False
     ) -> List[Problem]:
         """
         Get problems based on the distribution of difficulty levels.
@@ -96,7 +86,7 @@ class ProblemManager:
                 "java": problem.boilerplate.java,
                 "cpp": problem.boilerplate.cpp,
                 "python": problem.boilerplate.python,
-            }
+            },
         }
 
     @staticmethod
@@ -138,7 +128,7 @@ class ProblemManager:
                 "sample_test_results": [
                     "false",
                     "true",
-                ]
+                ],
             }
 
         return {

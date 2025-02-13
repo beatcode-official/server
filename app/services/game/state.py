@@ -14,6 +14,7 @@ class GameStatus(str, Enum):
     """
     Enum for the status of a game, useful for preventing typos.
     """
+
     WAITING = "waiting"
     IN_PROGRESS = "in_progress"
     FINISHED = "finished"
@@ -36,6 +37,7 @@ class PlayerState(BaseModel):
     :param mana_points: The mana points (MP) of the player.
     :param abilities: List of abilities that the player has.
     """
+
     user_id: int
     username: str
     display_name: str
@@ -83,6 +85,7 @@ class GameState(BaseModel):
     :param winner: The ID of the winner of the game.
     :param is_cleaning_up: A flag indicating whether the game is cleaning up.
     """
+
     id: str
     status: GameStatus
     player1: PlayerState
@@ -142,5 +145,7 @@ class GameState(BaseModel):
         :return: True if the match has timed out, False otherwise.
         """
         elapsed_time = time.time() - self.start_time
-        timeout = settings.MATCH_TIMEOUT_MINUTES * 60 if not settings.TESTING else 3 * 60  # change when testing (timeout test = 20, normal = 3 * 60)
+        timeout = (
+            settings.MATCH_TIMEOUT_MINUTES * 60 if not settings.TESTING else 3 * 60
+        )  # change when testing (timeout test = 20, normal = 3 * 60)
         return elapsed_time >= timeout

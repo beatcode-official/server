@@ -24,12 +24,14 @@ class EmailService:
         verify_url = f"{self.frontend_url}/verify-email?token={token}"
 
         try:
-            response = resend.Emails.send({
-                "from": self.from_email,
-                "to": to_email,
-                "subject": "Verify your BeatCode account",
-                "html": EmailTemplates.verification_email(verify_url)
-            })
+            response = resend.Emails.send(
+                {
+                    "from": self.from_email,
+                    "to": to_email,
+                    "subject": "Verify your BeatCode account",
+                    "html": EmailTemplates.verification_email(verify_url),
+                }
+            )
 
             return response
         except Exception as e:
@@ -42,17 +44,21 @@ class EmailService:
         Send a password reset email to the user's email address.
 
         :param to_email: The email address to send the email to.
-        :param token: The password reset token to include in the email.    
+        :param token: The password reset token to include in the email.
         """
         reset_url = f"{self.frontend_url}/reset-password?token={token}"
 
         try:
-            response = resend.Emails.send({
-                "from": self.from_email,
-                "to": to_email,
-                "subject": "Reset your BeatCode password",
-                "html": EmailTemplates.password_reset_email(reset_url, self.expire_minutes)
-            })
+            response = resend.Emails.send(
+                {
+                    "from": self.from_email,
+                    "to": to_email,
+                    "subject": "Reset your BeatCode password",
+                    "html": EmailTemplates.password_reset_email(
+                        reset_url, self.expire_minutes
+                    ),
+                }
+            )
 
             return response
         except Exception as e:

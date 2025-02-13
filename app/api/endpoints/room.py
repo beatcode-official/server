@@ -6,8 +6,14 @@ from typing import Optional
 from api.endpoints.users import get_current_user, get_current_user_ws
 from db.models.user import User
 from db.session import get_db
-from fastapi import (APIRouter, Depends, HTTPException, WebSocket,
-                     WebSocketDisconnect, status)
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from services.game.manager import game_manager
 from services.room.service import room_service
 from services.room.state import RoomSettings, RoomStatus
@@ -20,7 +26,7 @@ router = APIRouter(prefix="/rooms", tags=["rooms"])
 async def create_room(
     is_public: bool = True,
     settings: Optional[RoomSettings] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new room
@@ -35,14 +41,12 @@ async def create_room(
     for room in room_service.rooms.values():
         if room.is_player_in_room(current_user.id):
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Already in a room"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Already in a room"
             )
 
     if game_manager.get_player_game(current_user.id):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already in a game"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Already in a game"
         )
 
     room = room_service.create_room(current_user, is_public, settings)
@@ -53,7 +57,7 @@ async def create_room(
 async def get_room(
     room_code: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get room information
@@ -67,8 +71,7 @@ async def get_room(
     room = room_service.get_room(room_code)
     if not room:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Room not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Room not found"
         )
 
     users = {}
@@ -83,7 +86,7 @@ async def get_room(
 async def update_room_settings(
     room_code: str,
     settings: RoomSettings,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update room settings (host only)
@@ -97,27 +100,23 @@ async def update_room_settings(
     room = room_service.get_room(room_code)
     if not room:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Room not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Room not found"
         )
 
     if room.host_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the host can update room settings"
+            detail="Only the host can update room settings",
         )
 
     if room.status != RoomStatus.WAITING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot modify room settings while game is in progress"
+            detail="Cannot modify room settings while game is in progress",
         )
 
     room.settings = settings
-    await room.broadcast({
-        "type": "settings_updated",
-        "data": settings.model_dump()
-    })
+    await room.broadcast({"type": "settings_updated", "data": settings.model_dump()})
 
     if room.is_public:
         asyncio.create_task(room_service.handle_room_update())
@@ -127,8 +126,7 @@ async def update_room_settings(
 
 @router.websocket("/lobby")
 async def room_lobby_websocket(
-    websocket: WebSocket,
-    current_user: User = Depends(get_current_user_ws)
+    websocket: WebSocket, current_user: User = Depends(get_current_user_ws)
 ):
     """
     WebSocket endpoint for room lobby
@@ -155,7 +153,7 @@ async def room_websocket(
     websocket: WebSocket,
     room_code: str,
     current_user: User = Depends(get_current_user_ws),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     WebSocket endpoint for room management
@@ -182,7 +180,9 @@ async def room_websocket(
         # New guest joining the room
 
         # Check if user is already in any room (except this one)
-        if room_service.is_user_in_any_room(current_user.id) and not room.is_player_in_room(current_user.id):
+        if room_service.is_user_in_any_room(
+            current_user.id
+        ) and not room.is_player_in_room(current_user.id):
             return await websocket.close(code=4005, reason="Already in another room")
 
         room.guest_id = current_user.id
@@ -197,13 +197,17 @@ async def room_websocket(
         users = {}
         users[room.host_id] = db.query(User).filter(User.id == room.host_id).first()
         if room.guest_id:
-            users[room.guest_id] = db.query(User).filter(User.id == room.guest_id).first()
+            users[room.guest_id] = (
+                db.query(User).filter(User.id == room.guest_id).first()
+            )
 
         # Broadcast updated room state to all players
-        await room.broadcast({
-            "type": "room_state",
-            "data": room_service.create_room_view(room, users).model_dump()
-        })
+        await room.broadcast(
+            {
+                "type": "room_state",
+                "data": room_service.create_room_view(room, users).model_dump(),
+            }
+        )
 
         if room.is_public:
             await room_service.broadcast_room_list()
@@ -217,9 +221,9 @@ async def room_websocket(
                     room.host_id: db.query(User).filter(User.id == room.host_id).first()
                 }
                 if room.guest_id:
-                    users[room.guest_id] = db.query(User).filter(
-                        User.id == room.guest_id
-                    ).first()
+                    users[room.guest_id] = (
+                        db.query(User).filter(User.id == room.guest_id).first()
+                    )
 
                 if data["type"] == "toggle_ready":
                     # Toggle ready status
@@ -227,39 +231,48 @@ async def room_websocket(
                     room.set_player_ready(current_user.id, not current_ready)
 
                     # Broadcast updated room state
-                    await room.broadcast({
-                        "type": "room_state",
-                        "data": room_service.create_room_view(room, users).model_dump()
-                    })
+                    await room.broadcast(
+                        {
+                            "type": "room_state",
+                            "data": room_service.create_room_view(
+                                room, users
+                            ).model_dump(),
+                        }
+                    )
 
                 elif data["type"] == "start_game":
                     if current_user.id != room.host_id:
-                        await websocket.send_json({
-                            "type": "error",
-                            "data": {"message": "Only the host can start the game"}
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "data": {"message": "Only the host can start the game"},
+                            }
+                        )
                         continue
 
                     if not room.is_full():
-                        await websocket.send_json({
-                            "type": "error",
-                            "data": {"message": "Need 2 players to start"}
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "data": {"message": "Need 2 players to start"},
+                            }
+                        )
                         continue
 
                     if not room.are_players_ready():
-                        await websocket.send_json({
-                            "type": "error",
-                            "data": {"message": "All players must be ready to start"}
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "data": {
+                                    "message": "All players must be ready to start"
+                                },
+                            }
+                        )
                         continue
 
                     # Create game with room settings
                     game_state = await game_manager.create_game_with_settings(
-                        users[room.host_id],
-                        users[room.guest_id],
-                        room.settings,
-                        db
+                        users[room.host_id], users[room.guest_id], room.settings, db
                     )
 
                     room.status = RoomStatus.IN_GAME
@@ -267,21 +280,22 @@ async def room_websocket(
                     room.reset_ready_status()
 
                     # Notify players
-                    await room.broadcast({
-                        "type": "game_started",
-                        "data": {"game_id": game_state.id}
-                    })
+                    await room.broadcast(
+                        {"type": "game_started", "data": {"game_id": game_state.id}}
+                    )
 
                 elif data["type"] == "chat":
                     # Broadcast chat message
-                    await room.broadcast({
-                        "type": "chat",
-                        "data": {
-                            "sender": current_user.username,
-                            "message": data["data"]["message"],
-                            "timestamp": time.time()
+                    await room.broadcast(
+                        {
+                            "type": "chat",
+                            "data": {
+                                "sender": current_user.username,
+                                "message": data["data"]["message"],
+                                "timestamp": time.time(),
+                            },
                         }
-                    })
+                    )
 
             except asyncio.TimeoutError:
                 continue
@@ -305,14 +319,20 @@ async def room_websocket(
 
         else:
             # Broadcast updated room state
-            users = {room.host_id: db.query(User).filter(User.id == room.host_id).first()}
+            users = {
+                room.host_id: db.query(User).filter(User.id == room.host_id).first()
+            }
             if room.guest_id:
-                users[room.guest_id] = db.query(User).filter(User.id == room.guest_id).first()
+                users[room.guest_id] = (
+                    db.query(User).filter(User.id == room.guest_id).first()
+                )
 
-            await room.broadcast({
-                "type": "room_state",
-                "data": room_service.create_room_view(room, users).model_dump()
-            })
+            await room.broadcast(
+                {
+                    "type": "room_state",
+                    "data": room_service.create_room_view(room, users).model_dump(),
+                }
+            )
 
             if room.is_public:
                 asyncio.create_task(room_service.handle_room_update())

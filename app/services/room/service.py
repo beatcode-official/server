@@ -11,7 +11,7 @@ from fastapi import HTTPException, WebSocket
 from services.room.state import RoomSettings, RoomState, RoomStatus, RoomView
 
 
-class RoomService():
+class RoomService:
     """
     A service class that handles custom rooms
     """
@@ -29,10 +29,11 @@ class RoomService():
         :return: Room code
         """
         while True:
-            code = code = ''.join(random.choices(
-                string.ascii_uppercase + string.digits,
-                k=settings.ROOM_CODE_LENGTH
-            ))
+            code = code = "".join(
+                random.choices(
+                    string.ascii_uppercase + string.digits, k=settings.ROOM_CODE_LENGTH
+                )
+            )
             if code not in self.rooms:
                 return code
 
@@ -42,8 +43,13 @@ class RoomService():
 
         :return: Room settings
         """
-        easy, medium, hard = [float(x) for x in settings.DEFAULT_ROOM_SETTINGS["hp_multiplier"].split(",")]
-        prob_easy, prob_medium, prob_hard = [float(x) for x in settings.DEFAULT_ROOM_SETTINGS["problem_distribution"].split(",")]
+        easy, medium, hard = [
+            float(x) for x in settings.DEFAULT_ROOM_SETTINGS["hp_multiplier"].split(",")
+        ]
+        prob_easy, prob_medium, prob_hard = [
+            float(x)
+            for x in settings.DEFAULT_ROOM_SETTINGS["problem_distribution"].split(",")
+        ]
 
         return RoomSettings(
             problem_count=settings.DEFAULT_ROOM_SETTINGS["problem_count"],
@@ -58,7 +64,7 @@ class RoomService():
             prob_hard=prob_hard,
             starting_sp=settings.STARTING_SP,
             starting_mp=settings.STARTING_MP,
-            mana_recharge=settings.MANA_RECHARGE
+            mana_recharge=settings.MANA_RECHARGE,
         )
 
     async def _get_user(self, user_id: int) -> User:
@@ -96,10 +102,7 @@ class RoomService():
         room_list = await self._generate_room_list()
 
         try:
-            await ws.send_json({
-                "type": "room_list",
-                "rooms": room_list
-            })
+            await ws.send_json({"type": "room_list", "rooms": room_list})
         except:
             self.lobby_connections.discard(ws)
             raise
@@ -116,13 +119,15 @@ class RoomService():
         for room in public_rooms:
             try:
                 host = await self._get_user(room.host_id)
-                room_list.append({
-                    "room_code": room.room_code,
-                    "host_name": host.username,
-                    "host_display_name": host.display_name,
-                    "settings": room.settings.model_dump(),
-                    "player_count": 2 if room.guest_id else 1
-                })
+                room_list.append(
+                    {
+                        "room_code": room.room_code,
+                        "host_name": host.username,
+                        "host_display_name": host.display_name,
+                        "settings": room.settings.model_dump(),
+                        "player_count": 2 if room.guest_id else 1,
+                    }
+                )
             except:
                 continue
 
@@ -132,7 +137,7 @@ class RoomService():
         self,
         host: User,
         is_public: bool = True,
-        settings: Optional[RoomSettings] = None
+        settings: Optional[RoomSettings] = None,
     ) -> RoomState:
         """
         Create a new room
@@ -188,7 +193,8 @@ class RoomService():
         :return: List of public rooms
         """
         return [
-            room for room in self.rooms.values()
+            room
+            for room in self.rooms.values()
             if room.is_public and room.status == RoomStatus.WAITING
         ]
 
@@ -214,7 +220,7 @@ class RoomService():
             status=room.status,
             settings=room.settings,
             host_ready=room.host_ready,
-            guest_ready=room.guest_ready if room.guest_id else None
+            guest_ready=room.guest_ready if room.guest_id else None,
         )
 
     async def add_lobby_connection(self, ws: WebSocket):
@@ -254,10 +260,7 @@ class RoomService():
         dead_connections = set()
         for ws in self.lobby_connections:
             try:
-                await ws.send_json({
-                    "type": "room_list",
-                    "rooms": room_list
-                })
+                await ws.send_json({"type": "room_list", "rooms": room_list})
             except:
                 dead_connections.add(ws)
 

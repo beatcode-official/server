@@ -6,9 +6,14 @@ from typing import List
 import docker
 from core.config import settings
 from services.execution.docker import DockerRunner
-from services.execution.test_generator import PythonTestGenerator, JavaTestGenerator, CppTestGenerator
+from services.execution.test_generator import (
+    PythonTestGenerator,
+    JavaTestGenerator,
+    CppTestGenerator,
+)
 from services.execution.types import ExecutionResult
 from services.execution.runtime_analysis import runtime_analysis_service
+
 
 class CodeExecutionService:
     """
@@ -22,9 +27,7 @@ class CodeExecutionService:
             "java": JavaTestGenerator(),
             "cpp": CppTestGenerator(),
         }
-        easy, medium, hard = [
-            int(x) for x in settings.MAX_CONCURRENT.split(",")
-        ]
+        easy, medium, hard = [int(x) for x in settings.MAX_CONCURRENT.split(",")]
         self._execution_semaphores = {
             "easy": asyncio.Semaphore(easy),
             "medium": asyncio.Semaphore(medium),
@@ -41,7 +44,7 @@ class CodeExecutionService:
         sample_expected_results: List[str],
         difficulty: str,
         compare_func: str,
-        lang: str = 'python'
+        lang: str = "python",
     ) -> ExecutionResult:
         """
         Execute the code with the given test cases and expected results.
@@ -60,7 +63,9 @@ class CodeExecutionService:
         async with sem:  # blocks until a semaphore is available
 
             # Create a temporary file to store the test runner file.
-            with tempfile.NamedTemporaryFile(mode='w', suffix=gen.get_file_extension(lang), delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=gen.get_file_extension(lang), delete=False
+            ) as f:
                 # Test data are pairs of test cases and its expected results.
                 test_data = [
                     {"input": tc, "expected": er}
@@ -70,9 +75,11 @@ class CodeExecutionService:
                     {"input": tc, "expected": er}
                     for tc, er in zip(sample_test_cases, sample_expected_results)
                 ]
-                
-                base_name = os.path.basename(f.name).split('.')[0]
-                file_content = gen.generate_test_file(code, base_name, method_name, test_data, sample_data, compare_func)
+
+                base_name = os.path.basename(f.name).split(".")[0]
+                file_content = gen.generate_test_file(
+                    code, base_name, method_name, test_data, sample_data, compare_func
+                )
                 f.write(file_content)
                 file_path = f.name
             try:

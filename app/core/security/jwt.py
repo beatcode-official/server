@@ -23,7 +23,7 @@ class JWTManager:
         self,
         data: dict,
         user: Optional[User] = None,
-        expires_delta: Optional[int] = None
+        expires_delta: Optional[int] = None,
     ) -> str:
         """
         Create an access token with the given data.
@@ -44,23 +44,12 @@ class JWTManager:
             expire = time.time() + self.access_token_expire_minutes * 60
 
         # Add the expiration time and the user's secret to the token.
-        to_encode.update({
-            "exp": expire,
-            "secret": user.token_secret if user else None
-        })
+        to_encode.update({"exp": expire, "secret": user.token_secret if user else None})
 
         # Return the encoded token.
-        return jwt.encode(
-            to_encode,
-            key=self.secret_key,
-            algorithm=self.algorithm
-        )
+        return jwt.encode(to_encode, key=self.secret_key, algorithm=self.algorithm)
 
-    def create_tokens(
-        self,
-        user: User,
-        db: Session
-    ) -> Tuple[str, str]:
+    def create_tokens(self, user: User, db: Session) -> Tuple[str, str]:
         """
         Create an access token and a refresh token for the given user.
 
@@ -73,7 +62,7 @@ class JWTManager:
         access_token = self.create_access_token(
             data={"sub": user.username},
             user=user,
-            expires_delta=self.access_token_expire_minutes * 60
+            expires_delta=self.access_token_expire_minutes * 60,
         )
 
         # Create a refresh token for the user and save it to the database.
@@ -81,9 +70,7 @@ class JWTManager:
         expires_at = time.time() + self.refresh_token_expire_days * 24 * 60 * 60
 
         db_token = RefreshToken(
-            token=refresh_token,
-            user_id=user.id,
-            expires_at=expires_at
+            token=refresh_token, user_id=user.id, expires_at=expires_at
         )
 
         db.add(db_token)
@@ -92,11 +79,7 @@ class JWTManager:
         # Return the access token and the refresh token.
         return access_token, refresh_token
 
-    def verify_refresh_token(
-        self,
-        token: str,
-        db: Session
-    ) -> Optional[User]:
+    def verify_refresh_token(self, token: str, db: Session) -> Optional[User]:
         """
         Verify the given refresh token and return the associated user.
 
@@ -111,7 +94,8 @@ class JWTManager:
             .filter(
                 RefreshToken.token == token,
                 RefreshToken.expires_at > time.time(),
-            ).first()
+            )
+            .first()
         )
 
         if db_token:
@@ -119,11 +103,7 @@ class JWTManager:
 
         return None
 
-    def revoke_refresh_token(
-        self,
-        token: str,
-        db: Session
-    ):
+    def revoke_refresh_token(self, token: str, db: Session):
         """
         Revoke the given refresh token.
 
@@ -131,9 +111,7 @@ class JWTManager:
         :param db: The database session to use.
         """
         # Query for a token that matches the given token and delete it.
-        db.query(RefreshToken).filter(
-            RefreshToken.token == token
-        ).delete()
+        db.query(RefreshToken).filter(RefreshToken.token == token).delete()
 
         db.commit()
 
@@ -145,9 +123,7 @@ class JWTManager:
         :param db: The database session to use.
         """
         # Delete all refresh tokens that match the given user ID.
-        db.query(RefreshToken).filter(
-            RefreshToken.user_id == user_id
-        ).delete()
+        db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
 
         db.commit()
 
@@ -160,8 +136,7 @@ class JWTManager:
         """
         # Delete all refresh tokens that are expired.
         db.query(RefreshToken).filter(
-            RefreshToken.user_id == user_id,
-            RefreshToken.expires_at < time.time()
+            RefreshToken.user_id == user_id, RefreshToken.expires_at < time.time()
         ).delete()
 
         db.commit()

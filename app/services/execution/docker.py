@@ -34,7 +34,7 @@ class DockerRunner:
         self.last_logs = ""
         self.last_stderr = ""
         self.last_status_code = 0
-    
+
     def get_run_commands(self, lang: str, file_path: str) -> list:
         """
         Get the command to run the code in a Docker container.
@@ -44,27 +44,31 @@ class DockerRunner:
         :return: The command to run the code in a Docker container.
         """
         file_name = os.path.basename(file_path)
-        base_name = file_name.split('.')[0]
-    
+        base_name = file_name.split(".")[0]
+
         if lang == "python":
             return ["python", file_name]
-        
+
         # Needs to compile first before running unlike Python
         elif lang == "java":
             return [
-                "sh", "-c",
-                f"javac -cp /lib/*:/code {file_name} && java -cp /lib/*:/code {base_name}"
+                "sh",
+                "-c",
+                f"javac -cp /lib/*:/code {file_name} && java -cp /lib/*:/code {base_name}",
             ]
-        
+
         elif lang == "cpp":
             return [
-                "sh", "-c",
-                f"g++ -std=c++17 -o {base_name} {file_name} -ljsoncpp && ./{base_name}"
+                "sh",
+                "-c",
+                f"g++ -std=c++17 -o {base_name} {file_name} -ljsoncpp && ./{base_name}",
             ]
-        
+
         raise ValueError(f"Unsupported language: {lang}")
 
-    def run_container(self, lang: str, file_path: str, difficulty: str) -> ExecutionResult:
+    def run_container(
+        self, lang: str, file_path: str, difficulty: str
+    ) -> ExecutionResult:
         """
         Run the code in a Docker container.
 
@@ -101,13 +105,17 @@ class DockerRunner:
             try:
                 # Wait for the container to finish and get the logs
                 result = container.wait(timeout=time_limit / 1000)
-                self.last_logs = container.logs().decode('utf-8')
-                self.last_stderr = container.logs(stdout=False, stderr=True).decode('utf-8')
+                self.last_logs = container.logs().decode("utf-8")
+                self.last_stderr = container.logs(stdout=False, stderr=True).decode(
+                    "utf-8"
+                )
                 self.last_status_code = result["StatusCode"]
 
                 # Check if the container stopped unexpectedly
                 if result["StatusCode"] != 0:
-                    if result["StatusCode"] == 137:  # SIGKILL - likely fired when memory limit is exceeded
+                    if (
+                        result["StatusCode"] == 137
+                    ):  # SIGKILL - likely fired when memory limit is exceeded
                         return ExecutionResult(
                             success=False,
                             message="Runtime Error Detected: Memory Limit Exceeded",
@@ -116,18 +124,18 @@ class DockerRunner:
                         success=False,
                         message="Runtime Error Detected\n" + self.last_logs.strip(),
                     )
-                
+
                 if self.last_stderr.strip():
                     return ExecutionResult(
                         success=False,
                         message="Runtime Error Detected\n" + self.last_stderr.strip(),
                     )
 
-                base_name = os.path.basename(file_path).split('.')[0]
+                base_name = os.path.basename(file_path).split(".")[0]
                 results_file = os.path.join(dir_path, f"{base_name}-results.txt")
-                
+
                 if os.path.exists(results_file):
-                    with open(results_file, 'r') as f:
+                    with open(results_file, "r") as f:
                         execution_data = json.load(f)
                     os.remove(results_file)
                     return ExecutionResult(
@@ -138,12 +146,15 @@ class DockerRunner:
                 else:
                     return ExecutionResult(
                         success=False,
-                        message="Test Runner Error: Results file not found\n" + self.last_logs.strip(),
+                        message="Test Runner Error: Results file not found\n"
+                        + self.last_logs.strip(),
                     )
             except Exception as e:
                 # Check for timeout, else raise the exception
-                self.last_logs = container.logs().decode('utf-8')
-                self.last_stderr = container.logs(stdout=False, stderr=True).decode('utf-8')
+                self.last_logs = container.logs().decode("utf-8")
+                self.last_stderr = container.logs(stdout=False, stderr=True).decode(
+                    "utf-8"
+                )
                 if "timed out" in str(e):
                     return ExecutionResult(
                         success=False,

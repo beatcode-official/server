@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import sys
@@ -14,15 +13,10 @@ from tests.integration.functions import *
 # Important: Make sure server is in test mode.
 assert settings.TESTING, "Server is not in testing mode"
 # Clear database before hand with "python -m db.init --droptest"
-subprocess.run(
-    ["python", "-m", "db.init", "--droptest"],
-    stdout=subprocess.DEVNULL
-)
+subprocess.run(["python", "-m", "db.init", "--droptest"], stdout=subprocess.DEVNULL)
 
 # Global Variables
-SKIP = [
-
-]
+SKIP = []
 print(f"Skipping tests: {SKIP}")
 
 # 1. Register a new user
@@ -38,7 +32,11 @@ if 1 not in SKIP:
 
 # 2. Register another user with same username or password
 if 2 not in SKIP:
-    print("Running test 2: Register another user with same username or password", end=" ", flush=True)
+    print(
+        "Running test 2: Register another user with same username or password",
+        end=" ",
+        flush=True,
+    )
     broken_user1 = register_user("jdoe", "john@email.com", "password", "John Doe")
     assert broken_user1["detail"] == "Username already exists"
     broken_user1 = register_user("john", "jdoe@email.com", "password", "John Doe")
@@ -167,7 +165,11 @@ if 9 not in SKIP:
 
 # 10. Checking validity of access and refresh tokens after password change, user delete, logout
 if 10 not in SKIP:
-    print("Running test 10: Checking validity of access and refresh tokens after password change, user delete, logout", end=" ", flush=True)
+    print(
+        "Running test 10: Checking validity of access and refresh tokens after password change, user delete, logout",
+        end=" ",
+        flush=True,
+    )
     register_user("user5", "user5@email.com", "password", "User Five")
     verify_email("test_email_token")
     user5 = login_user("user5", "password")

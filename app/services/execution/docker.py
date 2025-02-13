@@ -31,6 +31,9 @@ class DockerRunner:
             "medium": [medium_mem, medium_time],
             "hard": [hard_mem, hard_time],
         }
+        self.last_logs = ""
+        self.last_stderr = ""
+        self.last_status_code = 0
     
     def get_run_commands(self, lang: str, file_path: str) -> list:
         """
@@ -98,7 +101,9 @@ class DockerRunner:
             try:
                 # Wait for the container to finish and get the logs
                 result = container.wait(timeout=time_limit / 1000)
-                logs = container.logs().decode('utf-8')
+                self.last_logs = container.logs().decode('utf-8')
+                self.last_stderr = container.logs(stdout=False, stderr=True).decode('utf-8')
+                self.last_status_code = result["StatusCode"]
 
                 # Check if the container stopped unexpectedly
                 if result["StatusCode"] != 0:
@@ -109,29 +114,36 @@ class DockerRunner:
                         )
                     return ExecutionResult(
                         success=False,
-                        message="Runtime Error Detected\n" + logs.strip(),
+                        message="Runtime Error Detected\n" + self.last_logs.strip(),
+                    )
+                
+                if self.last_stderr.strip():
+                    return ExecutionResult(
+                        success=False,
+                        message="Runtime Error Detected\n" + self.last_stderr.strip(),
                     )
 
-                # When successful, the test runner returns 'EXECUTION_RESULTS:' in its
-                # output, followed by a JSON object with the test results and execution time.
-                if "EXECUTION_RESULTS:" in logs:
-                    execution_data = json.loads(
-                        logs.split("EXECUTION_RESULTS:")[1].strip()
-                    )
-
+                base_name = os.path.basename(file_path).split('.')[0]
+                results_file = os.path.join(dir_path, f"{base_name}-results.txt")
+                
+                if os.path.exists(results_file):
+                    with open(results_file, 'r') as f:
+                        execution_data = json.load(f)
+                    os.remove(results_file)
                     return ExecutionResult(
                         success=True,
                         test_results=execution_data["hidden_results"]["test_results"],
                         sample_results=execution_data["sample_results"]["test_results"],
                     )
-
-                # If the success string is not found, means an exception occurred
-                return ExecutionResult(
-                    success=False,
-                    message="Test Runner Error Detected\n" + logs.strip(),
-                )
+                else:
+                    return ExecutionResult(
+                        success=False,
+                        message="Test Runner Error: Results file not found\n" + self.last_logs.strip(),
+                    )
             except Exception as e:
                 # Check for timeout, else raise the exception
+                self.last_logs = container.logs().decode('utf-8')
+                self.last_stderr = container.logs(stdout=False, stderr=True).decode('utf-8')
                 if "timed out" in str(e):
                     return ExecutionResult(
                         success=False,
@@ -153,3 +165,15 @@ class DockerRunner:
                 success=False,
                 message=f"Execution Error",
             )
+
+    def get_last_logs(self) -> str:
+        """Returns combined stdout/stderr logs from last container run"""
+        return self.last_logs
+
+    def get_last_errors(self) -> str:
+        """Returns stderr logs from last container run"""
+        return self.last_stderr
+
+    def get_last_status(self) -> int:
+        """Returns exit status code from last container run"""
+        return self.last_status_code

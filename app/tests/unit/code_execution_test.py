@@ -259,7 +259,7 @@ class Solution {
         return """
 class Solution {
     public int add(int a, int b) {
-        return a + b
+        a + b
     }
 }
 """

@@ -73,21 +73,19 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
     }}
     
 if __name__ == "__main__":
-    test_data = {test_data}
     method_name = {method_name!r}
+    test_data = {test_data}
     sample_data = {sample_data}
 
-    try:
-        solution = Solution()
-        hidden_results = run_tests(solution, method_name, test_data, is_sample=False)
-        sample_results = run_tests(solution, method_name, sample_data, is_sample=True)
-        results = {{
-            "hidden_results": hidden_results,
-            "sample_results": sample_results
-        }}
-        print("EXECUTION_RESULTS:", json.dumps(results))
-    except Exception as e:
-        print("GLOBAL_ERROR:\\n" + traceback.format_exc())
+    solution = Solution()
+    hidden_results = run_tests(solution, method_name, test_data, is_sample=False)
+    sample_results = run_tests(solution, method_name, sample_data, is_sample=True)
+    results = {{
+        "hidden_results": hidden_results,
+        "sample_results": sample_results
+    }}
+    with open("{file_name}-results.txt", "w") as f:
+        f.write(json.dumps(results))
 """
 
 JAVA_TEMPLATE = r"""
@@ -429,27 +427,35 @@ public class {file_name} {{
             results.add("hidden_results", createResultObject(runTests(solution, testData)));
             results.add("sample_results", createResultObject(runTests(solution, sampleData)));
 
-            System.out.println("EXECUTION_RESULTS:" + results);
+            java.io.FileWriter file = new java.io.FileWriter("{file_name}-results.txt");
+            file.write(results.toString());
+            file.close();
         }} catch (Exception e) {{
             Throwable cause = e;
             if (e instanceof InvocationTargetException && e.getCause() != null) {{
                 cause = e.getCause();
             }}
-            System.out.println("GLOBAL_ERROR:\n" + cause.toString());
+            throw new RuntimeException(cause);
         }}
     }}
 }}
 """
 
 
-CPP_TEMPLATE = r"""#include <functional>
+CPP_TEMPLATE = r"""#include <fstream>
+#include <functional>
 #include <iostream>
 #include <json/json.h>
 #include <regex>
 #include <sstream>
 #include <tuple>
 #include <type_traits>
+#include <bits/stdc++.h>
 #include <vector>
+
+using namespace std;
+
+{code}
 
 template <typename T> struct function_traits;
 template <typename> struct always_false : std::false_type {{}};
@@ -459,21 +465,15 @@ template <typename T> struct is_vector<std::vector<T>> : std::true_type {{}};
 template <typename C, typename R, typename... Args>
 struct function_traits<R (C::*)(Args...)> {{
     using return_type = R;
-    using args_tuple = std::tuple<
-        typename std::remove_reference<Args>::type...
-    >;
+    using args_tuple = std::tuple<typename std::remove_reference<Args>::type...>;
     static constexpr size_t arg_count = sizeof...(Args);
 }};
 
 template <size_t N, typename T>
 using tuple_element_t = typename std::tuple_element<N, T>::type;
 template <size_t N, typename T> struct arg_type {{
-  using type = tuple_element_t<N, typename function_traits<T>::args_tuple>;
+  using type = std::tuple_element_t<N, typename function_traits<T>::args_tuple>;
 }};
-
-using namespace std;
-
-{code}
 
 template <typename T> T jsonToValue(const Json::Value &val) {{
     // Handle nested vectors recursively
@@ -484,6 +484,19 @@ template <typename T> T jsonToValue(const Json::Value &val) {{
             result.push_back(jsonToValue<ElementType>(elem));
         }}
         return result;
+    }}
+    // Handle chars specifically
+    else if constexpr (std::is_same_v<T, char>) {{
+        if (val.isString()) {{
+            std::string str_val = val.asString();
+            if (!str_val.empty()) {{
+                return str_val[0];
+            }} else {{
+                throw std::runtime_error("JSON string for char is empty");
+            }}
+        }} else {{
+            throw std::runtime_error("JSON value for char is not a string");
+        }}
     }}
     // Handle arithmetic types (int, float, double)
     else if constexpr (std::is_arithmetic_v<T>) {{
@@ -549,8 +562,12 @@ vector<ArgType> parseArguments(const string& input) {{
         if (reader->parse(value_str.c_str(), value_str.c_str() + value_str.length(), &json_val, &errors)) {{
             args.push_back({{json_val}});
         }} else {{
-            // If not valid JSON, treat as string
-            args.push_back({{Json::Value(value_str)}});
+            // If not valid JSON, treat as string (highly likely with single quotes)
+            if (value_str.front() == '\'' && value_str.back() == '\'') {{
+                args.push_back({{Json::Value(value_str.substr(1, value_str.length() - 2))}});
+            }} else {{
+                args.push_back({{Json::Value(value_str)}});
+            }}
         }}
     }}
     delete reader;
@@ -637,7 +654,9 @@ int main() {{
     results["hidden_results"] = formatResults(runTests(solution, test_data));
     results["sample_results"] = formatResults(runTests(solution, sample_data));
     
-    cout << "EXECUTION_RESULTS:" << results.toStyledString();
+    ofstream output_file("{file_name}-results.txt");
+    output_file << results.toStyledString() << endl;
+    output_file.close();
     return 0;
 }}
 """

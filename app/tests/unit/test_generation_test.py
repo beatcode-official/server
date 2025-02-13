@@ -30,7 +30,7 @@ class CodeGenerationService:
             return CodeGenerationResponse()
         try:
             completion = await self.client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a code generation assistant. Generate correct solutions in python, java, and c++."},
                     {"role": "user", "content": f"Title: {title}\nProblem description:\n{description}\nBoilerplates:\n{boilerplate.python}\n{boilerplate.java}\n{boilerplate.cpp}\nReturn only JSON with python, java, and cpp fields."}
@@ -65,7 +65,6 @@ async def test_code_validation_all_problems(db: Session):
     executor = CodeExecutionService()
     problems = db.query(Problem).all()
     print(f"Validating {len(problems)} problems")
-    # import pdb; pdb.set_trace()
     for problem in problems:
         print(f"Validating problem: {problem.title}")
         code_res = await code_generator.generate_code(problem.title, problem.description, problem.boilerplate)

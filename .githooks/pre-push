@@ -5,6 +5,3 @@ black .
 
 # Amend the commit message
 git commit --amend -m "chore: format code" -u
-
-# Push the changes
-git push

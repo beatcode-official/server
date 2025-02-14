@@ -22,12 +22,22 @@ class DockerRunner:
         self.docker_cpu_limit = settings.DOCKER_CPU_LIMIT
         self._docker_settings = {}
         for lang in self.docker_image.keys():
-            mem_limits = [int(x) for x in getattr(settings, f"DOCKER_{lang.upper()}_MEMORY_LIMIT").split(",")]
-            time_limits = [int(x) for x in getattr(settings, f"DOCKER_{lang.upper()}_TIME_LIMIT").split(",")]
+            mem_limits = [
+                int(x)
+                for x in getattr(settings, f"DOCKER_{lang.upper()}_MEMORY_LIMIT").split(
+                    ","
+                )
+            ]
+            time_limits = [
+                int(x)
+                for x in getattr(settings, f"DOCKER_{lang.upper()}_TIME_LIMIT").split(
+                    ","
+                )
+            ]
             self._docker_settings[lang] = {
-            "easy": (mem_limits[0], time_limits[0]),
-            "medium": (mem_limits[1], time_limits[1]),
-            "hard": (mem_limits[2], time_limits[2]),
+                "easy": (mem_limits[0], time_limits[0]),
+                "medium": (mem_limits[1], time_limits[1]),
+                "hard": (mem_limits[2], time_limits[2]),
             }
         self.last_logs = ""
         self.last_stderr = ""

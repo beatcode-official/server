@@ -50,9 +50,9 @@ class Settings(BaseSettings):
 
     # JWT
     SECRET_KEY: str  # Secret key for JWT
-    ALGORITHM: str   # Encryption algorithm for JWT
+    ALGORITHM: str  # Encryption algorithm for JWT
     ACCESS_TOKEN_EXPIRE_MINUTES: int  # Time in minutes for the access token to expire
-    REFRESH_TOKEN_EXPIRE_DAYS: int    # Time in days for the refresh token to expire
+    REFRESH_TOKEN_EXPIRE_DAYS: int  # Time in days for the refresh token to expire
 
     # Code Execution
     MAX_CONCURRENT: str  # Maximum number of problems that can be executed concurrently for each difficulty
@@ -60,16 +60,16 @@ class Settings(BaseSettings):
 
     # Docker Settings
     DOCKER_IMAGE_PYTHON: str  # Docker image for running Python code
-    DOCKER_IMAGE_JAVA: str    # Docker image for running Java code
-    DOCKER_IMAGE_CPP: str     # Docker image for running C++ code
+    DOCKER_IMAGE_JAVA: str  # Docker image for running Java code
+    DOCKER_IMAGE_CPP: str  # Docker image for running C++ code
 
     DOCKER_PYTHON_MEMORY_LIMIT: str  # Memory limit (mb) for running Python code
-    DOCKER_JAVA_MEMORY_LIMIT: str    # Memory limit (mb) for running Java code
-    DOCKER_CPP_MEMORY_LIMIT: str     # Memory limit (mb) for running C++ code
+    DOCKER_JAVA_MEMORY_LIMIT: str  # Memory limit (mb) for running Java code
+    DOCKER_CPP_MEMORY_LIMIT: str  # Memory limit (mb) for running C++ code
 
     DOCKER_PYTHON_TIME_LIMIT: str  # Time limit (ms) for running Python code
-    DOCKER_JAVA_TIME_LIMIT: str    # Time limit (ms) for running Java code
-    DOCKER_CPP_TIME_LIMIT: str     # Time limit (ms) for running C++ code
+    DOCKER_JAVA_TIME_LIMIT: str  # Time limit (ms) for running Java code
+    DOCKER_CPP_TIME_LIMIT: str  # Time limit (ms) for running C++ code
 
     DOCKER_CPU_LIMIT: float  # CPU limit (0-1.0) for each container
 

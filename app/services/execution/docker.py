@@ -14,23 +14,21 @@ class DockerRunner:
 
     def __init__(self, client: docker.DockerClient):
         self.client = client
-        self.docker_image_map = {
+        self.docker_image = {
             "python": settings.DOCKER_IMAGE_PYTHON,
             "java": settings.DOCKER_IMAGE_JAVA,
             "cpp": settings.DOCKER_IMAGE_CPP,
         }
         self.docker_cpu_limit = settings.DOCKER_CPU_LIMIT
-        easy_mem, medium_mem, hard_mem = [
-            int(x) for x in settings.DOCKER_MEMORY_LIMIT.split(",")
-        ]
-        easy_time, medium_time, hard_time = [
-            int(x) for x in settings.DOCKER_TIME_LIMIT.split(",")
-        ]
-        self._docker_settings = {
-            "easy": [easy_mem, easy_time],
-            "medium": [medium_mem, medium_time],
-            "hard": [hard_mem, hard_time],
-        }
+        self._docker_settings = {}
+        for lang in self.docker_image.keys():
+            mem_limits = [int(x) for x in getattr(settings, f"DOCKER_{lang.upper()}_MEMORY_LIMIT").split(",")]
+            time_limits = [int(x) for x in getattr(settings, f"DOCKER_{lang.upper()}_TIME_LIMIT").split(",")]
+            self._docker_settings[lang] = {
+            "easy": (mem_limits[0], time_limits[0]),
+            "medium": (mem_limits[1], time_limits[1]),
+            "hard": (mem_limits[2], time_limits[2]),
+            }
         self.last_logs = ""
         self.last_stderr = ""
         self.last_status_code = 0
@@ -77,7 +75,7 @@ class DockerRunner:
         :return: The result of the execution.
         """
         # Get the memory and time limits for the difficulty level.
-        memory_limit, time_limit = self._docker_settings[difficulty.lower()]
+        memory_limit, time_limit = self._docker_settings[lang][difficulty.lower()]
         dir_path = os.path.dirname(file_path)
         if not dir_path:
             dir_path = "."
@@ -85,7 +83,7 @@ class DockerRunner:
         try:
             # Run the container with the specified constraints
             container = self.client.containers.run(
-                self.docker_image_map[lang],
+                self.docker_image[lang],
                 self.get_run_commands(lang, file_path),
                 volumes={
                     dir_path: {

@@ -158,7 +158,11 @@ public class {file_name} {{
                 result.addProperty("output", gson.toJson(output));
                 result.addProperty("expected", test.get("expected").getAsString());
             }} catch (Exception e) {{
-                result.addProperty("error", e.toString());
+                Throwable cause = e;
+                if (e instanceof InvocationTargetException && e.getCause() != null) {{
+                    cause = e.getCause();
+                }}
+                result.addProperty("error", cause.toString());
                 result.addProperty("passed", false);
             }}
             results.add(result);

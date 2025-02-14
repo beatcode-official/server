@@ -1,7 +1,10 @@
 #!/bin/sh
 
-# Run black to format all Python code
+# Exit and block git push if there's any error
 black .
 
-# Amend the commit message
-git commit --amend -m "chore: format code" -u
+echo "Staging formatted files..."
+git add -u
+
+echo "Committing staged changes..."
+git commit -m "chore: format code before push"

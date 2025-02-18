@@ -1,10 +1,4 @@
 #!/bin/sh
 
-# Exit and block git push if there's any error
-black .
-
-echo "Staging formatted files..."
-git add -u
-
-echo "Committing staged changes..."
-git commit -m "chore: format code before push"
+echo "Format check... (Please run `black .` before pushing)"
+black . --check

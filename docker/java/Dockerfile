@@ -16,4 +16,5 @@ ENV CLASSPATH=/lib/*:/code
 # Set up security
 RUN useradd -m codeuser
 RUN chown -R codeuser:codeuser /code
+RUN chmod -R 777 /code
 USER codeuser

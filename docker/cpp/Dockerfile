@@ -15,4 +15,5 @@ RUN apt-get update && apt-get install -y \
 
 # Set security limits
 RUN mkdir /sandbox && chmod 777 /sandbox
+RUN chmod -R 777 /code
 USER nobody

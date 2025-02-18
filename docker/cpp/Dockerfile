@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/include/jsoncpp/json /usr/include/json
 
 # Set security limits
-RUN mkdir /sandbox && chmod 777 /sandbox
-RUN chmod -R 777 /code
-USER nobody
+RUN useradd -m player
+RUN chown -R player:player /code
+RUN chmod -R 777 player:player /code
+USER player

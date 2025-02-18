@@ -14,7 +14,7 @@ RUN wget https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.9/gson-2.8
 ENV CLASSPATH=/lib/*:/code
 
 # Set up security
-RUN useradd -m codeuser
-RUN chown -R codeuser:codeuser /code
-RUN chmod -R 777 /code
-USER codeuser
+RUN useradd -m player
+RUN chown -R player:player /code
+RUN chmod -R 777 player:player /code
+USER player

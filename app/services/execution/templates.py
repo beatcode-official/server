@@ -11,13 +11,13 @@ class TestResult:
         passed: bool,
         output: Any = None,
         error: str = None,
-        input_data: str = None,
+        input: str = None,
     ):
         self.expected = expected
         self.output = str(output) if output is not None else None
         self.passed = passed
         self.error = error
-        self.input_data = input_data
+        self.input = input
         
     def to_dict(self, include_input: bool = True):
         result = {{
@@ -27,7 +27,7 @@ class TestResult:
             "error": self.error,
         }}
         if include_input:
-            result["input_data"] = self.input_data
+            result["input"] = self.input
         return result
     
 def compare_results(result: Any, expected: str) -> bool:
@@ -54,14 +54,14 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
                 expected=test['expected'],
                 output=result,
                 passed=passed,
-                input_data=test['input'],
+                input=test['input'],
             ).to_dict(include_input=is_sample))
         except Exception as e:
             results.append(TestResult(
                 expected=test['expected'],
                 passed=False,
                 error=traceback.format_exc(),
-                input_data=test['input'],
+                input=test['input'],
             ).to_dict(include_input=is_sample))
             
     return {{
@@ -119,7 +119,7 @@ public class {file_name} {{
         {compare_func}
     }}
 
-    public static JsonArray runTests(Solution solution, JsonArray testData) {{
+    public static JsonArray runTests(Solution solution, JsonArray testData, boolean showInput) {{
         JsonArray results = new JsonArray();
         Gson gson = new Gson();
 
@@ -157,6 +157,9 @@ public class {file_name} {{
                 result.addProperty("passed", passed);
                 result.addProperty("output", gson.toJson(output));
                 result.addProperty("expected", test.get("expected").getAsString());
+                if (showInput) {{
+                    result.addProperty("input", inputStr);
+                }}
             }} catch (Exception e) {{
                 Throwable cause = e;
                 if (e instanceof InvocationTargetException && e.getCause() != null) {{
@@ -428,8 +431,8 @@ public class {file_name} {{
             JsonArray sampleData = gson.fromJson(sampleStr, JsonArray.class);
 
             JsonObject results = new JsonObject();
-            results.add("hidden_results", createResultObject(runTests(solution, testData)));
-            results.add("sample_results", createResultObject(runTests(solution, sampleData)));
+            results.add("hidden_results", createResultObject(runTests(solution, testData, false)));
+            results.add("sample_results", createResultObject(runTests(solution, sampleData, true)));
 
             java.io.FileWriter file = new java.io.FileWriter("{file_name}-results.txt");
             file.write(results.toString());
@@ -582,7 +585,7 @@ bool compare(const Json::Value &result, const Json::Value &expected) {{
     {compare_func}
 }}
 
-Json::Value runTests(Solution& solution, const Json::Value& testData) {{
+Json::Value runTests(Solution& solution, const Json::Value& testData, bool showInput) {{
     Json::Value results(Json::arrayValue);
     Json::CharReaderBuilder builder;
     Json::CharReader* reader = builder.newCharReader();
@@ -612,7 +615,9 @@ Json::Value runTests(Solution& solution, const Json::Value& testData) {{
             writer["indentation"] = "";
             testResult["output"] = Json::writeString(writer, output_json);
             testResult["expected"] = Json::writeString(writer, expected);
-
+            if (showInput) {{
+                testResult["input"] = test["input"];
+            }}
         }} catch (const exception &e) {{
             testResult["error"] = e.what();
             testResult["passed"] = false;
@@ -655,8 +660,8 @@ int main() {{
     delete reader;
     
     Json::Value results;
-    results["hidden_results"] = formatResults(runTests(solution, test_data));
-    results["sample_results"] = formatResults(runTests(solution, sample_data));
+    results["hidden_results"] = formatResults(runTests(solution, test_data, false));
+    results["sample_results"] = formatResults(runTests(solution, sample_data, true));
     
     ofstream output_file("{file_name}-results.txt");
     output_file << results.toStyledString() << endl;

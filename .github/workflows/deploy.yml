@@ -37,6 +37,7 @@ jobs:
           echo "${{ secrets.HETZNER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r docker/ $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/docker/
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yml $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/docker-compose.yml
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa Dockerfile $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/Dockerfile
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa requirements.txt $HETZNER_USER@$HETZNER_IP:/var/lib/beatcode-server/requirements.txt

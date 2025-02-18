@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "Format check... (Please run `black .` before pushing)"
+echo "Format check... (Please run "black ." before pushing)"
 black . --check

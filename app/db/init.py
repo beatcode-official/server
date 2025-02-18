@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 from core.config import settings
 from db.base import Base
@@ -8,7 +9,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
 
+def run_migrations():
+    """Run Alembic migrations to ensure the schema is up to date."""
+    try:
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
+        print("Applied database migrations successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error running migrations: {e}")
+        raise
+
+
 def init_db(test=False):
+    """Initialize the database and insert initial data if needed."""
     engine = create_engine(
         settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
     )
@@ -17,8 +29,7 @@ def init_db(test=False):
         create_database(engine.url)
         print(f"Created database: {engine.url}")
 
-    Base.metadata.create_all(bind=engine)
-    print("Created all database tables")
+    run_migrations()
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
@@ -72,6 +83,7 @@ def init_db(test=False):
 
 
 def drop_all_db(test=False):
+    """Drop all tables in the database."""
     engine = create_engine(
         settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
     )
@@ -82,6 +94,7 @@ def drop_all_db(test=False):
 
 
 def drop_db(table_names, test=False):
+    """Drop specific tables in the database. (--drop=table1,table2)"""
     engine = create_engine(
         settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
     )

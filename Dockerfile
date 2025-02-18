@@ -1,21 +1,21 @@
-FROM python:3.11-alpine
+# Build images first
+FROM docker:latest AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Install Docker client
-RUN apk add --no-cache docker-cli
+COPY docker/python/ docker/python/
+COPY docker/java/ docker/java/
+COPY docker/cpp/ docker/cpp/
 
-# Copy Docker environment files
-COPY docker/python/Dockerfile docker/python/
-COPY docker/java/Dockerfile docker/java/
-COPY docker/cpp/Dockerfile docker/cpp/
-
-# Build execution environment images
 RUN docker build -t beatcode-python:latest docker/python/ && \
     docker build -t beatcode-java:latest docker/java/ && \
     docker build -t beatcode-cpp:latest docker/cpp/
 
-# Continue with app setup
+# Set up the server
+FROM python:3.11-alpine
+
+WORKDIR /app
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

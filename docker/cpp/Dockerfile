@@ -16,5 +16,5 @@ RUN apt-get update && apt-get install -y \
 # Set security limits
 RUN useradd -m player
 RUN chown -R player:player /code
-RUN chmod -R 777 player:player /code
+RUN chmod -R 777 /code
 USER player

@@ -16,5 +16,5 @@ ENV CLASSPATH=/lib/*:/code
 # Set up security
 RUN useradd -m player
 RUN chown -R player:player /code
-RUN chmod -R 777 player:player /code
+RUN chmod -R 777 /code
 USER player

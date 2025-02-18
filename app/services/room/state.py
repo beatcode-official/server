@@ -9,6 +9,7 @@ class RoomStatus(str, Enum):
     """
     Enum for room status
     """
+
     WAITING = "waiting"
     IN_GAME = "in_game"
 
@@ -28,6 +29,7 @@ class RoomSettings(BaseModel):
     :param prob_medium: Probability of a medium problem
     :param prob_hard: Probability of a hard problem
     """
+
     problem_count: int
     starting_hp: int
     base_hp_deduction: int
@@ -46,7 +48,9 @@ class RoomSettings(BaseModel):
     def validate_problem_count(cls, v):
         min_count, max_count = 1, 10
         if not (min_count <= v <= max_count):
-            raise ValueError(f"Problem count must be between {min_count} and {max_count}")
+            raise ValueError(
+                f"Problem count must be between {min_count} and {max_count}"
+            )
         return v
 
     @field_validator("starting_hp")
@@ -60,14 +64,18 @@ class RoomSettings(BaseModel):
     def validate_base_hp_deduction(cls, v):
         min_deduction, max_deduction = 1, 100
         if not (min_deduction <= v <= max_deduction):
-            raise ValueError(f"Base HP deduction must be between {min_deduction} and {max_deduction}")
+            raise ValueError(
+                f"Base HP deduction must be between {min_deduction} and {max_deduction}"
+            )
         return v
 
     @field_validator("hp_multiplier_easy", "hp_multiplier_medium", "hp_multiplier_hard")
     def validate_hp_multiplier(cls, v):
         min_multiplier, max_multiplier = 0.1, 10.0
         if not (min_multiplier <= v <= max_multiplier):
-            raise ValueError(f"HP multiplier must be between {min_multiplier} and {max_multiplier}")
+            raise ValueError(
+                f"HP multiplier must be between {min_multiplier} and {max_multiplier}"
+            )
         return v
 
     @field_validator("prob_easy", "prob_medium", "prob_hard")
@@ -80,10 +88,10 @@ class RoomSettings(BaseModel):
     @field_validator("prob_hard")
     def validate_prob_sum(cls, v, info):
         values = info.data
-        if 'prob_easy' in values and 'prob_medium' in values:
-            total = values['prob_easy'] + values['prob_medium'] + v
+        if "prob_easy" in values and "prob_medium" in values:
+            total = values["prob_easy"] + values["prob_medium"] + v
             if not (0.99 <= total <= 1.01):  # Allow small floating point errors
-                raise ValueError('Probabilities must sum to 1')
+                raise ValueError("Probabilities must sum to 1")
         return v
 
     @field_validator("starting_sp")
@@ -104,7 +112,9 @@ class RoomSettings(BaseModel):
     def validate_mana_recharge(cls, v):
         min_recharge, max_recharge = 0, 500
         if not (min_recharge <= v <= max_recharge):
-            raise ValueError(f"Mana recharge must be between {min_recharge} and {max_recharge}")
+            raise ValueError(
+                f"Mana recharge must be between {min_recharge} and {max_recharge}"
+            )
         return v
 
 
@@ -124,6 +134,7 @@ class RoomState(BaseModel):
     :param guest_ws: Guest websocket
     :param guest_id: Guest user ID
     """
+
     room_code: str
     host_id: int
     is_public: bool
@@ -253,6 +264,7 @@ class RoomView(BaseModel):
     :param host_ready: Whether the host is ready
     :param guest_ready: Whether the guest is ready
     """
+
     room_code: str
     host_name: str
     host_display_name: str

@@ -26,7 +26,11 @@ class ExecutionResult:
         """
         Check if all tests passed.
         """
-        return all(t.get("passed", False) for t in self.test_results) if self.test_results else False
+        return (
+            all(t.get("passed", False) for t in self.test_results)
+            if self.test_results
+            else False
+        )
 
     def to_dict(self) -> Dict:
         """
@@ -37,9 +41,14 @@ class ExecutionResult:
             "message": self.message,
             "test_results": self.test_results,
             "sample_results": self.sample_results,
-            "summary": self.summary or {
+            "summary": self.summary
+            or {
                 "total_tests": len(self.test_results) if self.test_results else 0,
-                "passed_tests": len([t for t in self.test_results if t.get("passed", False)]) if self.test_results else 0,
+                "passed_tests": (
+                    len([t for t in self.test_results if t.get("passed", False)])
+                    if self.test_results
+                    else 0
+                ),
             },
-            "runtime_analysis": self.runtime_analysis
+            "runtime_analysis": self.runtime_analysis,
         }

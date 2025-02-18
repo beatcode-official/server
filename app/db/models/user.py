@@ -20,10 +20,11 @@ class User(Base):
     :param verification_token: The token used to verify the user's email.
     :param reset_token: The token used to reset the user's password.
     :param reset_token_expires: The expiration date of the reset token.
-    :param token_secret: The secret token used to immediately revoke access when events like password changes happen. 
+    :param token_secret: The secret token used to immediately revoke access when events like password changes happen.
     :param created_at: The epoch time when the user was created.
     :param updated_at: The epoch time when the user was last updated.
     """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -37,11 +38,14 @@ class User(Base):
     verification_token = Column(String, unique=True, nullable=True)
     reset_token = Column(String, unique=True, nullable=True)
     reset_token_expires = Column(Float, nullable=True)
-    token_secret = Column(String, nullable=True, server_default=PasswordManager.generate_secret_token())
-    created_at = Column(Float, server_default=func.extract('epoch', func.now()))
-    updated_at = Column(Float, server_default=func.extract('epoch', func.now()))
+    token_secret = Column(
+        String, nullable=True, server_default=PasswordManager.generate_secret_token()
+    )
+    created_at = Column(Float, server_default=func.extract("epoch", func.now()))
+    updated_at = Column(Float, server_default=func.extract("epoch", func.now()))
     google_id = Column(String, unique=True, index=True, nullable=True)
     avatar_url = Column(String, nullable=True)
+
 
 class RefreshToken(Base):
     """
@@ -60,7 +64,7 @@ class RefreshToken(Base):
     token = Column(String, unique=True, index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     expires_at = Column(Float, nullable=False)
-    created_at = Column(Float, server_default=func.extract('epoch', func.now()))
+    created_at = Column(Float, server_default=func.extract("epoch", func.now()))
 
     # Relationship allows for querying the user associated with the refresh token or vice versa.
     user = relationship("User", backref="refresh_tokens")

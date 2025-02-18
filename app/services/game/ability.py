@@ -13,6 +13,7 @@ class Ability(BaseModel):
     :param sp_cost: The amount of skill points required to buy the ability
     :param mp_cost: The amount of mana points required to use the ability
     """
+
     sp_cost: int
     mp_cost: int
 
@@ -37,7 +38,7 @@ class AbilityManager:
         game_state: GameState,
         game_manager: GameManager,
         player_id: int,
-        message: Dict
+        message: Dict,
     ) -> Optional[str]:
         """
         Handle an ability message from the client
@@ -50,17 +51,11 @@ class AbilityManager:
         action = message.get("action")
         if action == "buy":
             return await self.handle_buy_ability(
-                game_state,
-                game_manager,
-                player_id,
-                message.get("ability_id")
+                game_state, game_manager, player_id, message.get("ability_id")
             )
         elif action == "use":
             return await self.handle_use_ability(
-                game_state,
-                game_manager,
-                player_id,
-                message.get("ability_id")
+                game_state, game_manager, player_id, message.get("ability_id")
             )
 
         return "Invalid action"
@@ -70,7 +65,7 @@ class AbilityManager:
         game_state: GameState,
         game_manager: GameManager,
         player_id: int,
-        ability_id: str
+        ability_id: str,
     ) -> Optional[str]:
         """
         Handle ability purchases
@@ -96,30 +91,31 @@ class AbilityManager:
         player.skill_points -= ability.sp_cost
         player.abilities.append(ability_id)
 
-        await game_state.broadcast_event(GameEvent(
-            type="ability_bought",
-            data={
-                "player": player.username,
-                "ability": ability_id
-            }
-        ))
+        await game_state.broadcast_event(
+            GameEvent(
+                type="ability_bought",
+                data={"player": player.username, "ability": ability_id},
+            )
+        )
 
         # Send updated player states to both players
-        await game_state.player1.send_event(GameEvent(
-            type="game_state",
-            data=game_manager.create_game_view(
-                game_state,
-                game_state.player1.user_id
-            ).model_dump()
-        ))
+        await game_state.player1.send_event(
+            GameEvent(
+                type="game_state",
+                data=game_manager.create_game_view(
+                    game_state, game_state.player1.user_id
+                ).model_dump(),
+            )
+        )
 
-        await game_state.player2.send_event(GameEvent(
-            type="game_state",
-            data=game_manager.create_game_view(
-                game_state,
-                game_state.player2.user_id
-            ).model_dump()
-        ))
+        await game_state.player2.send_event(
+            GameEvent(
+                type="game_state",
+                data=game_manager.create_game_view(
+                    game_state, game_state.player2.user_id
+                ).model_dump(),
+            )
+        )
 
         return None
 
@@ -128,7 +124,7 @@ class AbilityManager:
         game_state: GameState,
         game_manager: GameManager,
         player_id: int,
-        ability_id: str
+        ability_id: str,
     ) -> Optional[str]:
         """
         Handle ability uses
@@ -158,30 +154,31 @@ class AbilityManager:
         if ability_id == "healio":
             player.hp += 20  # Heal for 20
 
-        await game_state.broadcast_event(GameEvent(
-            type="ability_used",
-            data={
-                "player": player.username,
-                "ability": ability_id
-            }
-        ))
+        await game_state.broadcast_event(
+            GameEvent(
+                type="ability_used",
+                data={"player": player.username, "ability": ability_id},
+            )
+        )
 
         # Send updated player states to both players
-        await game_state.player1.send_event(GameEvent(
-            type="game_state",
-            data=game_manager.create_game_view(
-                game_state,
-                game_state.player1.user_id
-            ).model_dump()
-        ))
+        await game_state.player1.send_event(
+            GameEvent(
+                type="game_state",
+                data=game_manager.create_game_view(
+                    game_state, game_state.player1.user_id
+                ).model_dump(),
+            )
+        )
 
-        await game_state.player2.send_event(GameEvent(
-            type="game_state",
-            data=game_manager.create_game_view(
-                game_state,
-                game_state.player2.user_id
-            ).model_dump()
-        ))
+        await game_state.player2.send_event(
+            GameEvent(
+                type="game_state",
+                data=game_manager.create_game_view(
+                    game_state, game_state.player2.user_id
+                ).model_dump(),
+            )
+        )
 
         return None
 

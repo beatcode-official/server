@@ -12,3 +12,5 @@ SQLAlchemy==2.0.36
 openai==1.58.1
 google-auth-oauthlib==1.2.1
 google-api-python-client==2.158.0
+pytest_asyncio==0.25.3
+black==25.1.0

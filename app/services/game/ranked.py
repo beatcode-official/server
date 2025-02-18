@@ -9,12 +9,8 @@ class RankedService:
     """
 
     def __init__(self):
-        thresholds = [
-            int(x) for x in settings.RANK_THRESHOLDS.split(",")
-        ]
-        names = [
-            x.strip() for x in settings.RANK_NAMES.split(",")
-        ]
+        thresholds = [int(x) for x in settings.RANK_THRESHOLDS.split(",")]
+        names = [x.strip() for x in settings.RANK_NAMES.split(",")]
         self.k_factor = settings.RATING_K_FACTOR
 
         # Map thresholds to rank names
@@ -26,11 +22,7 @@ class RankedService:
 
         for rank, dist in zip(names, distributions):
             easy, medium, hard = [int(x) for x in dist.split("-")]
-            self.rank_problems[rank] = {
-                "easy": easy,
-                "medium": medium,
-                "hard": hard
-            }
+            self.rank_problems[rank] = {"easy": easy, "medium": medium, "hard": hard}
 
     def get_rank(self, rating: float) -> str:
         """
@@ -57,10 +49,7 @@ class RankedService:
         return self.rank_problems[rank]
 
     def calculate_rating_change(
-        self,
-        player_rating: float,
-        opponent_rating: float,
-        won: bool
+        self, player_rating: float, opponent_rating: float, won: bool
     ) -> float:
         """
         Calculate rating change using ELO-like system

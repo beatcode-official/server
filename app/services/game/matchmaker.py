@@ -24,10 +24,7 @@ class Matchmaker:
         self.ranked_service = RankedService()
 
     async def add_to_queue(
-        self,
-        ws: WebSocket,
-        user: User,
-        ranked: bool = False
+        self, ws: WebSocket, user: User, ranked: bool = False
     ) -> bool:
         """
         Adds a player to the queue if they are not already in it.
@@ -37,9 +34,8 @@ class Matchmaker:
         :param ranked: Whether to add to ranked or unranked queue
         :return: True if the user was added to the queue, False otherwise.
         """
-        if (
-            any(user.id == u.id for _, u in self.unranked_queue) or
-            any(user.id == u.id for _, _, u in self.ranked_queue)
+        if any(user.id == u.id for _, u in self.unranked_queue) or any(
+            user.id == u.id for _, _, u in self.ranked_queue
         ):
             return False
 
@@ -58,12 +54,12 @@ class Matchmaker:
         :param user_id: The ID of the user to remove from the queue.
         """
         self.unranked_queue = {
-            (ws, user) for ws, user in self.unranked_queue
-            if user.id != user_id
+            (ws, user) for ws, user in self.unranked_queue if user.id != user_id
         }
 
         self.ranked_queue = [
-            (rating, ws, user) for rating, ws, user in self.ranked_queue
+            (rating, ws, user)
+            for rating, ws, user in self.ranked_queue
             if user.id != user_id
         ]
 
@@ -77,7 +73,7 @@ class Matchmaker:
             return None
 
         # Find the closest pair of ratings
-        min_diff = float('inf')
+        min_diff = float("inf")
         best_pair_idx = None
 
         # Compare adjacent pairs in the sorted queue
@@ -113,9 +109,7 @@ class Matchmaker:
         return selected_players
 
     def get_problem_distribution(
-        self,
-        ranked: bool = False,
-        rating: float = 0
+        self, ranked: bool = False, rating: float = 0
     ) -> Dict[str, int]:
         """
         Get the problem distribution based on queue type and rating.

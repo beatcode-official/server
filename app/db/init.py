@@ -2,14 +2,16 @@ import json
 
 from core.config import settings
 from db.base import Base
-from db.models.problem import Problem
+from db.models.problem import Problem, Boilerplate, CompareFunc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
 
 def init_db(test=False):
-    engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
+    engine = create_engine(
+        settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
+    )
 
     if not database_exists(engine.url):
         create_database(engine.url)
@@ -22,22 +24,37 @@ def init_db(test=False):
     session = SessionLocal()
 
     try:
-        with open('db/combined.json', 'r') as file:
+        with open("db/combined.json", "r") as file:
             problems = json.load(file)
 
         for problem in problems:
             new_problem = Problem(
-                title=problem['title'],
-                source=problem['source'],
-                description=problem['description'],
-                difficulty=problem['difficulty'],
-                sample_test_cases=problem['sample_test_cases'],
-                sample_test_results=problem['sample_test_results'],
-                hidden_test_cases=problem['hidden_test_cases'],
-                hidden_test_results=problem['hidden_test_results'],
-                boilerplate=problem['boilerplate'],
-                compare_func=problem['compare_func']
+                title=problem["title"],
+                source=problem["source"],
+                description=problem["description"],
+                explanation=problem["explanation"],
+                difficulty=problem["difficulty"],
+                sample_test_cases=problem["sample_test_cases"],
+                sample_test_results=problem["sample_test_results"],
+                hidden_test_cases=problem["hidden_test_cases"],
+                hidden_test_results=problem["hidden_test_results"],
+                method_name=problem["method_name"],
             )
+
+            new_boilerplate = Boilerplate(
+                java=problem["boilerplate"]["java"],
+                cpp=problem["boilerplate"]["cpp"],
+                python=problem["boilerplate"]["python"],
+            )
+
+            new_compare_func = CompareFunc(
+                java=problem["compare_func"]["java"],
+                cpp=problem["compare_func"]["cpp"],
+                python=problem["compare_func"]["python"],
+            )
+
+            new_problem.boilerplate = new_boilerplate
+            new_problem.compare_func = new_compare_func
 
             session.add(new_problem)
 
@@ -54,12 +71,24 @@ def init_db(test=False):
     return engine
 
 
-def drop_db(test=False):
-    engine = create_engine(settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL)
+def drop_all_db(test=False):
+    engine = create_engine(
+        settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
+    )
 
     if database_exists(engine.url):
         Base.metadata.drop_all(bind=engine)
         print("Dropped all tables")
+
+
+def drop_db(table_names, test=False):
+    engine = create_engine(
+        settings.DATABASE_URL if not test else settings.TEST_DATABASE_URL
+    )
+    if database_exists(engine.url):
+        table_list = [Base.metadata.tables[name] for name in table_names.split(",")]
+        Base.metadata.drop_all(bind=engine, tables=table_list)
+        print(f"Dropped tables: {table_names}")
 
 
 if __name__ == "__main__":
@@ -67,23 +96,29 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--dropall", action="store_true", help="Drop existing tables before creation"
+    )
+
+    parser.add_argument(
         "--drop",
-        action="store_true",
-        help="Drop existing tables before creation"
+        type=str,
+        help="Drop specific tables (comma-separated, ex: --drop=table1,table2)",
     )
 
     parser.add_argument(
         "--droptest",
         action="store_true",
-        help="Drop existing test tables before creation"
+        help="Drop existing test tables before creation",
     )
 
     args = parser.parse_args()
 
+    if args.dropall:
+        drop_all_db()
     if args.drop:
-        drop_db()
+        drop_db(args.drop)
     if args.droptest:
-        drop_db(test=True)
+        drop_all_db(test=True)
 
     init_db()
     init_db(test=True)

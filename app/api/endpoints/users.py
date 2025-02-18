@@ -10,8 +10,16 @@ from db.models.user import RefreshToken, User
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from schemas.user import (ForgotPassword, PasswordReset, Token, TokenRefresh,
-                          UserCreate, UserCreateWithGoogle, UserResponse, UserUpdate)
+from schemas.user import (
+    ForgotPassword,
+    PasswordReset,
+    Token,
+    TokenRefresh,
+    UserCreate,
+    UserCreateWithGoogle,
+    UserResponse,
+    UserUpdate,
+)
 from services.email.service import email_service
 from sqlalchemy.orm import Session
 import jwt
@@ -22,9 +30,9 @@ from googleapiclient.discovery import build
 router = APIRouter(prefix="/users", tags=["users"])
 oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"users/login")
 
+
 async def get_current_user(
-    token: Annotated[str, Depends(oath2_scheme)],
-    db: Session = Depends(get_db)
+    token: Annotated[str, Depends(oath2_scheme)], db: Session = Depends(get_db)
 ) -> User:
     """
     Dependency to get the current user from the JWT token
@@ -41,9 +49,7 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
 
         # Extract the username and token secret from the payload
@@ -68,8 +74,7 @@ async def get_current_user(
 
 
 async def get_current_user_ws(
-    websocket: WebSocket,
-    db: Session = Depends(get_db)
+    websocket: WebSocket, db: Session = Depends(get_db)
 ) -> User:
     """
     Dependency to get the current user from the JWT token in a WebSocket connection.
@@ -81,12 +86,11 @@ async def get_current_user_ws(
     # Define an exception to raise if the credentials are invalid
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials"
+        detail="Could not validate credentials",
     )
 
     async def close_ws_and_raise(
-        code: int = 4001,
-        reason: str = "Could not validate credentials"
+        code: int = 4001, reason: str = "Could not validate credentials"
     ):
         try:
             await websocket.close(code=code, reason=reason)
@@ -109,9 +113,7 @@ async def get_current_user_ws(
             await close_ws_and_raise()
 
         payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
 
         # Extract the username and token secret from the payload
@@ -136,11 +138,10 @@ async def get_current_user_ws(
     return user
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(
-    user: UserCreate,
-    db: Session = Depends(get_db)
-):
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user.
 
@@ -154,14 +155,12 @@ async def register_user(
     # Check for existing username or email
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # Send verification email
@@ -177,7 +176,7 @@ async def register_user(
         email=user.email,
         display_name=user.display_name,
         hashed_password=PasswordManager.hash_password(user.password),
-        verification_token=verification_token
+        verification_token=verification_token,
     )
     db.add(db_user)
     db.commit()
@@ -188,8 +187,7 @@ async def register_user(
 
 @router.post("/login", response_model=Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     """
     Log in a user.
@@ -202,12 +200,18 @@ async def login(
     :return: The user's access and refresh tokens
     """
     # Query the database for the user with the username or email
-    user = db.query(User).filter(
-        (User.username == form_data.username) | (User.email == form_data.username)
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            (User.username == form_data.username) | (User.email == form_data.username)
+        )
+        .first()
+    )
 
     # Check if the user exists and the password is correct
-    if not user or not PasswordManager.verify_password(form_data.password, user.hashed_password):
+    if not user or not PasswordManager.verify_password(
+        form_data.password, user.hashed_password
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect login credentials",
@@ -241,8 +245,7 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification token"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token"
         )
 
     user.is_verified = True
@@ -253,10 +256,7 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/forgot-password")
-async def forgot_password(
-    forgot_pwd: ForgotPassword,
-    db: Session = Depends(get_db)
-):
+async def forgot_password(forgot_pwd: ForgotPassword, db: Session = Depends(get_db)):
     """
     Send a password reset email.
 
@@ -268,9 +268,7 @@ async def forgot_password(
 
     # Same message to avoid leaking information
     if not user:
-        return {
-            "message": "If the email exists, a password reset link will be sent"
-        }
+        return {"message": "If the email exists, a password reset link will be sent"}
 
     # Generate and store the reset token, and send the email
     reset_token = PasswordManager.generate_secret_token()
@@ -289,10 +287,7 @@ async def forgot_password(
 
 
 @router.post("/reset-password")
-async def reset_password(
-    reset_data: PasswordReset,
-    db: Session = Depends(get_db)
-):
+async def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
     """
     Reset a user's password.
 
@@ -303,10 +298,14 @@ async def reset_password(
     user = db.query(User).filter(User.reset_token == reset_data.token).first()
 
     # Check if the user exists and the reset token is valid
-    if not user or not user.reset_token_expires or user.reset_token_expires < time.time():
+    if (
+        not user
+        or not user.reset_token_expires
+        or user.reset_token_expires < time.time()
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token"
+            detail="Invalid or expired reset token",
         )
 
     # Reset the password and clear the reset token
@@ -326,9 +325,7 @@ async def reset_password(
 
 
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_user)]
-):
+async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
     """
     Get the current user.
 
@@ -341,7 +338,7 @@ async def read_users_me(
 async def update_user(
     user_update: UserUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update the current user.
@@ -354,7 +351,7 @@ async def update_user(
     if current_user.is_guest:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Guest users cannot change their account details"
+            detail="Guest users cannot change their account details",
         )
 
     # Update the user fields specified in the user update dictionary
@@ -369,7 +366,7 @@ async def update_user(
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     current_user: Annotated[User, Depends(get_current_user)],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Delete the current user.
@@ -379,16 +376,11 @@ async def delete_user(
     """
     db.delete(current_user)
     db.commit()
-    return {
-        "message": "User deleted successfully"
-    }
+    return {"message": "User deleted successfully"}
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(
-    token_data: TokenRefresh,
-    db: Session = Depends(get_db)
-):
+async def refresh_token(token_data: TokenRefresh, db: Session = Depends(get_db)):
     """
     Refresh the user's access and refresh tokens.
 
@@ -400,7 +392,7 @@ async def refresh_token(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
+            detail="Invalid or expired refresh token",
         )
 
     # Revoke the refresh token and create new tokens
@@ -420,7 +412,7 @@ async def refresh_token(
 async def logout(
     token_data: TokenRefresh,
     current_user: Annotated[User, Depends(get_current_user)],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Log out the user by revoking their provided refresh token.
@@ -447,20 +439,18 @@ async def create_guest_account(db: Session = Depends(get_db)):
         time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
 
         # First delete associated refresh tokens
-        old_guest_users = db.query(User).filter(
-            User.is_guest == True,
-            User.created_at < time_limit
-        ).all()
+        old_guest_users = (
+            db.query(User)
+            .filter(User.is_guest == True, User.created_at < time_limit)
+            .all()
+        )
 
         for user in old_guest_users:
-            db.query(RefreshToken).filter(
-                RefreshToken.user_id == user.id
-            ).delete()
+            db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete()
 
         # Then delete the guest users
         db.query(User).filter(
-            User.is_guest == True,
-            User.created_at < time_limit
+            User.is_guest == True, User.created_at < time_limit
         ).delete()
 
         db.commit()
@@ -469,7 +459,9 @@ async def create_guest_account(db: Session = Depends(get_db)):
         print(f"Error cleaning up guest accounts: {e}")
 
     # Generate guest credentials
-    random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    random_string = "".join(
+        random.choices(string.ascii_lowercase + string.digits, k=10)
+    )
     username = f"guest_{random_string}"
     display_name = f"Guest_{random_string[:5]}"
     email = f"{random_string}-not-an-actual@email.com"
@@ -483,7 +475,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
         hashed_password=PasswordManager.hash_password(password),
         is_verified=True,
         is_guest=True,
-        token_secret=PasswordManager.generate_secret_token()
+        token_secret=PasswordManager.generate_secret_token(),
     )
 
     try:
@@ -494,15 +486,13 @@ async def create_guest_account(db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating guest account"
+            detail="Error creating guest account",
         )
 
     # Generate tokens
     access_token, refresh_token = jwt_manager.create_tokens(db_user, db)
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token
-    }
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
 
 def create_google_flow(state=None):
     """
@@ -521,8 +511,9 @@ def create_google_flow(state=None):
         },
         scopes=settings.GOOGLE_CLIENT_SCOPES,
         redirect_uri=settings.GOOGLE_REDIRECT_URI,
-        state=state
+        state=state,
     )
+
 
 @router.get("/google/redirect")
 async def google_redirect():
@@ -531,7 +522,8 @@ async def google_redirect():
     """
     flow = create_google_flow()
     url, _ = flow.authorization_url()
-    return { "url": url }
+    return {"url": url}
+
 
 @router.post("/google/login")
 async def google_login(
@@ -548,15 +540,17 @@ async def google_login(
     code = request.query_params.get("code")
     state = request.query_params.get("state")
     if not code:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No code found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No code found"
+        )
+
     flow = create_google_flow(state=state)
 
     # Exchange code for tokens and retrieve user info
     flow.fetch_token(code=code)
     credentials = flow.credentials
     oauth2_client = build("oauth2", "v2", credentials=credentials)
-    user_info = oauth2_client.userinfo().get().execute()    
+    user_info = oauth2_client.userinfo().get().execute()
 
     # Extract relevant fields
     google_id = user_info.get("id")
@@ -567,7 +561,7 @@ async def google_login(
     if not google_id or not email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing account information from Google"
+            detail="Missing account information from Google",
         )
 
     # See if user already exists
@@ -587,7 +581,7 @@ async def google_login(
                 "google_id": google_id,
                 "email": email,
                 "name": name,
-                "avatar_url": avatar_url
+                "avatar_url": avatar_url,
             }
 
     access_token, refresh_token = jwt_manager.create_tokens(db_user, db)
@@ -597,10 +591,10 @@ async def google_login(
         "refresh_token": refresh_token,
     }
 
+
 @router.post("/google/register")
 async def google_register(
-    user: UserCreateWithGoogle,
-    db: Session = Depends(get_db)
+    user: UserCreateWithGoogle, db: Session = Depends(get_db)
 ) -> dict:
     """
     Register a new user with Google OAuth.
@@ -615,14 +609,12 @@ async def google_register(
     # Check for existing username or email
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # Create the user
@@ -633,7 +625,7 @@ async def google_register(
         hashed_password="",
         google_id=user.google_id,
         avatar_url=user.avatar_url,
-        is_verified=True
+        is_verified=True,
     )
     db.add(db_user)
     db.commit()

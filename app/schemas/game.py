@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class GameView(BaseModel):
     """
-    A model for a user's view of a game. 
+    A model for a user's view of a game.
 
     :param match_id: The match ID.
     :param opponent_name: The opponent's username.
@@ -18,9 +18,10 @@ class GameView(BaseModel):
     :param match_type: The type of the match.
     :param start_time: The start time of the match (epoch)
     :param status: The status of the match.
-    :param winner: The winner of the match. 
+    :param winner: The winner of the match.
     :param rating_change: The rating change of the user.
     """
+
     match_id: str
     opponent_name: str
     opponent_display_name: str
@@ -47,5 +48,6 @@ class GameEvent(BaseModel):
     :param type: The type of the event.
     :param data: The data of the event.
     """
+
     type: str
     data: Dict

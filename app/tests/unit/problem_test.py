@@ -64,14 +64,14 @@ async def test_get_problem_by_id(db: Session):
 
 @pytest.mark.asyncio
 async def test_get_problems_by_distribution(db: Session):
-    distribution = {"easy": 1, "medium": 1}
+    distribution = {"medium": 1, "hard": 1}
 
     result = await ProblemManager.get_problems_by_distribution(db, distribution)
 
     assert isinstance(result, list)
     assert len(result) > 0
     difficulties = [prob.difficulty for prob in result]
-    assert all(diff in ["easy", "medium"] for diff in difficulties)
+    assert all(diff in ["medium", "hard"] for diff in difficulties)
     assert len(result) <= sum(distribution.values())
 
 
@@ -118,6 +118,7 @@ async def test_get_problems_by_distribution_empty_distribution(db: Session):
     distribution = {}
     result = await ProblemManager.get_problems_by_distribution(db, distribution)
     assert len(result) == 0
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -1,21 +1,19 @@
 import random
 from typing import Dict, List, Optional
-
 from core.config import settings
 from db.models.problem import Problem
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 
 class ProblemManager:
     """
     A static class to handle all the operations related to fetching and preparing problems for the other services.
     """
+
     @staticmethod
     async def get_random_problems(
-        db: Session,
-        difficulty: str,
-        count: int
+        db: Session, difficulty: str, count: int
     ) -> List[Problem]:
         """
         Get a specified number of problems of a specific difficulty level randomly.
@@ -35,10 +33,7 @@ class ProblemManager:
         )
 
     @staticmethod
-    async def get_problem_by_id(
-        db: Session,
-        problem_id: int
-    ) -> Optional[Problem]:
+    async def get_problem_by_id(db: Session, problem_id: int) -> Optional[Problem]:
         """
         Get a problem by its ID.
 
@@ -47,15 +42,11 @@ class ProblemManager:
 
         :return: The problem with the specified ID, if it exists.
         """
-        return db.query(Problem).filter(
-            Problem.id == problem_id
-        ).first()
+        return db.query(Problem).filter(Problem.id == problem_id).first()
 
     @staticmethod
     async def get_problems_by_distribution(
-        db: Session,
-        distribution: Dict[str, int],
-        shuffle: bool = False
+        db: Session, distribution: Dict[str, int], shuffle: bool = False
     ) -> List[Problem]:
         """
         Get problems based on the distribution of difficulty levels.
@@ -91,7 +82,11 @@ class ProblemManager:
             "difficulty": problem.difficulty,
             "sample_test_cases": problem.sample_test_cases,
             "sample_test_results": problem.sample_test_results,
-            "boilerplate": problem.boilerplate,
+            "boilerplate": {
+                "java": problem.boilerplate.java,
+                "cpp": problem.boilerplate.cpp,
+                "python": problem.boilerplate.python,
+            },
         }
 
     @staticmethod
@@ -102,38 +97,38 @@ class ProblemManager:
         if settings.TESTING:
             return {
                 "hidden_test_cases": [
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(True)",
-                    "test(False)",
-                    "test(False)",
-                    "test(False)",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=true",
+                    "--arg1=false",
+                    "--arg1=false",
+                    "--arg1=false",
                 ],
                 "hidden_test_results": [
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "False",
-                    "True",
-                    "True",
-                    "True",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "false",
+                    "true",
+                    "true",
+                    "true",
                 ],
-                "compare_func": "return str(result) == expected",
+                # "compare_func": "return str(result) == expected",
                 "sample_test_cases": [
-                    "test(True)",
-                    "test(False)",
+                    "--arg1=true",
+                    "--arg2=false",
                 ],
                 "sample_test_results": [
-                    "False",
-                    "True",
-                ]
+                    "false",
+                    "true",
+                ],
             }
 
         return {
@@ -141,5 +136,6 @@ class ProblemManager:
             "hidden_test_results": problem.hidden_test_results,
             "sample_test_cases": problem.sample_test_cases,
             "sample_test_results": problem.sample_test_results,
+            "method_name": problem.method_name,
             "compare_func": problem.compare_func,
         }

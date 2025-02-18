@@ -1,99 +1,202 @@
 import json
 from typing import Dict, List
+from abc import ABC, abstractmethod
+from services.execution.templates import PYTHON_TEMPLATE, JAVA_TEMPLATE, CPP_TEMPLATE
+import re
 
 
-class TestGenerator:
+class TestGenerator(ABC):
     """
     A class to generate test runner code for a given solution code, test data and compare function.
     """
 
-    def generate_test_runner(self, code: str, test_data: List[Dict], sample_data: List[Dict], compare_func: str) -> str:
+    @abstractmethod
+    def generate_test_file(
+        self,
+        code: str,
+        file_name: str,
+        method_name: str,
+        test_data: List[Dict],
+        sample_data: List[Dict],
+        compare_func: str,
+    ) -> str:
         """
         Generate test runner code for a given solution code, test data and compare function.
 
         :param code: The solution code.
+        :param method_name: The solution's main function name.
         :param test_data: The test data.
         :param compare_func: The compare function.
         """
-        compare_func = "\n    ".join(compare_func.splitlines())
-        return f"""
-import json
-import traceback
-from typing import *
 
-{code}
+    @abstractmethod
+    def get_file_extension(self, lang: str) -> str:
+        """
+        Get the file extension for the given language.
 
-def compare_results(result: Any, expected: str) -> bool:
-    {compare_func}
-    
-class TestResult:
-    def __init__(
+        :param lang: The language.
+        """
+
+    def process_quotes(self, json_str: str) -> str:
+        """
+        Process quotes in a JSON string.
+
+        :param json_str: The JSON string.
+        """
+        return json_str.replace('"', '\\"').replace(
+            '\\\\"', '\\\\\\"'
+        )  # cursed code alert
+
+
+class PythonTestGenerator(TestGenerator):
+    def generate_test_file(
         self,
-        expected: str,
-        passed: bool,
-        output: Any = None,
-        error: str = None,
-        input_data: str = None,
-    ):
-        self.expected = expected
-        self.output = str(output) if output is not None else None
-        self.passed = passed
-        self.error = error
-        self.input_data = input_data
-        
-    def to_dict(self, include_input: bool = True):
-        result = {{
-            "expected": self.expected,
-            "output": self.output,
-            "passed": self.passed,
-            "error": self.error,
-        }}
-        if include_input:
-            result["input_data"] = self.input_data
-        return result
-        
-        
-def run_tests(solution, test_data, is_sample: bool = False):
-    results = []
-    
-    for test in test_data:
-        try:
-            result = eval(f"solution.{{test['input']}}")
-            passed = compare_results(result, test['expected'])
-            results.append(TestResult(
-                expected=test['expected'],
-                output=result,
-                passed=passed,
-                input_data=test['input'],
-            ).to_dict(include_input=is_sample))
-        except Exception as e:
-            results.append(TestResult(
-                expected=test['expected'],
-                passed=False,
-                error=traceback.format_exc(),
-                input_data=test['input'],
-            ).to_dict(include_input=is_sample))
-            
-    return {{
-        "test_results": results,
-        "summary": {{
-            "total_tests": len(results),
-            "passed_tests": len([r for r in results if r["passed"]]),
-        }}
-    }}
-    
-if __name__ == "__main__":
-    test_data = {json.dumps(test_data)}
-    sample_data = {json.dumps(sample_data)}
-    try:
-        solution = Solution()
-        hidden_results = run_tests(solution, test_data, is_sample=False)
-        sample_results = run_tests(solution, sample_data, is_sample=True)
-        results = {{
-            "hidden_results": hidden_results,
-            "sample_results": sample_results
-        }}
-        print("EXECUTION_RESULTS:", json.dumps(results))
-    except Exception as e:
-        print("GLOBAL_ERROR:\\n" + traceback.format_exc())
-"""
+        code: str,
+        file_name: str,
+        method_name: str,
+        test_data: List[Dict],
+        sample_data: List[Dict],
+        compare_func: str,
+    ) -> str:
+        return PYTHON_TEMPLATE.format(
+            code=code,
+            file_name=file_name,
+            method_name=method_name,
+            compare_func=compare_func,
+            test_data=json.dumps(test_data),
+            sample_data=json.dumps(sample_data),
+        )
+
+    def get_file_extension(self, lang: str) -> str:
+        return ".py"
+
+
+class JavaTestGenerator(TestGenerator):
+    def generate_test_file(
+        self,
+        code: str,
+        file_name: str,
+        method_name: str,
+        test_data: List[Dict],
+        sample_data: List[Dict],
+        compare_func: str,
+    ) -> str:
+        MAX_STR_LEN = 60000
+        test_data = self.process_quotes(json.dumps(test_data))
+        sample_data = self.process_quotes(json.dumps(sample_data))
+        if len(test_data) > MAX_STR_LEN:
+            test_data = self.data_chunks(test_data)
+        else:
+            test_data = f'"{test_data}"'
+        if len(sample_data) > MAX_STR_LEN:
+            sample_data = self.data_chunks(test_data)
+        else:
+            sample_data = f'"{sample_data}"'
+
+        return JAVA_TEMPLATE.format(
+            code=code,
+            file_name=file_name,
+            method_name=method_name,
+            compare_func=compare_func,
+            test_data=test_data,
+            sample_data=sample_data,
+        )
+
+    def get_file_extension(self, lang: str) -> str:
+        return ".java"
+
+    def data_chunks(self, data: str) -> str:
+        """
+        Converts the data to a string of concatenated JSON strings.
+        Since C++ code can only handle 65k characters max in a string variable.
+
+        :param data: The test data string to process.
+        """
+        MAX_LENGTH = 1000
+        json_strings = []
+        cur = 0
+        while cur < len(data):
+            if cur + MAX_LENGTH < len(data):
+                next_chunk = data[cur : cur + MAX_LENGTH]
+            else:
+                next_chunk = data[cur:]
+            json_strings.append(next_chunk)
+            cur += MAX_LENGTH
+        chunks = "".join(['.append("' + s + '")' for s in json_strings])
+        return f"new StringBuilder(){chunks}.toString()"
+
+
+class CppTestGenerator(TestGenerator):
+    def generate_test_file(
+        self,
+        code: str,
+        file_name: str,
+        method_name: str,
+        test_data: List[Dict],
+        sample_data: List[Dict],
+        compare_func: str,
+    ) -> str:
+        args_init, args_param = self.process_args(test_data[0]["input"])
+        test_data = self.process_test_data(test_data)
+        sample_data = self.process_test_data(sample_data)
+        return CPP_TEMPLATE.format(
+            code=code,
+            file_name=file_name,
+            method_name=method_name,
+            compare_func=compare_func,
+            test_data=self.process_quotes(json.dumps(test_data)),
+            sample_data=self.process_quotes(json.dumps(sample_data)),
+            args_init=args_init,
+            args_param=args_param,
+        )
+
+    def process_args(self, args: str) -> (str, str):
+        """
+        Process the args string and return the initialization lines and parameters.
+
+        Example:
+
+        `args = "--arg1=? --arg2=?"`
+
+        Output:
+        ```cpp
+        auto arg1 = args[0].get<typename arg_type<0, Method_t>::type>();
+        auto arg2 = args[1].get<typename arg_type<1, Method_t>::type>();
+        ```
+
+        :param args: The args string.
+        """
+        init_lines = []
+        params = []
+        matches = list(re.finditer(r"--arg(\d+)=", args))
+        for i in range(len(matches)):
+            var_name = f"arg{i+1}"
+            line = f"auto {var_name} = args[{i}].get<typename arg_type<{i}, Method_t>::type>();"
+            init_lines.append(line)
+            params.append(var_name)
+        # initializing and inserting these auto arguments
+        args_init = "\n".join(init_lines)
+        args_param = ", ".join(params)
+        return args_init, args_param
+
+    def process_test_data(self, test_data: List[Dict]) -> List[Dict]:
+        """
+        Reformat the test data to be a valid JSON (No single quotes)
+
+        :param test_data: The test data to process.
+        """
+        processed_data = []
+        for data in test_data:
+            if (
+                "expected" in data
+                and isinstance(data["expected"], str)
+                and (
+                    data["expected"].startswith("[") or data["expected"].startswith("'")
+                )
+            ):
+                data["expected"] = json.dumps(eval(data["expected"]))  # bad code alert
+            processed_data.append(data)
+        return processed_data
+
+    def get_file_extension(self, lang: str) -> str:
+        return ".cpp"

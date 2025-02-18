@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
+
 def run_migrations():
     """Run Alembic migrations to ensure the schema is up to date."""
     try:
@@ -16,6 +17,7 @@ def run_migrations():
     except subprocess.CalledProcessError as e:
         print(f"Error running migrations: {e}")
         raise
+
 
 def init_db(test=False):
     """Initialize the database and insert initial data if needed."""

@@ -42,6 +42,7 @@ class ExecutionResult:
         self,
         success: bool,
         message: Optional[str] = None,
+        line_offset: Optional[int] = None,  # for error logs from templates
         test_results: Optional[List[TestResult]] = None,
         sample_results: Optional[List[TestResult]] = None,
         summary: Optional[Dict] = None,
@@ -49,6 +50,7 @@ class ExecutionResult:
     ):
         self.success = success
         self.message = message
+        self.line_offset = line_offset
         self.test_results = test_results
         self.sample_results = sample_results
         self.summary = summary
@@ -71,6 +73,7 @@ class ExecutionResult:
         return {
             "success": self.success,
             "message": self.message,
+            "line_offset": self.line_offset,
             "test_results": self.test_results,
             "sample_results": self.sample_results,
             "summary": self.summary

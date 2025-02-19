@@ -11,7 +11,6 @@ from services.execution.service import CodeExecutionService
 # fmt: on
 
 
-@pytest.mark.skip()
 class TestPython:
     @pytest.fixture
     def executor(self):
@@ -273,7 +272,6 @@ class Solution:
         )
 
 
-@pytest.mark.skip()
 class TestJava:
     @pytest.fixture
     def executor(self):
@@ -645,9 +643,7 @@ public:
             compare_func="return result == expected;",
             lang="cpp",
         )
-        import pdb
 
-        pdb.set_trace()
         assert result.success
         assert len(result.test_results) == 3
         assert all(test["passed"] for test in result.test_results)

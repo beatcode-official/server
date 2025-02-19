@@ -64,7 +64,7 @@ class CodeExecutionService:
 
             # Create a temporary file to store the test runner file.
             with tempfile.NamedTemporaryFile(
-                mode="w", suffix=gen.get_file_extension(lang), delete=False
+                mode="w", suffix=gen.get_file_extension(), delete=False
             ) as f:
                 # Test data are pairs of test cases and its expected results.
                 test_data = [
@@ -83,7 +83,9 @@ class CodeExecutionService:
                 f.write(file_content)
                 file_path = f.name
             try:
-                result = self.docker.run_container(lang, file_path, difficulty)
+                result = self.docker.run_container(
+                    lang, file_path, difficulty, gen.get_line_offset()
+                )
 
                 # If all tests passed, get runtime analysis
                 if result.all_cleared() and not settings.TESTING:

@@ -75,13 +75,15 @@ class DockerRunner:
         raise ValueError(f"Unsupported language: {lang}")
 
     def run_container(
-        self, lang: str, file_path: str, difficulty: str
+        self, lang: str, file_path: str, difficulty: str, line_offset: int
     ) -> ExecutionResult:
         """
         Run the code in a Docker container.
 
+        :param lang: The language of the code.
         :param file_path: The path to the file to run.
         :param difficulty: The difficulty of the problem.
+        :param line_offset: The line offset for error logs.
         :return: The result of the execution.
         """
         # Get the memory and time limits for the difficulty level.
@@ -131,12 +133,14 @@ class DockerRunner:
                     return ExecutionResult(
                         success=False,
                         message="Runtime Error Detected\n" + self.last_logs.strip(),
+                        line_offset=line_offset,
                     )
 
                 if self.last_stderr.strip():
                     return ExecutionResult(
                         success=False,
                         message="Runtime Error Detected\n" + self.last_stderr.strip(),
+                        line_offset=line_offset,
                     )
 
                 base_name = os.path.basename(file_path).split(".")[0]
@@ -150,6 +154,7 @@ class DockerRunner:
                         success=True,
                         test_results=execution_data["hidden_results"]["test_results"],
                         sample_results=execution_data["sample_results"]["test_results"],
+                        line_offset=line_offset,
                     )
                 else:
                     return ExecutionResult(

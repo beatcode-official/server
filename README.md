@@ -47,7 +47,7 @@ Step 4: Copy the .env.example to a new file and name it .env (place in the same 
 Step 5: Initialize the database
 ```bash
 cd app
-python -m db.init --drop --droptest
+python -m db.init --dropall
 ```
 
 Step 6: Start the server

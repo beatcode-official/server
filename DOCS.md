@@ -43,13 +43,14 @@ ALTERNATIVELY: Send a POST request to `/api/users/guest` to get `access_token` a
 4. While inside the game websocket, here are the messages you'll receive:
    - `type: "game_state"`: sent on join/query; contains information about the current state of the game (you and your opponent)
    - `type: "problem"`: sent on join/when your current problem is solved; contains description of the current problem you must solve
-   - `type: "submission_result"`: sent after you submit your code; contains the result of the execution of your code on hidden test cases (and errors if there are any)
+   - `type: "submission_result"`: sent after you submit your code; contains the result of the execution of your code on sample test cases (with inputs) and hidden test cases (and errors if there are any)
    - `type: "match_end"`: sent when match ends; contains the final information about the match like winner, rating changes, etc.
    - `type: "error"`: sent when your messages causes an error; contains error message
    - `type: "chat"`: sent when you or your opponent sends a message.
 5. And here are the messages you can send, note that after the game finishes, the server won't accept any more messages (even though WS is still open):
    - `type: "submit"`: used to submit your code for execution. Inside your `"data"` property:
      - `code: string`: your code string (includes boilerplate)
+     - `lang: 'python' | 'java' | 'cpp'`: your code's language
    - `type: "forfeit"`: used to forfeit the match
    - `type: "query"`: used to fetch current match data. 
    - `type: "ability"`: used to signal a buy/use of abilities. Inside your `"data"` property:

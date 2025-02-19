@@ -1,5 +1,7 @@
 PYTHON_TEMPLATE = r"""import json
 import traceback
+import io
+import sys
 from typing import *
 
 {code}
@@ -10,23 +12,26 @@ class TestResult:
         expected: str,
         passed: bool,
         output: Any = None,
+        logs: str = None,
         error: str = None,
         input: str = None,
     ):
         self.expected = expected
         self.output = str(output) if output is not None else None
         self.passed = passed
+        self.logs = logs
         self.error = error
         self.input = input
         
-    def to_dict(self, include_input: bool = True):
+    def to_dict(self, is_sample: bool = True):
         result = {{
             "expected": self.expected,
             "output": self.output,
             "passed": self.passed,
             "error": self.error,
         }}
-        if include_input:
+        if is_sample:
+            result["logs"] = self.logs
             result["input"] = self.input
         return result
     
@@ -47,6 +52,10 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
     results = []
     
     for test in test_data:
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+
         try:
             result = eval(f"solution.{{format_test_data(method_name, test['input'])}}")
             passed = compare_results(result, test['expected'])
@@ -54,15 +63,19 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
                 expected=test['expected'],
                 output=result,
                 passed=passed,
+                logs=new_stdout.getvalue(),
                 input=test['input'],
-            ).to_dict(include_input=is_sample))
+            ).to_dict(is_sample=is_sample))
         except Exception as e:
             results.append(TestResult(
                 expected=test['expected'],
                 passed=False,
+                logs=new_stdout.getvalue(),
                 error=traceback.format_exc(),
                 input=test['input'],
-            ).to_dict(include_input=is_sample))
+            ).to_dict(is_sample=is_sample))
+        finally:
+            sys.stdout = old_stdout
             
     return {{
         "test_results": results,
@@ -94,6 +107,7 @@ import org.junit.runner.JUnitCore;
 import com.google.gson.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.io.*;
 
 {code}
 
@@ -115,11 +129,32 @@ public class {file_name} {{
         }}
     }}
 
+    private static class LogCapture {{
+        private final ByteArrayOutputStream baos;
+        private final PrintStream original;
+        private final PrintStream capture;
+
+        public LogCapture() {{
+            this.baos = new ByteArrayOutputStream();
+            this.original = System.out;
+            this.capture = new PrintStream(baos);
+        }}
+
+        public void start() {{
+            System.setOut(capture);
+        }}
+
+        public String stop() {{
+            System.setOut(original);
+            return baos.toString().trim();
+        }}
+    }}
+
     private static boolean compare(Object result, Object expected) {{
         {compare_func}
     }}
 
-    public static JsonArray runTests(Solution solution, JsonArray testData, boolean showInput) {{
+    public static JsonArray runTests(Solution solution, JsonArray testData, boolean isSample) {{
         JsonArray results = new JsonArray();
         Gson gson = new Gson();
 
@@ -146,21 +181,28 @@ public class {file_name} {{
         for (JsonElement testElement : testData) {{
             JsonObject test = testElement.getAsJsonObject();
             JsonObject result = new JsonObject();
+            LogCapture logCapture = new LogCapture();
 
             try {{
                 String inputStr = test.get("input").getAsString();
                 Object[] args = parseArguments(inputStr, paramTypes);
+
+                logCapture.start();
                 Object output = targetMethod.invoke(solution, args);
+                String logs = logCapture.stop();
+
                 Object expected = parseValue(test.get("expected").getAsString(), returnType);
 
                 boolean passed = compare(output, expected);
                 result.addProperty("passed", passed);
                 result.addProperty("output", gson.toJson(output));
                 result.addProperty("expected", test.get("expected").getAsString());
-                if (showInput) {{
+                if (isSample) {{
+                    result.addProperty("logs", logs);
                     result.addProperty("input", inputStr);
                 }}
             }} catch (Exception e) {{
+                logCapture.stop();
                 Throwable cause = e;
                 if (e instanceof InvocationTargetException && e.getCause() != null) {{
                     cause = e.getCause();
@@ -459,6 +501,7 @@ CPP_TEMPLATE = r"""#include <fstream>
 #include <type_traits>
 #include <bits/stdc++.h>
 #include <vector>
+#include <streambuf>
 
 using namespace std;
 
@@ -585,7 +628,7 @@ bool compare(const Json::Value &result, const Json::Value &expected) {{
     {compare_func}
 }}
 
-Json::Value runTests(Solution& solution, const Json::Value& testData, bool showInput) {{
+Json::Value runTests(Solution& solution, const Json::Value& testData, bool isSample) {{
     Json::Value results(Json::arrayValue);
     Json::CharReaderBuilder builder;
     Json::CharReader* reader = builder.newCharReader();
@@ -593,6 +636,11 @@ Json::Value runTests(Solution& solution, const Json::Value& testData, bool showI
 
     for (const auto &test : testData) {{
         Json::Value testResult;
+
+        stringstream logStream;
+        streambuf* oldCout = cout.rdbuf(); 
+        cout.rdbuf(logStream.rdbuf()); 
+
         try {{
             auto args = parseArguments(test["input"].asString());
 
@@ -615,13 +663,15 @@ Json::Value runTests(Solution& solution, const Json::Value& testData, bool showI
             writer["indentation"] = "";
             testResult["output"] = Json::writeString(writer, output_json);
             testResult["expected"] = Json::writeString(writer, expected);
-            if (showInput) {{
+            if (isSample) {{
+                testResult["logs"] = logStream.str(); 
                 testResult["input"] = test["input"];
             }}
         }} catch (const exception &e) {{
             testResult["error"] = e.what();
             testResult["passed"] = false;
         }}
+        cout.rdbuf(oldCout);
         results.append(testResult);
     }}
     delete reader;

@@ -30,12 +30,12 @@ class TestGenerator(ABC):
         """
 
     @abstractmethod
-    def get_file_extension(self, lang: str) -> str:
-        """
-        Get the file extension for the given language.
+    def get_file_extension(self) -> str:
+        """Get the file extension for the given language."""
 
-        :param lang: The language.
-        """
+    @abstractmethod
+    def get_line_offset(self) -> int:
+        """Get the line offset for the given language."""
 
     def process_quotes(self, json_str: str) -> str:
         """
@@ -67,8 +67,11 @@ class PythonTestGenerator(TestGenerator):
             sample_data=json.dumps(sample_data),
         )
 
-    def get_file_extension(self, lang: str) -> str:
+    def get_file_extension(self) -> str:
         return ".py"
+
+    def get_line_offset(self) -> int:
+        return 6
 
 
 class JavaTestGenerator(TestGenerator):
@@ -102,9 +105,6 @@ class JavaTestGenerator(TestGenerator):
             sample_data=sample_data,
         )
 
-    def get_file_extension(self, lang: str) -> str:
-        return ".java"
-
     def data_chunks(self, data: str) -> str:
         """
         Converts the data to a string of concatenated JSON strings.
@@ -124,6 +124,12 @@ class JavaTestGenerator(TestGenerator):
             cur += MAX_LENGTH
         chunks = "".join(['.append("' + s + '")' for s in json_strings])
         return f"new StringBuilder(){chunks}.toString()"
+
+    def get_file_extension(self) -> str:
+        return ".java"
+
+    def get_line_offset(self) -> int:
+        return 8
 
 
 class CppTestGenerator(TestGenerator):
@@ -198,5 +204,8 @@ class CppTestGenerator(TestGenerator):
             processed_data.append(data)
         return processed_data
 
-    def get_file_extension(self, lang: str) -> str:
+    def get_file_extension(self) -> str:
         return ".cpp"
+
+    def get_line_offset(self) -> int:
+        return 14

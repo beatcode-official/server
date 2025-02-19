@@ -1,5 +1,33 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Any, Optional
 
+class TestResult:
+    def __init__(
+        self,
+        expected: str,
+        passed: bool,
+        output: Any = None,
+        logs: str = None,
+        error: str = None,
+        input: str = None,
+    ):
+        self.expected = expected
+        self.output = str(output) if output is not None else None
+        self.passed = passed
+        self.logs = logs
+        self.error = error
+        self.input = input
+        
+    def to_dict(self, is_sample: bool = True):
+        result = {{
+            "expected": self.expected,
+            "output": self.output,
+            "passed": self.passed,
+            "error": self.error,
+        }}
+        if is_sample:
+            result["logs"] = self.logs
+            result["input"] = self.input
+        return result
 
 class ExecutionResult:
     """
@@ -10,8 +38,8 @@ class ExecutionResult:
         self,
         success: bool,
         message: Optional[str] = None,
-        test_results: Optional[List[Dict]] = None,
-        sample_results: Optional[List[Dict]] = None,
+        test_results: Optional[List[TestResult]] = None,
+        sample_results: Optional[List[TestResult]] = None,
         summary: Optional[Dict] = None,
         runtime_analysis: Optional[str] = None,
     ):

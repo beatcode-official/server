@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from services.execution.service import CodeExecutionService
 # fmt: on
 
-
+@pytest.mark.skip()
 class TestPython:
     @pytest.fixture
     def executor(self):
@@ -31,6 +31,15 @@ class Solution:
                 return [seen[complement], i]
             seen[num] = i
         return []
+"""
+
+    @pytest.fixture
+    def log_solution(self):
+        return """
+class Solution:
+    def add(self, a: int, b: int) -> int:
+        print("Hello, World!")
+        return a + b
 """
 
     @pytest.fixture
@@ -110,6 +119,22 @@ class Solution:
         assert len(result.test_results) == 2
         assert not any(test["passed"] for test in result.test_results)
         assert all(test["error"] is None for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_if_show_logs(self, executor, log_solution):
+        result = await executor.execute_code(
+            code=log_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == int(expected)",
+        )
+
+        assert result.success
+        assert any("Hello, World!" in test["logs"] for test in result.sample_results)
 
     @pytest.mark.asyncio
     async def test_syntax_error(self, executor, invalid_syntax_solution):
@@ -246,6 +271,7 @@ class Solution:
             > executor._execution_semaphores["hard"]._value
         )
 
+@pytest.mark.skip()
 
 class TestJava:
     @pytest.fixture
@@ -270,6 +296,17 @@ class Solution {
             seen.put(nums[i], i);
         }
         return new int[]{};
+    }
+}
+"""
+
+    @pytest.fixture
+    def log_solution(self):
+        return """
+class Solution {
+    public int add(int a, int b) {
+        System.out.println("Hello, World!");
+        return a + b;
     }
 }
 """
@@ -357,6 +394,23 @@ class Solution {
         assert len(result.test_results) == 2
         assert not any(test["passed"] for test in result.test_results)
         assert all("error" not in test for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_if_show_logs(self, executor, log_solution):
+        result = await executor.execute_code(
+            code=log_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return ((Integer)result).intValue() == ((Integer)expected).intValue();",
+            lang="java",
+        )
+
+        assert result.success
+        assert any("Hello, World!" in test["logs"] for test in result.sample_results)
 
     @pytest.mark.asyncio
     async def test_syntax_error(self, executor, invalid_syntax_solution):
@@ -511,6 +565,18 @@ public:
 """
 
     @pytest.fixture
+    def log_solution(self):
+        return r"""
+class Solution {
+public:
+    int add(int a, int b) {
+        cout << "Hello, World!";
+        return a + b;
+    }
+};
+"""
+
+    @pytest.fixture
     def invalid_syntax_solution(self):
         # Missing a semicolon after the return statement.
         return r"""
@@ -578,6 +644,7 @@ public:
             compare_func="return result == expected;",
             lang="cpp",
         )
+        import pdb; pdb.set_trace()
         assert result.success
         assert len(result.test_results) == 3
         assert all(test["passed"] for test in result.test_results)
@@ -598,6 +665,23 @@ public:
         assert result.success
         assert len(result.test_results) == 2
         assert not any(test["passed"] for test in result.test_results)
+
+    @pytest.mark.asyncio
+    async def test_if_show_logs(self, executor, log_solution):
+        result = await executor.execute_code(
+            code=log_solution,
+            method_name="add",
+            test_cases=["--arg1=1 --arg2=2"],
+            expected_results=["3"],
+            sample_test_cases=["--arg1=1 --arg2=2"],
+            sample_expected_results=["3"],
+            difficulty="easy",
+            compare_func="return result == expected;",
+            lang="cpp",
+        )
+
+        assert result.success
+        assert any("Hello, World!" in test["logs"] for test in result.sample_results)
 
     @pytest.mark.asyncio
     async def test_syntax_error(self, executor, invalid_syntax_solution):

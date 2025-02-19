@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from services.execution.service import CodeExecutionService
 # fmt: on
 
+
 @pytest.mark.skip()
 class TestPython:
     @pytest.fixture
@@ -271,8 +272,8 @@ class Solution:
             > executor._execution_semaphores["hard"]._value
         )
 
-@pytest.mark.skip()
 
+@pytest.mark.skip()
 class TestJava:
     @pytest.fixture
     def executor(self):
@@ -644,7 +645,9 @@ public:
             compare_func="return result == expected;",
             lang="cpp",
         )
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         assert result.success
         assert len(result.test_results) == 3
         assert all(test["passed"] for test in result.test_results)

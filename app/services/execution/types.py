@@ -1,5 +1,6 @@
 from typing import Dict, List, Any, Optional
 
+
 class TestResult:
     def __init__(
         self,
@@ -16,18 +17,21 @@ class TestResult:
         self.logs = logs
         self.error = error
         self.input = input
-        
+
     def to_dict(self, is_sample: bool = True):
-        result = {{
-            "expected": self.expected,
-            "output": self.output,
-            "passed": self.passed,
-            "error": self.error,
-        }}
+        result = {
+            {
+                "expected": self.expected,
+                "output": self.output,
+                "passed": self.passed,
+                "error": self.error,
+            }
+        }
         if is_sample:
             result["logs"] = self.logs
             result["input"] = self.input
         return result
+
 
 class ExecutionResult:
     """

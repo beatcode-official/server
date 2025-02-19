@@ -71,7 +71,7 @@ class PythonTestGenerator(TestGenerator):
         return ".py"
 
     def get_line_offset(self) -> int:
-        return 7
+        return 6
 
 
 class JavaTestGenerator(TestGenerator):
@@ -129,7 +129,7 @@ class JavaTestGenerator(TestGenerator):
         return ".java"
 
     def get_line_offset(self) -> int:
-        return 9
+        return 8
 
 
 class CppTestGenerator(TestGenerator):
@@ -208,4 +208,4 @@ class CppTestGenerator(TestGenerator):
         return ".cpp"
 
     def get_line_offset(self) -> int:
-        return 15
+        return 14

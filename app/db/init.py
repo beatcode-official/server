@@ -12,7 +12,9 @@ from sqlalchemy_utils import create_database, database_exists
 def run_migrations():
     """Run Alembic migrations to ensure the schema is up to date."""
     try:
-        subprocess.run(["alembic", "revision", "--autogenerate", "-m", "auto"], check=True)
+        subprocess.run(
+            ["alembic", "revision", "--autogenerate", "-m", "auto"], check=True
+        )
         subprocess.run(["alembic", "upgrade", "head"], check=True)
         print("Generated and applied database migrations successfully.")
     except subprocess.CalledProcessError as e:

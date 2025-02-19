@@ -27,3 +27,4 @@ services:
 
 volumes:
   postgres_data:
+  app_alembic:

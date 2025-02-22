@@ -80,19 +80,19 @@ class RoomSettings(BaseModel):
 
     @field_validator("prob_easy", "prob_medium", "prob_hard")
     def validate_prob(cls, v):
-        min_prob, max_prob = 0.0, 1.0
+        min_prob, max_prob = 0.0, 3.0
         if not (min_prob <= v <= max_prob):
             raise ValueError(f"Probability must be between {min_prob} and {max_prob}")
         return v
 
-    @field_validator("prob_hard")
-    def validate_prob_sum(cls, v, info):
-        values = info.data
-        if "prob_easy" in values and "prob_medium" in values:
-            total = values["prob_easy"] + values["prob_medium"] + v
-            if not (0.99 <= total <= 1.01):  # Allow small floating point errors
-                raise ValueError("Probabilities must sum to 1")
-        return v
+    # @field_validator("prob_hard")
+    # def validate_prob_sum(cls, v, info):
+    #     values = info.data
+    #     if "prob_easy" in values and "prob_medium" in values:
+    #         total = values["prob_easy"] + values["prob_medium"] + v
+    #         if not (0.99 <= total <= 1.01):  # Allow small floating point errors
+    #             raise ValueError("Probabilities must sum to 1")
+    #     return v
 
     @field_validator("starting_sp")
     def validate_starting_sp(cls, v):

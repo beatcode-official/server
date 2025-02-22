@@ -58,6 +58,8 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
 
         try:
             result = eval(f"solution.{{format_test_data(method_name, test['input'])}}")
+            if isinstance(result, str):
+                result = f"'{{result}}'"
             passed = compare_results(result, test['expected'])
             results.append(TestResult(
                 expected=test['expected'],
@@ -535,6 +537,14 @@ template <typename T> T jsonToValue(const Json::Value &val) {{
         }}
         return result;
     }}
+    // Handle booleans
+    else if constexpr (std::is_same_v<T, bool>) {{
+        if (val.isBool()) {{
+            return val.asBool();
+        }} else {{
+            throw std::runtime_error("JSON value is not a boolean");
+        }}
+    }}
     // Handle chars specifically
     else if constexpr (std::is_same_v<T, char>) {{
         if (val.isString()) {{
@@ -651,10 +661,11 @@ Json::Value runTests(Solution& solution, const Json::Value& testData, bool isSam
             auto output = solution.{method_name}({args_param});
 
             Json::Value expected;
-            reader->parse(test["expected"].asString().c_str(),
-                        test["expected"].asString().c_str() +
-                        test["expected"].asString().length(),
-                    &expected, &errors);
+            const std::string& expected_str = test["expected"].asString();
+            if (!reader->parse(expected_str.c_str(), expected_str.c_str() + expected_str.length(), &expected, &errors)) {{
+                std::cerr << "Parse error: " << errors << std::endl;
+                return false;
+            }}
 
             Json::Value output_json= valueToJson(output);
 

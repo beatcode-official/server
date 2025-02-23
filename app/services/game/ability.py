@@ -25,12 +25,36 @@ class AbilityManager:
 
     def __init__(self):
         self.abilities: Dict[str, Ability] = {
-            "healio": Ability(sp_cost=10, mp_cost=20),
-            "deletio": Ability(sp_cost=10, mp_cost=5),
-            "syntaxio": Ability(sp_cost=10, mp_cost=5),
-            "lightio": Ability(sp_cost=10, mp_cost=5),
-            "hugio": Ability(sp_cost=10, mp_cost=5),
-            "smallio": Ability(sp_cost=10, mp_cost=5),
+            "healio": Ability(sp_cost=10, mp_cost=20),  # Heal 20 HP
+            "syntaxio": Ability(sp_cost=10, mp_cost=5),  # Turn off syntax highlighting
+            "lightio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Force your opponent to code in light mode
+            "hugio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Make your opponent's code 2x bigger
+            "smallio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Make your opponent's code 2x smaller
+            "deletio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Delete a random line in your opponent's code
+            "freezio": Ability(
+                sp_cost=10, mp_cost=10
+            ),  # Opponent will not be allowed to code
+            "rickrollio": Ability(
+                sp_cost=20, mp_cost=30
+            ),  # You already know what this does
+            "insertio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Insert a random character inside your opponent's code
+            "errorio": Ability(
+                sp_cost=10, mp_cost=5
+            ),  # Add a random error inside your opponent's code
+            "peekio": Ability(sp_cost=10, mp_cost=10),  # Peek your opponent's code
+            "mistypio": Ability(
+                sp_cost=10, mp_cost=20
+            ),  # Every key will be mapped to a different key when typing
         }
 
     async def handle_ability_message(

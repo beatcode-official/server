@@ -58,9 +58,15 @@ def run_tests(solution, method_name, test_data, is_sample: bool = False):
 
         try:
             result = eval(f"solution.{{format_test_data(method_name, test['input'])}}")
+            if test['expected'].lower() == 'true':
+                test['expected'] = 'True'
+            elif test['expected'].lower() == 'false':
+                test['expected'] = 'False'
+            elif test['expected'].lower() == 'null':
+                test['expected'] = 'None'
+            passed = compare_results(result, test['expected'])
             if isinstance(result, str):
                 result = f"'{{result}}'"
-            passed = compare_results(result, test['expected'])
             results.append(TestResult(
                 expected=test['expected'],
                 output=result,

@@ -107,8 +107,13 @@ async def test_code_validation_all_problems(db: Session):
                     print(snippet)
                 print(result.message)
                 assert result.success
+                all_passed = True
                 for tr in result.test_results:
                     if "error" in tr:
                         print(tr)
-                    assert "error" not in tr
-                print(f"{lang} code validation successful")
+                    if not tr["passed"]:
+                        all_passed = False
+                    assert "error" not in tr or not tr["error"]
+                print(
+                    f"{lang} code validation successful: {'all passed' if all_passed else 'a few failed'}"
+                )

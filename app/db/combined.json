@@ -406,7 +406,7 @@
       "cpp": "class Solution {\npublic:\n    vector<int> plusOne(vector<int>& digits) {\n        \n    }\n};"
     },
     "compare_func": {
-      "python": "return str(result) == expected",
+      "python": "return result == eval(expected)",
       "java": "return Arrays.equals((int[]) result, (int []) expected);",
       "cpp": "return result == expected;"
     },

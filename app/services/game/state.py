@@ -27,6 +27,7 @@ class PlayerState(BaseModel):
     :param user_id: The ID of the user.
     :param username: The username of the user.
     :param display_name: The display name of the user.
+    :param rating: The rating of the player.
     :param current_problem_index: The index of the current problem the player is working on [0-MATCH_PROBLEM_COUNT)
     :param hp: The health points of the player.
     :param problems_solved: The number of problems the player has solved.
@@ -41,6 +42,7 @@ class PlayerState(BaseModel):
     user_id: int
     username: str
     display_name: str
+    rating: float
     avatar_url: Optional[str] = None
     current_problem_index: int = 0
     hp: int = settings.STARTING_HP if not settings.TESTING else 140

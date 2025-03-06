@@ -7,6 +7,7 @@ from core.config import settings
 from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
 from db.models.user import RefreshToken, User
+from db.models.game import Match
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -436,7 +437,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
     """
     try:
         # Clean up old guest accounts and their refresh tokens first
-        time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
+        time_limit = time.time()  # 2 hours ago
 
         # First delete associated refresh tokens
         old_guest_users = (
@@ -445,8 +446,11 @@ async def create_guest_account(db: Session = Depends(get_db)):
             .all()
         )
 
+        # Delete all records of old guest users to prevent foreign key violations
         for user in old_guest_users:
             db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete()
+            db.query(Match).filter(Match.player1_id == user.id).delete()
+            db.query(Match).filter(Match.player2_id == user.id).delete()
 
         # Then delete the guest users
         db.query(User).filter(

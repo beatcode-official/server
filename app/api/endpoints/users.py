@@ -437,7 +437,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
     """
     try:
         # Clean up old guest accounts and their refresh tokens first
-        time_limit = time.time()  # 2 hours ago
+        time_limit = time.time() - (2 * 60 * 60)  # 2 hours ago
 
         # First delete associated refresh tokens
         old_guest_users = (

@@ -25,6 +25,14 @@ class AlreadyInRoomError(HTTPException):
         )
 
 
+class GameInProgressError(HTTPException):
+    """Exception raised when an invalid action is performed during the game."""
+
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot perform this action when game is in progress"
+        )
+
 class GuestUpdateSettingsError(HTTPException):
     """Exception raised when a guest tries to update room settings."""
 
@@ -55,14 +63,6 @@ class WSAlreadyInRoomError(WebSocketException):
     def __init__(self):
         super().__init__(code=4000, reason="Already in another room")
 
-
-class WSGameInProgressError(WebSocketException):
-    """(WebSocket) Exception raised when a game is in progress."""
-
-    def __init__(self):
-        super().__init__(
-            code=4000, reason="Cannot modify room settings while game is in progress"
-        )
 
 
 class RoomError(Exception):

@@ -2,11 +2,12 @@ import asyncio
 from typing import Optional
 
 from api.endpoints.users import get_current_user
+from api.endpoints.room.utils import get_users_from_db
 from core.errors.room import (
     RoomNotFoundError,
-    RoomInProgressError,
+    GuestUpdateSettingsError,
     AlreadyInRoomError,
-    NotRoomHostError,
+    GameInProgressError,
 )
 from core.errors.game import AlreadyInGameError
 from db.models.user import User
@@ -69,11 +70,7 @@ async def get_room(
     if not room:
         raise RoomNotFoundError()
 
-    users = {}
-    users[room.host_id] = db.query(User).filter(User.id == room.host_id).first()
-    if room.guest_id:
-        users[room.guest_id] = db.query(User).filter(User.id == room.guest_id).first()
-
+    users = get_users_from_db(room, db)
     return room_service.create_room_view(room, users)
 
 
@@ -97,9 +94,9 @@ async def update_room_settings(
         raise RoomNotFoundError()
 
     if room.host_id != current_user.id:
-        raise NotRoomHostError(action="update room settings")
+        raise GuestUpdateSettingsError()
     if room.status != RoomStatus.WAITING:
-        raise RoomInProgressError()
+        raise GameInProgressError()
 
     room.settings = settings
     await room.broadcast({"type": "settings_updated", "data": settings.model_dump()})

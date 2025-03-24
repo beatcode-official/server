@@ -3,11 +3,11 @@ import time
 import traceback
 
 from api.endpoints.users import get_current_user_ws
+from api.endpoints.room.utils import get_users_from_db
 from core.errors.room import (
     WSRoomNotFoundError,
     WSRoomFullError,
     WSAlreadyInRoomError,
-    WSGameInProgressError,
     RoomError,
     GuestStartGameError,
     NotAllPlayersReadyError,
@@ -120,12 +120,7 @@ async def room_websocket(
                 asyncio.create_task(room_service.handle_room_update())
 
 
-def _get_users_from_db(room, db):
-    users = {}
-    users[room.host_id] = db.query(User).filter(User.id == room.host_id).first()
-    if room.guest_id:
-        users[room.guest_id] = db.query(User).filter(User.id == room.guest_id).first()
-    return users
+
 
 
 async def _handle_guest_join(room, room_service, current_user, websocket):
@@ -144,7 +139,7 @@ async def _handle_guest_join(room, room_service, current_user, websocket):
 
 
 async def _broadcast_room_state(room, room_service):
-    users = _get_users_from_db(room, room_service.db)
+    users = get_users_from_db(room, room_service.db)
     # Broadcast updated room state to all players
     await room.broadcast(
         {
@@ -162,12 +157,12 @@ async def _run_room_loop(room, room_service, current_user, websocket, db):
         try:
             data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
             # If data received, update users
-            users = _get_users_from_db(room, db)
+            users = get_users_from_db(room, db)
             await _handle_messages(room, data, users, current_user, websocket)
         except asyncio.TimeoutError:
             continue
         except RoomError as e:
-            await e.send_json()
+            await e.send_json(websocket)
             continue
         except WebSocketDisconnect:
             break

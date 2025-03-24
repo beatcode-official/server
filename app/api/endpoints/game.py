@@ -213,7 +213,10 @@ async def game_websocket(
     # Close the old WebSocket connection if it exists
     if old_ws:
         try:
-            await old_ws.close(code=4000, reason="Reconnected from another session")
+            await old_ws.close(
+                code=4000,
+                reason="Reconnected from another session. Please close this tab.",
+            )
         except Exception:
             pass
 

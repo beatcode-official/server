@@ -109,7 +109,7 @@ class Matchmaker:
         return selected_players
 
     def get_problem_distribution(
-        self, ranked: bool = False, rating: float = 0
+        self, ranked: bool = False, rating1: float = 0, rating2: float = 0
     ) -> Dict[str, int]:
         """
         Get the problem distribution based on queue type and rating.
@@ -124,7 +124,8 @@ class Matchmaker:
             return {"easy": 3, "medium": 0, "hard": 0}
 
         if ranked:
-            return self.ranked_service.get_problem_distribution(rating)
+            avg_rating = (rating1 + rating2) / 2
+            return self.ranked_service.get_problem_distribution(avg_rating)
 
         # For unranked, convert probability to fixed count
         distribution = defaultdict(int)

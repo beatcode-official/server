@@ -6,7 +6,7 @@ from typing import List, Tuple
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from api.endpoints.users import get_current_user_ws
+from api.endpoints.users.websockets import get_current_user_ws
 from core.config import settings
 from core.errors.game import SubmittingTooFastError
 from db.models.user import User
@@ -188,7 +188,18 @@ async def game_websocket(
 
     try:
         # Send initial game state
-        await _send_game_state(game_state, current_user.id, player)
+        game_view = game_manager.create_game_view(game_state, current_user.id)
+        await player.ws.send_json({"type": "game_state", "data": game_view.model_dump()})
+    
+        # Send the current problem if the game is in progress
+        if (
+            game_state.status == GameStatus.IN_PROGRESS
+            and player.current_problem_index < len(game_state.problems)
+        ):
+            current_problem = ProblemManager.prepare_problem_for_client(
+                game_state.problems[player.current_problem_index]
+            )
+            await player.ws.send_json({"type": "problem", "data": current_problem})
 
         # Start the game if both players are connected and the game is waiting
         opponent = game_state.get_opponent_state(current_user.id)
@@ -217,22 +228,6 @@ async def _is_game_invalid(game_state: GameState | None, current_user_id: int):
     player = game_state.get_player_state(current_user_id)
     if not player:
         return "Player not found"
-
-
-async def _send_game_state(game_state, user_id, player):
-    game_view = game_manager.create_game_view(game_state, user_id)
-    await player.ws.send_json({"type": "game_state", "data": game_view.model_dump()})
-
-    # Send the current problem if the game is in progress
-    if (
-        game_state.status == GameStatus.IN_PROGRESS
-        and player.current_problem_index < len(game_state.problems)
-    ):
-        current_problem = ProblemManager.prepare_problem_for_client(
-            game_state.problems[player.current_problem_index]
-        )
-        await player.ws.send_json({"type": "problem", "data": current_problem})
-
 
 async def _start_game(game_state):
     game_state.status = GameStatus.IN_PROGRESS
@@ -308,6 +303,8 @@ async def _handle_submit(game_state, player, data, db):
 
 
 def _remaining_cooldown(game_state, player):
+    if not player or not player.last_submission:
+        return 0
     current_time = time.time()
     submission_cooldown = settings.SUBMISSION_COOLDOWN if not settings.TESTING else 2
     submission_time_diff = current_time - player.last_submission

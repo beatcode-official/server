@@ -161,7 +161,7 @@ class RoomService:
         self.rooms[room_code] = room
 
         if is_public:
-            asyncio.create_task(self.handle_room_update())
+            asyncio.create_task(self.broadcast_room_list())
 
         return room
 
@@ -182,7 +182,7 @@ class RoomService:
         """
         room = self.rooms.get(room_code)
         if room and room.is_public:
-            asyncio.create_task(self.handle_room_update())
+            asyncio.create_task(self.broadcast_room_list())
 
         self.rooms.pop(room_code, None)
 
@@ -266,12 +266,6 @@ class RoomService:
 
         # Remove dead connections
         self.lobby_connections -= dead_connections
-
-    async def handle_room_update(self):
-        """
-        Handle room updates
-        """
-        await self.broadcast_room_list()
 
     def is_user_in_any_room(self, user_id: int) -> bool:
         """

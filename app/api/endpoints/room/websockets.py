@@ -2,7 +2,7 @@ import asyncio
 import time
 import traceback
 
-from api.endpoints.users import get_current_user_ws
+from api.endpoints.users.websockets import get_current_user_ws
 from api.endpoints.room.utils import get_users_from_db
 from core.errors.room import (
     WSRoomNotFoundError,
@@ -86,7 +86,7 @@ async def room_websocket(
         await _handle_guest_join(room, room_service, current_user, websocket)
 
     try:
-        await _broadcast_room_state(room, room_service)
+        await _broadcast_room_state(room, room_service, db)
         await _run_room_loop(room, room_service, current_user, websocket, db)
     finally:
         # Clean up when a player disconnects
@@ -97,31 +97,10 @@ async def room_websocket(
             was_public = room.is_public
             room_service.remove_room(room_code)
             if was_public:
-                asyncio.create_task(room_service.handle_room_update())
+                asyncio.create_task(room_service.broadcast_room_list())
 
         else:
-            # Broadcast updated room state
-            users = {
-                room.host_id: db.query(User).filter(User.id == room.host_id).first()
-            }
-            if room.guest_id:
-                users[room.guest_id] = (
-                    db.query(User).filter(User.id == room.guest_id).first()
-                )
-
-            await room.broadcast(
-                {
-                    "type": "room_state",
-                    "data": room_service.create_room_view(room, users).model_dump(),
-                }
-            )
-
-            if room.is_public:
-                asyncio.create_task(room_service.handle_room_update())
-
-
-
-
+            await _broadcast_room_state(room, room_service, db)
 
 async def _handle_guest_join(room, room_service, current_user, websocket):
     # Check if user is already in any room (except this one)
@@ -135,11 +114,11 @@ async def _handle_guest_join(room, room_service, current_user, websocket):
 
     # Trigger room update when new player joins
     if room.is_public:
-        asyncio.create_task(room_service.handle_room_update())
+        asyncio.create_task(room_service.broadcast_room_list())
 
 
-async def _broadcast_room_state(room, room_service):
-    users = get_users_from_db(room, room_service.db)
+async def _broadcast_room_state(room, room_service, db):
+    users = get_users_from_db(room, db)
     # Broadcast updated room state to all players
     await room.broadcast(
         {
@@ -158,7 +137,7 @@ async def _run_room_loop(room, room_service, current_user, websocket, db):
             data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
             # If data received, update users
             users = get_users_from_db(room, db)
-            await _handle_messages(room, data, users, current_user, websocket)
+            await _handle_messages(room, data, users, current_user, websocket, db)
         except asyncio.TimeoutError:
             continue
         except RoomError as e:
@@ -172,12 +151,12 @@ async def _run_room_loop(room, room_service, current_user, websocket, db):
             break
 
 
-async def _handle_messages(room, data, users, current_user, websocket):
+async def _handle_messages(room, data, users, current_user, websocket, db):
     if data["type"] == "toggle_ready":
         await _handle_toggle_ready(room, data, users, current_user, websocket)
 
     elif data["type"] == "start_game":
-        await _handle_start_game(room, data, users, current_user, websocket)
+        await _handle_start_game(room, data, users, current_user, websocket, db)
 
     elif data["type"] == "chat":
         # Broadcast chat message
@@ -207,7 +186,7 @@ async def _handle_toggle_ready(room, data, users, current_user, websocket):
     )
 
 
-async def _handle_start_game(room, data, users, current_user, websocket):
+async def _handle_start_game(room, data, users, current_user, websocket, db):
     if current_user.id != room.host_id:
         raise GuestStartGameError()
 

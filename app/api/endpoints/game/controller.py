@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from schemas.game import GameView
 from db.models.user import User
-from api.endpoints.users import get_current_user
+from api.endpoints.users.controller import get_current_user
 from services.game.manager import game_manager
 
 router = APIRouter(prefix="/game", tags=["game"])

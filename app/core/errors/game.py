@@ -6,7 +6,7 @@ class SubmittingTooFastError(Exception):
 
     def __init__(self, remaining_cooldown):
         self.remaining_cooldown = remaining_cooldown
-        self.message = f"You're submitting too fast. Please wait {self.remaining_cooldown} seconds before submitting again."
+        self.message = f"You're submitting too fast. Please wait {self.remaining_cooldown:.2f} seconds before submitting again."
         super().__init__(self.message)
 
 

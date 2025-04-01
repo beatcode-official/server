@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 
-from api.endpoints.users import get_current_user
+from api.endpoints.users.controller import get_current_user
 from api.endpoints.room.utils import get_users_from_db
 from core.errors.room import (
     RoomNotFoundError,
@@ -102,6 +102,6 @@ async def update_room_settings(
     await room.broadcast({"type": "settings_updated", "data": settings.model_dump()})
 
     if room.is_public:
-        asyncio.create_task(room_service.handle_room_update())
+        asyncio.create_task(room_service.broadcast_room_list())
 
     return {"message": "Settings updated successfully"}

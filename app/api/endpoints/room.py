@@ -3,7 +3,8 @@ import time
 import traceback
 from typing import Optional
 
-from api.endpoints.users import get_current_user, get_current_user_ws
+from api.endpoints.users.controller import get_current_user
+from api.endpoints.users.websockets import get_current_user_ws
 from db.models.user import User
 from db.session import get_db
 from fastapi import (
@@ -119,7 +120,7 @@ async def update_room_settings(
     await room.broadcast({"type": "settings_updated", "data": settings.model_dump()})
 
     if room.is_public:
-        asyncio.create_task(room_service.handle_room_update())
+        asyncio.create_task(room_service.broadcast_room_list())
 
     return {"message": "Settings updated successfully"}
 
@@ -190,7 +191,7 @@ async def room_websocket(
 
         # Trigger room update when new player joins
         if room.is_public:
-            asyncio.create_task(room_service.handle_room_update())
+            asyncio.create_task(room_service.broadcast_room_list())
 
     try:
         # Get users for the room view
@@ -315,7 +316,7 @@ async def room_websocket(
             was_public = room.is_public
             room_service.remove_room(room_code)
             if was_public:
-                asyncio.create_task(room_service.handle_room_update())
+                asyncio.create_task(room_service.broadcast_room_list())
 
         else:
             # Broadcast updated room state
@@ -335,4 +336,4 @@ async def room_websocket(
             )
 
             if room.is_public:
-                asyncio.create_task(room_service.handle_room_update())
+                asyncio.create_task(room_service.broadcast_room_list())

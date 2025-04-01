@@ -189,8 +189,10 @@ async def game_websocket(
     try:
         # Send initial game state
         game_view = game_manager.create_game_view(game_state, current_user.id)
-        await player.ws.send_json({"type": "game_state", "data": game_view.model_dump()})
-    
+        await player.ws.send_json(
+            {"type": "game_state", "data": game_view.model_dump()}
+        )
+
         # Send the current problem if the game is in progress
         if (
             game_state.status == GameStatus.IN_PROGRESS
@@ -228,6 +230,7 @@ async def _is_game_invalid(game_state: GameState | None, current_user_id: int):
     player = game_state.get_player_state(current_user_id)
     if not player:
         return "Player not found"
+
 
 async def _start_game(game_state):
     game_state.status = GameStatus.IN_PROGRESS

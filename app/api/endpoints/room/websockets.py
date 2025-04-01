@@ -102,6 +102,7 @@ async def room_websocket(
         else:
             await _broadcast_room_state(room, room_service, db)
 
+
 async def _handle_guest_join(room, room_service, current_user, websocket):
     # Check if user is already in any room (except this one)
     if room_service.is_user_in_any_room(current_user.id) and not room.is_player_in_room(

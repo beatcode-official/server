@@ -7,6 +7,7 @@ from db.session import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+
 async def get_current_user_ws(
     websocket: WebSocket, db: Session = Depends(get_db)
 ) -> User:

@@ -8,14 +8,20 @@ from sqlalchemy.orm import Session
 
 from api.endpoints.users.websockets import get_current_user_ws
 from core.config import settings
-from core.errors.game import SubmittingTooFastError
+from core.errors.game import (
+    GameNotFoundError,
+    PlayerNotFoundError,
+    NotInThisGameError,
+    AlreadyInGameError,
+    AlreadyInQueueError,
+)
 from db.models.user import User
 from db.session import get_db
 from schemas.game import GameEvent
 from services.execution.service import code_execution
 from services.game.ability import ability_manager
 from services.game.manager import game_manager
-from services.game.state import GameStatus, GameState
+from services.game.state import GameStatus
 from services.problem.service import ProblemManager
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -38,11 +44,11 @@ async def queue_websocket(
     try:
         # Check if the user is already in a game
         if game_manager.get_player_game(current_user.id):
-            return await websocket.close(code=4000, reason="Already in a game")
+            raise AlreadyInGameError()
 
         # Only add the user to the queue if they're not already in it
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=False):
-            return await websocket.close(code=4000, reason="Already in queue")
+            raise AlreadyInQueueError()
 
         await _process_matchmaking_queue(websocket, current_user, db, ranked=False)
 
@@ -64,10 +70,10 @@ async def ranked_queue_websocket(
     try:
         # Check existing game and queue status
         if game_manager.get_player_game(current_user.id):
-            return await websocket.close(code=4000, reason="Already in a game")
+            raise AlreadyInGameError()
 
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=True):
-            return await websocket.close(code=4000, reason="Already in queue")
+            raise AlreadyInQueueError()
 
         await _process_matchmaking_queue(websocket, current_user, db, ranked=True)
 
@@ -177,18 +183,16 @@ async def game_websocket(
 
     # Check if the game exists and is not finished
     if not game_state or game_state.status == GameStatus.FINISHED:
-        return await websocket.close(
-            code=4000, reason="Game not found or already finished"
-        )
+        raise GameNotFoundError()
 
     # Check if the user is a player in the game
     if current_user.id not in [game_state.player1.user_id, game_state.player2.user_id]:
-        return await websocket.close(code=4000, reason="Not a player in this game")
+        raise NotInThisGameError()
 
     # Get the player state
     player = game_state.get_player_state(current_user.id)
     if not player:
-        return await websocket.close(code=4000, reason="Player not found")
+        raise PlayerNotFoundError()
 
     old_ws = player.ws
     player.ws = websocket
@@ -279,11 +283,14 @@ async def game_websocket(
                         player.last_submission is not None
                         and current_time - player.last_submission < submission_cooldown
                     ):
+                        time_to_wait = submission_cooldown - (
+                            current_time - player.last_submission
+                        )
                         await player.send_event(
                             GameEvent(
                                 type="error",
                                 data={
-                                    "message": "You're submitting too fast. Please wait before submitting again"
+                                    "message": f"You're submitting too fast. Please wait {time_to_wait:.2f}s before submitting again"
                                 },
                             )
                         )

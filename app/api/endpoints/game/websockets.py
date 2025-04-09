@@ -1,20 +1,22 @@
 import asyncio
 import time
 import traceback
-from typing import Optional
 
-from api.endpoints.users import get_current_user, get_current_user_ws
+from typing import List, Tuple
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
+
+from api.endpoints.users.websockets import get_current_user_ws
 from core.config import settings
+from core.errors.game import SubmittingTooFastError
 from db.models.user import User
 from db.session import get_db
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from schemas.game import GameEvent, GameView
+from schemas.game import GameEvent
 from services.execution.service import code_execution
 from services.game.ability import ability_manager
 from services.game.manager import game_manager
-from services.game.state import GameStatus
+from services.game.state import GameStatus, GameState
 from services.problem.service import ProblemManager
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/game", tags=["game"])
 matchmaker = game_manager.matchmaker
@@ -42,52 +44,8 @@ async def queue_websocket(
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=False):
             return await websocket.close(code=4000, reason="Already in queue")
 
-        while True:
-            try:
-                # Since manual disconnection doesn't fire the event, we have to manually check for disconnection
-                await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
-                continue
-            # Timeout means the WebSocket is still connected
-            except asyncio.TimeoutError:
-                # Try to find a match
-                match = await matchmaker.get_random_player(2)
+        await _process_matchmaking_queue(websocket, current_user, db, ranked=False)
 
-                if len(match) > 0:
-                    ws1, player1 = match[0]
-                    ws2, player2 = match[1]
-
-                    # Get problems for the match
-                    distribution = matchmaker.get_problem_distribution()
-                    problems = await ProblemManager.get_problems_by_distribution(
-                        db, distribution
-                    )
-
-                    # Create game and notify players
-                    game_state = await game_manager.create_game(
-                        player1, player2, problems, "unranked", db
-                    )
-
-                    match_data = {
-                        "match_id": game_state.id,
-                        "opponent": {
-                            "username": player2.username,
-                            "display_name": player2.display_name,
-                        },
-                    }
-                    await ws1.send_json({"type": "match_found", "data": match_data})
-
-                    match_data["opponent"] = {
-                        "username": player1.username,
-                        "display_name": player1.display_name,
-                    }
-
-                    await ws2.send_json({"type": "match_found", "data": match_data})
-
-                    break
-
-                await asyncio.sleep(1)
-
-    # Remove the user from the queue if they disconnect or some other error occurs
     except WebSocketDisconnect:
         await matchmaker.remove_from_queue(current_user.id)
     except Exception as e:
@@ -102,70 +60,16 @@ async def ranked_queue_websocket(
     current_user: User = Depends(get_current_user_ws),
     db: Session = Depends(get_db),
 ):
-    """
-    WebSocket endpoint for the ranked matchmaking queue
-
-    :param websocket: WebSocket object
-    :param current_user: User object
-    :param db: Database session
-    """
-
+    """Handle ranked matchmaking queue connections."""
     try:
-        # Check if the user is already in a game
+        # Check existing game and queue status
         if game_manager.get_player_game(current_user.id):
             return await websocket.close(code=4000, reason="Already in a game")
 
-        # Only add the user to the queue if they're not already in it
         if not await matchmaker.add_to_queue(websocket, current_user, ranked=True):
             return await websocket.close(code=4000, reason="Already in queue")
 
-        while True:
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
-                continue
-            except asyncio.TimeoutError:
-                # Try to find a ranked match
-                match = await matchmaker.get_ranked_match()
-
-                if match:
-                    ws1, player1 = match[0]
-                    ws2, player2 = match[1]
-
-                    # Get problems based on average rating
-                    avg_rating = (player1.rating + player2.rating) / 2
-                    distribution = matchmaker.get_problem_distribution(
-                        ranked=True, rating=avg_rating
-                    )
-
-                    problems = await ProblemManager.get_problems_by_distribution(
-                        db, distribution
-                    )
-
-                    # Create game and notify players
-                    game_state = await game_manager.create_game(
-                        player1, player2, problems, "ranked", db
-                    )
-
-                    match_data = {
-                        "match_id": game_state.id,
-                        "opponent": {
-                            "username": player2.username,
-                            "display_name": player2.display_name,
-                        },
-                    }
-
-                    await ws1.send_json({"type": "match_found", "data": match_data})
-
-                    match_data["opponent"] = {
-                        "username": player1.username,
-                        "display_name": player1.display_name,
-                    }
-
-                    await ws2.send_json({"type": "match_found", "data": match_data})
-
-                    break
-
-                await asyncio.sleep(1)
+        await _process_matchmaking_queue(websocket, current_user, db, ranked=True)
 
     except WebSocketDisconnect:
         await matchmaker.remove_from_queue(current_user.id)
@@ -173,6 +77,85 @@ async def ranked_queue_websocket(
         print(traceback.format_exc())
         print(f"Error in ranked queue websocket: {e}")
         await matchmaker.remove_from_queue(current_user.id)
+
+
+async def _process_matchmaking_queue(websocket, current_user, db, ranked=False):
+    """
+    Process matchmaking queue for user
+
+    :param websocket: WebSocket connection
+    :param current_user: Current user
+    :param db: Database session
+    :param ranked: Boolean indicating ranked or unranked match
+    """
+    while True:
+        try:
+            # Manual disconnection doesn't fire the event, so we keep checking for it
+            await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
+            continue
+        except asyncio.TimeoutError:
+            if ranked:
+                match = await matchmaker.get_ranked_match()
+                if match:
+                    await _setup_ranked_match(match, db)
+                    break
+            else:
+                match = await matchmaker.get_random_player(2)
+                if len(match) > 0:
+                    await _setup_unranked_match(match, db)
+                    break
+
+            await asyncio.sleep(1)
+
+
+async def _setup_unranked_match(match: List[Tuple[WebSocket, User]], db: Session):
+    player1 = match[0][1]
+    player2 = match[1][1]
+
+    # Fetch problems
+    distribution = matchmaker.get_problem_distribution()
+    problems = await ProblemManager.get_problems_by_distribution(db, distribution)
+
+    # Create game and notify players
+    game = await game_manager.create_game(player1, player2, problems, "unranked", db)
+    await _notify_match_found(match, game.id)
+
+
+async def _setup_ranked_match(match: List[Tuple[WebSocket, User]], db: Session):
+    player1 = match[0][1]
+    player2 = match[1][1]
+
+    # Fetch problems based on players' ratings
+    distribution = matchmaker.get_problem_distribution(
+        ranked=True, rating1=player1.rating, rating2=player2.rating
+    )
+    problems = await ProblemManager.get_problems_by_distribution(db, distribution)
+
+    # Create game and notify players
+    game = await game_manager.create_game(player1, player2, problems, "ranked", db)
+    await _notify_match_found(match, game.id)
+
+
+async def _notify_match_found(match: List[Tuple[WebSocket, User]], match_id: str):
+    ws1, player1 = match[0]
+    ws2, player2 = match[1]
+
+    match_data = {
+        "match_id": match_id,
+        "opponent": {
+            "username": player2.username,
+            "display_name": player2.display_name,
+        },
+    }
+
+    await ws1.send_json({"type": "match_found", "data": match_data})
+
+    match_data["opponent"] = {
+        "username": player1.username,
+        "display_name": player1.display_name,
+    }
+
+    await ws2.send_json({"type": "match_found", "data": match_data})
 
 
 @router.websocket("/play/{game_id}")
@@ -213,7 +196,10 @@ async def game_websocket(
     # Close the old WebSocket connection if it exists
     if old_ws:
         try:
-            await old_ws.close(code=4000, reason="Reconnected from another session")
+            await old_ws.close(
+                code=4000,
+                reason="Reconnected from another session. Please close this tab.",
+            )
         except Exception:
             pass
 
@@ -402,19 +388,3 @@ async def game_websocket(
         pass
     except Exception as _:
         print(f"Error in game websocket: {traceback.format_exc()}")
-
-
-@router.get("/current-game", response_model=Optional[GameView])
-async def get_current_game(
-    current_user: User = Depends(get_current_user),
-) -> Optional[GameView]:
-    """
-    Check if the user is in a game and return the game state. Used for reconnection.
-
-    :param current_user: User object
-    :return: GameView object if the user is in a game, None otherwise
-    """
-    game_state = game_manager.get_player_game(current_user.id)
-    if game_state:
-        return game_manager.create_game_view(game_state, current_user.id)
-    return None

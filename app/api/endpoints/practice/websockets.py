@@ -17,7 +17,11 @@ from services.problem.service import ProblemManager
 from services.practice.service import practice_bot_manager, HEALING_THRESHOLD
 from services.game.state import GameState, GameStatus, PlayerState
 from services.practice.manager import practice_game_manager
-from services.practice.dialogue import get_welcome_dialogue, get_ability_received_dialogue, get_chat_response
+from services.practice.dialogue import (
+    get_welcome_dialogue,
+    get_ability_received_dialogue,
+    get_chat_response,
+)
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
@@ -82,7 +86,9 @@ async def practice_websocket(
 
     try:
         # Send initial game state using practice_game_manager.create_game_view
-        game_view = practice_game_manager.create_game_view(game_state, current_user.id).model_dump()
+        game_view = practice_game_manager.create_game_view(
+            game_state, current_user.id
+        ).model_dump()
 
         await websocket.send_json({"type": "game_state", "data": game_view})
 
@@ -148,7 +154,7 @@ async def practice_websocket(
                     # Extract the action and ability_id from data
                     action = data["data"].get("action", "")
                     ability_id = data["data"].get("ability_id", "")
-                    
+
                     error = await ability_manager.handle_ability_message(
                         game_state, practice_game_manager, current_user.id, data["data"]
                     )
@@ -173,8 +179,8 @@ async def practice_websocket(
                                     },
                                 )
                             )
-                        
-                        # Get updated game view 
+
+                        # Get updated game view
                         game_view = practice_game_manager.create_game_view(
                             game_state, current_user.id
                         ).model_dump()
@@ -257,18 +263,21 @@ async def practice_websocket(
 
                         # Get the bot HP before damage
                         bot_hp_before = bot_player.hp
-                        
+
                         # Apply damage to bot
                         bot_player.hp = max(0, bot_player.hp - damage)
-                        
+
                         # Get the active bot for this game
                         active_bot = practice_bot_manager.active_bots.get(str(game_id))
-                        
+
                         # Check if the bot's HP dropped below healing threshold and has healio
-                        if (active_bot and bot_player.hp < HEALING_THRESHOLD and 
-                            bot_hp_before >= HEALING_THRESHOLD and 
-                            "healio" in bot_player.abilities):
-                            
+                        if (
+                            active_bot
+                            and bot_player.hp < HEALING_THRESHOLD
+                            and bot_hp_before >= HEALING_THRESHOLD
+                            and "healio" in bot_player.abilities
+                        ):
+
                             # Get healio ability info
                             healio = ability_manager.abilities.get("healio")
                             if healio and bot_player.mana_points >= healio.mp_cost:

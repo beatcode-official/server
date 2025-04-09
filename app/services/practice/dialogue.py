@@ -60,31 +60,40 @@ HEALING_DIALOGUES = [
 ]
 
 # Response to player chat (LLM replacement joke)
-CHAT_RESPONSE = "Sorry, my creator Bao is so broke he can't put an LLM in me to answer you."
+CHAT_RESPONSE = (
+    "Sorry, my creator Bao is so broke he can't put an LLM in me to answer you."
+)
+
 
 def get_damage_dialogue() -> str:
     """Get a random dialogue for dealing damage"""
     return random.choice(DAMAGE_DIALOGUES)
 
+
 def get_ability_use_dialogue() -> str:
     """Get a random dialogue for using an ability"""
     return random.choice(ABILITY_USE_DIALOGUES)
+
 
 def get_ability_received_dialogue() -> str:
     """Get a random dialogue for receiving an ability"""
     return random.choice(ABILITY_RECEIVED_DIALOGUES)
 
+
 def get_welcome_dialogue(player_name: str) -> str:
     """Get a random welcome dialogue"""
     return random.choice(WELCOME_DIALOGUES).format(player_name)
+
 
 def get_problem_solved_dialogue() -> str:
     """Get a random dialogue for solving a problem"""
     return random.choice(PROBLEM_SOLVED_DIALOGUES)
 
+
 def get_healing_dialogue() -> str:
     """Get a random dialogue for healing"""
     return random.choice(HEALING_DIALOGUES)
+
 
 def get_chat_response() -> str:
     """Get the response to player chat"""

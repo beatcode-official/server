@@ -62,7 +62,7 @@ class PracticeGameManager:
     ) -> Optional[str]:
         """
         Handle ability messages in practice mode.
-        
+
         :param game_state: The current game state
         :param _: Unused parameter (for compatibility with game.manager)
         :param player_id: The id of the player sending the message

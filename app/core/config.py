@@ -90,7 +90,9 @@ class Settings(BaseSettings):
     HP_MULTIPLIER: str  # HP multiplier for each difficulty
 
     # Practice Mode Settings
-    PRACTICE_DAMAGE_PER_PROBLEM: int  # Typical HP needed to solve a problem in practice mode
+    PRACTICE_DAMAGE_PER_PROBLEM: (
+        int  # Typical HP needed to solve a problem in practice mode
+    )
     PRACTICE_MAJOR_DAMAGE_MIN: int  # Minimum damage for a major breakthrough
     PRACTICE_MAJOR_DAMAGE_MAX: int  # Maximum damage for a major breakthrough
     PRACTICE_MINOR_DAMAGE_MIN: int  # Minimum damage for small progress

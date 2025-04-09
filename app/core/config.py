@@ -89,6 +89,19 @@ class Settings(BaseSettings):
     HP_DEDUCTION_BASE: int  # HP deduction for each test case
     HP_MULTIPLIER: str  # HP multiplier for each difficulty
 
+    # Practice Mode Settings
+    PRACTICE_DAMAGE_PER_PROBLEM: int  # Typical HP needed to solve a problem in practice mode
+    PRACTICE_MAJOR_DAMAGE_MIN: int  # Minimum damage for a major breakthrough
+    PRACTICE_MAJOR_DAMAGE_MAX: int  # Maximum damage for a major breakthrough
+    PRACTICE_MINOR_DAMAGE_MIN: int  # Minimum damage for small progress
+    PRACTICE_MINOR_DAMAGE_MAX: int  # Maximum damage for small progress
+    PRACTICE_HEALING_THRESHOLD: int  # HP threshold to use healing
+    PRACTICE_HEAL_CHECK_INTERVAL: int  # Seconds between heal checks
+    PRACTICE_ACTION_INTERVAL: int  # Base time between bot actions in seconds
+    PRACTICE_ADDITIONAL_INTERVAL: int  # Maximum additional random time for bot actions
+    PRACTICE_READING_SPEED: int  # Bot reading speed (chars per minute)
+    PRACTICE_THINKING_TIME: int  # Base thinking time for bot in seconds
+
     # Ranked Settings
     RATING_K_FACTOR: int  # K factor for Elo rating
     RANK_THRESHOLDS: str  # Thresholds for each rank

@@ -1,0 +1,17 @@
+[lint]
+# Enable select rules
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "I",      # isort
+]
+
+# Allow star imports, long lines, and bare `except`
+ignore = ["F403", "F405", "E501", "E722"]
+
+[lint.isort]
+# Use standard isort configuration
+force-single-line = false
+force-sort-within-sections = true
+combine-as-imports = false
+

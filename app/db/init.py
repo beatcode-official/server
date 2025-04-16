@@ -3,7 +3,7 @@ import subprocess
 
 from core.config import settings
 from db.base import Base
-from db.models.problem import Problem, Boilerplate, CompareFunc
+from db.models.problem import Boilerplate, CompareFunc, Problem
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists
@@ -32,12 +32,22 @@ def init_db(test=False):
         create_database(engine.url)
         print(f"Created database: {engine.url}")
 
+    # Create all tables first to ensure they exist
+    Base.metadata.create_all(bind=engine)
+    print("Created all tables")
+
+    # Then run migrations to handle any schema changes
     run_migrations()
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
 
     try:
+        # Check if data already exists
+        if session.query(Problem).count() > 0:
+            print("Data already exists, skipping insertion")
+            return engine
+
         with open("db/combined.json", "r") as file:
             problems = json.load(file)
 

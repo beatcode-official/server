@@ -3,7 +3,6 @@ import api.endpoints.game as game
 import api.endpoints.practice as practice
 import api.endpoints.room as room
 import api.endpoints.users as users
-
 from core.config import settings
 from fastapi import FastAPI
 

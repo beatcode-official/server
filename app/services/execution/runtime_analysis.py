@@ -1,6 +1,7 @@
-from openai import AsyncOpenAI
 from typing import Optional
+
 from core.config import settings
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
 

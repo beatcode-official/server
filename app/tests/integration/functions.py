@@ -19,6 +19,7 @@ API_MAP = {
     "queue": "/game/queue",
     "queue_ranked": "/game/ranked-queue",
     "current_game": "/game/current-game",
+    "practice": "/practice",
 }
 
 
@@ -71,6 +72,7 @@ def delete_user(access_token):
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.delete(url, headers=headers)
+    return response.json()
 
 
 def forgot_password(email):
@@ -129,7 +131,21 @@ async def make_user(username, email, password, display_name):
     response = session.post(
         login_url, data={"username": username, "password": password}
     )
-    access_token = response.json()["access_token"]
+
+    response_json = response.json()
+
+    # Handle the typo in the response key (acceess_token instead of access_token)
+    if "access_token" in response_json:
+        access_token = response_json["access_token"]
+    elif "acceess_token" in response_json:
+        access_token = response_json["acceess_token"]
+    elif "token" in response_json and "access_token" in response_json["token"]:
+        access_token = response_json["token"]["access_token"]
+    else:
+        # Print full response for debugging
+        print(f"Full response content: {response.text}")
+        raise KeyError(f"Could not find access_token in response: {response_json}")
+
     return {"Authorization": f"Bearer {access_token}"}
 
 
@@ -174,7 +190,9 @@ async def send_chat(ws: websockets.WebSocketClientProtocol, message: str):
 
 
 async def send_code(ws: websockets.WebSocketClientProtocol, code: str):
-    return await ws.send(json.dumps({"type": "submit", "data": {"code": code}}))
+    return await ws.send(
+        json.dumps({"type": "submit", "data": {"code": code, "lang": "python"}})
+    )
 
 
 async def buy_ability(ws: websockets.WebSocketClientProtocol, ability_id: str):

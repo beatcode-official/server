@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "Format check... (Please run "black ." before pushing)"
-black . --check
+echo "Format check... (Please run "ruff format and ruff check" to format your code before pushing)"
+ruff check

@@ -1,8 +1,9 @@
-import json
-from typing import Dict, List
 from abc import ABC, abstractmethod
-from services.execution.templates import PYTHON_TEMPLATE, JAVA_TEMPLATE, CPP_TEMPLATE
+import json
 import re
+from typing import Dict, List
+
+from services.execution.templates import CPP_TEMPLATE, JAVA_TEMPLATE, PYTHON_TEMPLATE
 
 
 class TestGenerator(ABC):
@@ -176,7 +177,7 @@ class CppTestGenerator(TestGenerator):
         params = []
         matches = list(re.finditer(r"--arg(\d+)=", args))
         for i in range(len(matches)):
-            var_name = f"arg{i+1}"
+            var_name = f"arg{i + 1}"
             line = f"auto {var_name} = args[{i}].get<typename arg_type<{i}, Method_t>::type>();"
             init_lines.append(line)
             params.append(var_name)

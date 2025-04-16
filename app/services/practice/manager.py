@@ -1,10 +1,9 @@
 import asyncio
-import time
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
-from schemas.game import GameEvent, GameView
+from schemas.game import GameView
 from services.game.ability import ability_manager
-from services.game.state import GameState, GameStatus, PlayerState
+from services.game.state import GameState
 
 
 class PracticeGameManager:
@@ -47,7 +46,7 @@ class PracticeGameManager:
             start_time=game_state.start_time,
             status=game_state.status.value,
             winner=game_state.winner,
-            rating_change=None,  # No rating change in practice mode
+            rating_change=None,
             skill_points=player.skill_points,
             mana_points=player.mana_points,
             abilities=player.abilities,
@@ -56,7 +55,7 @@ class PracticeGameManager:
     async def handle_ability_message(
         self,
         game_state: GameState,
-        _: Any,  # Ignored parameter to match GameManager's signature
+        _: Any,
         player_id: int,
         message: Dict,
     ) -> Optional[str]:
@@ -111,5 +110,4 @@ class PracticeGameManager:
             self.player_to_game.pop(game.player2.user_id, None)
 
 
-# Create a singleton instance
 practice_game_manager = PracticeGameManager()

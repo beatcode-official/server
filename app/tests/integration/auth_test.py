@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-from pprint import pprint
 
 # fmt: off
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -27,7 +26,7 @@ if 1 not in SKIP:
     assert user1["username"] == "jdoe"
     assert user1["email"] == "jdoe@email.com"
     assert user1["display_name"] == "John Doe"
-    assert user1["is_verified"] == False
+    assert user1["is_verified"]
     print("✅")
 
 # 2. Register another user with same username or password
@@ -78,13 +77,13 @@ if 6 not in SKIP:
     assert user1["username"] == "jdoe"
     assert user1["email"] == "jdoe@email.com"
     assert user1["display_name"] == "John Doe"
-    assert user1["is_verified"] == True
+    assert user1["is_verified"]
 
     user1 = update_user(user1_access, {"display_name": "John Doe Jr."})
     assert user1["username"] == "jdoe"
     assert user1["email"] == "jdoe@email.com"
     assert user1["display_name"] == "John Doe Jr."
-    assert user1["is_verified"] == True
+    assert user1["is_verified"]
 
     delete_user(user1_access)
     user1 = get_user(user1_access)

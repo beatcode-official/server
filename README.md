@@ -73,4 +73,5 @@ To run these tests, run them as normal Python scripts from the `/app` directory:
 python tests/integration/auth_test.py # Test authentication endpoints
 python tests/integration/game_test.py # Test game endpoints
 python tests/integration/room_test.py # Test room endpoints
+python tests/integration/practice_test.py # Test practice mode
 ```

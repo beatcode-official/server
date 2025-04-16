@@ -1,5 +1,5 @@
-import resend
 from core.config import settings
+import resend
 from services.email.templates import EmailTemplates
 
 

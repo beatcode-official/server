@@ -1,28 +1,21 @@
 import asyncio
 import time
 import traceback
-
 from typing import List, Tuple
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session
 
 from api.endpoints.users.websockets import get_current_user_ws
 from core.config import settings
-from core.errors.game import (
-    GameNotFoundError,
-    PlayerNotFoundError,
-    NotInThisGameError,
-    AlreadyInGameError,
-    AlreadyInQueueError,
-)
+from core.errors.game import *
 from db.models.user import User
 from db.session import get_db
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from schemas.game import GameEvent
 from services.execution.service import code_execution
 from services.game.ability import ability_manager
 from services.game.manager import game_manager
 from services.game.state import GameStatus
 from services.problem.service import ProblemManager
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/game", tags=["game"])
 matchmaker = game_manager.matchmaker
@@ -268,17 +261,15 @@ async def game_websocket(
                     await websocket.send_json(
                         {"type": "game_state", "data": game_view.model_dump()}
                     )
-                # Handle player forfeits
                 elif data["type"] == "forfeit":
                     await game_manager.forfeit_game(game_id, current_user.id)
                     await game_manager.handle_game_end(game_state, db)
-                # Handle player submissions
                 elif data["type"] == "submit":
-                    # Check if the player is submitting too fast
                     current_time = time.time()
                     submission_cooldown = (
                         settings.SUBMISSION_COOLDOWN if not settings.TESTING else 2
                     )
+                    # Check if the player is submitting too fast
                     if (
                         player.last_submission is not None
                         and current_time - player.last_submission < submission_cooldown
@@ -298,7 +289,6 @@ async def game_websocket(
 
                     player.last_submission = current_time
 
-                    # Execute the player's code on the hidden test cases
                     code = data["data"]["code"]
                     lang = data["data"]["lang"]  # java, cpp, python
                     problem_index = player.current_problem_index
@@ -318,9 +308,7 @@ async def game_websocket(
                     )
                     result = result.to_dict()
 
-                    # Process the submission result
                     if result["success"]:
-                        # Fetch deducted HP and whether the problem was solved
                         submission_result = await game_manager.process_submission(
                             game_id,
                             current_user.id,
@@ -328,7 +316,6 @@ async def game_websocket(
                             result["summary"]["total_tests"],
                         )
 
-                        # Send the submission result to the player
                         await player.send_event(
                             GameEvent(
                                 type="submission_result",
@@ -336,7 +323,6 @@ async def game_websocket(
                             )
                         )
 
-                        # Send the game state to both players
                         await game_state.player1.send_event(
                             GameEvent(
                                 type="game_state",
@@ -367,7 +353,6 @@ async def game_websocket(
                                 GameEvent(type="problem", data=next_problem)
                             )
 
-                        # Check if the game has ended and handle it
                         if await game_manager.check_game_end(game_id):
                             await game_manager.handle_game_end(game_state, db)
                     else:

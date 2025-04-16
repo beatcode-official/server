@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+
 from pydantic import BaseModel
 from schemas.game import GameEvent
 from services.game.manager import GameManager

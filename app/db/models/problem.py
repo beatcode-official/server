@@ -1,7 +1,7 @@
 from db.base_class import Base
-from sqlalchemy import JSON, Column, Float, Integer, String, Text, ForeignKey
-from sqlalchemy.sql import func
+from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 
 class Problem(Base):

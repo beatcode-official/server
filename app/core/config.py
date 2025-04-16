@@ -104,6 +104,14 @@ class Settings(BaseSettings):
     PRACTICE_READING_SPEED: int  # Bot reading speed (chars per minute)
     PRACTICE_THINKING_TIME: int  # Base thinking time for bot in seconds
 
+    # Bot Settings (Easy, Medium, Hard)
+    BOT_THINKING_MULTIPLIER: str  # Time the bot takes to "think" about the problem
+    BOT_ACTION_INTERVAL_MULTIPLIER: str  # Time between bot actions
+    BOT_DAMAGE_MULTIPLIER: str  # Multiplier for bot damage
+    BOT_ABILITY_USE_CHANCE: (
+        str  # Chance for bot to use abilities instead of dealing damage
+    )
+
     # Ranked Settings
     RATING_K_FACTOR: int  # K factor for Elo rating
     RANK_THRESHOLDS: str  # Thresholds for each rank

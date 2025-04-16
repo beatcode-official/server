@@ -1,9 +1,9 @@
 import asyncio
+from collections import defaultdict
 import random
 import time
-import uuid
-from collections import defaultdict
 from typing import Dict, List, Optional
+import uuid
 
 from core.config import settings
 from db.models.game import Match
@@ -526,12 +526,16 @@ class GameManager:
             game_state.player1_rating_change = (
                 winner_change
                 if game_state.winner == game_state.player1.username
-                else loser_change if loser_user.rating > 0 else 0
+                else loser_change
+                if loser_user.rating > 0
+                else 0
             )
             game_state.player2_rating_change = (
                 winner_change
                 if game_state.winner == game_state.player2.username
-                else loser_change if loser_user.rating > 0 else 0
+                else loser_change
+                if loser_user.rating > 0
+                else 0
             )
 
     async def forfeit_game(self, game_id: str, player_id: int):

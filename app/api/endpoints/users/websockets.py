@@ -1,9 +1,10 @@
-import jwt
-from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from core.config import settings
+from core.errors.auth import CredentialError
 from db.models.user import User
 from db.session import get_db
+from fastapi import APIRouter, Depends, WebSocket
+import jwt
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -19,24 +20,21 @@ async def get_current_user_ws(
     :param db: The database session
     """
     # Define an exception to raise if the credentials are invalid
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-    )
+    # credentials_exception = HTTPException(
+    #     status_code=status.HTTP_401_UNAUTHORIZED,
+    #     detail="Could not validate credentials",
+    # )
 
-    async def close_ws_and_raise(
-        code: int = 4001, reason: str = "Could not validate credentials"
-    ):
-        try:
-            await websocket.close(code=code, reason=reason)
-        except Exception:
-            pass
-        raise credentials_exception
+    # Initialize variables at function scope to avoid UnboundLocalError
+    token = None
+    payload = None
+    username = None
+    token_secret = None
 
     try:
         # Extract the token from the protocols header
 
-        token = None
+        # import pdb; pdb.set_trace()  # Comment out debugger
         for protocol in websocket.headers.get("sec-websocket-protocol", "").split(", "):
             if protocol.startswith("access_token|"):
                 token = protocol.split("|")[1]
@@ -45,29 +43,37 @@ async def get_current_user_ws(
                 break
 
         if not token:
-            await close_ws_and_raise()
+            raise CredentialError()
 
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        try:
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
+        except jwt.ExpiredSignatureError:
+            raise CredentialError()
+        except jwt.InvalidTokenError:  # Catch broader invalid token errors
+            raise CredentialError()
+        except jwt.PyJWTError:
+            raise CredentialError()
 
-        # Extract the username and token secret from the payload
-        username: str = payload.get("sub")
-        token_secret: str = payload.get("secret")
+        if payload is None:
+            raise CredentialError()
+
+        username = payload.get("sub")
+        token_secret = payload.get("secret")
 
         if username is None:
-            await close_ws_and_raise()
-
+            raise CredentialError()
     except jwt.PyJWTError:
-        await close_ws_and_raise()
+        raise CredentialError()
 
     # Query the database for the user with that username
     user = db.query(User).filter(User.username == username).first()
 
     if user is None:
-        await close_ws_and_raise()
+        raise CredentialError()
 
     if token_secret != user.token_secret:
-        await close_ws_and_raise()
+        raise CredentialError()
 
     return user

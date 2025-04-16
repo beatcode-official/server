@@ -6,20 +6,18 @@ DAMAGE_DIALOGUES = [
     "Skill issue",
     "Got some test cases",
     "Yessir",
-    "I'm solving this problem faster than you!",
     "Making progress here!",
     "Getting closer to the solution!",
-    "Watch out, I'm on fire!",
 ]
 
 # Dialogues when the bot uses an ability
 ABILITY_USE_DIALOGUES = [
     "Here's a gift!",
     "Eat this",
-    "I think you might enjoy this",
+    "Hope u enjoy this",
     "Surprise!",
-    "Special delivery!",
     "Watch this",
+    "Check this out",
 ]
 
 # Dialogues when the bot is hit with an ability
@@ -37,11 +35,27 @@ ABILITY_RECEIVED_DIALOGUES = [
 # Welcome messages when the bot starts a practice session
 WELCOME_DIALOGUES = [
     "Hi {}! I'll be your practice partner today. Good luck!",
-    "Hello {}! Ready to code? I won't go easy on you!",
-    "Hey {}! Let's see what you've got!",
-    "Greetings {}! Hope you're ready for a challenge!",
-    "Welcome {}! Let's have a great practice match!",
+    "Hi {}! Ready to code? I won't go easy on you!",
+    "Hey {} my pookie. Time to lock in for some coding sesh",
+    "Sup. How's ur day been {}? I'm just a bot so I'm not sure I can care enough tho",
+    "{} wsg. Let's lock in",
 ]
+
+# Dialogues for reading the problem
+READING_PROBLEM_DIALOGUES = {
+    "easy": [
+        "Reading the problem rn. Looks easy enough",
+        "Oh an easy one! Let's read and see...",
+    ],
+    "medium": [
+        "Reading the problem rn. Medium huh...",
+        "Oh a medium one! Can either be easy or very hard. They're weird",
+    ],
+    "hard": [
+        "Reading the problem rn. Hard one huh...",
+        "It's hard. I'm cooked chat",
+    ],
+}
 
 # Dialogues for when the bot finishes a problem
 PROBLEM_SOLVED_DIALOGUES = [
@@ -59,10 +73,16 @@ HEALING_DIALOGUES = [
     "Healing time!",
 ]
 
-# Response to player chat (LLM replacement joke)
-CHAT_RESPONSE = (
-    "Sorry, my creator Bao is so broke he can't put an LLM in me to answer you."
-)
+DIFFICULTY_CHANGE_DIALOGUES = {
+    "easy": "Alright I'll go easy on ya now",
+    "medium": "I guess you like being mid. Scared of hard?",
+    "hard": "Hard mode? Ok I'll actually type on my keyboard now. Been playing with my phone mb",
+}
+
+CHAT_RESPONSE = [
+    "Sorry, Bao is so broke he can't put an LLM in me to answer you.",
+    "As a non-AI language model, I cannot respond. If you wanna talk that much, go play with other humans. I won't be lonely. I promise.",
+]
 
 
 def get_damage_dialogue() -> str:
@@ -97,4 +117,4 @@ def get_healing_dialogue() -> str:
 
 def get_chat_response() -> str:
     """Get the response to player chat"""
-    return CHAT_RESPONSE
+    return random.choice(CHAT_RESPONSE)

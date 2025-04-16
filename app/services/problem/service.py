@@ -1,9 +1,10 @@
 import random
 from typing import Dict, List, Optional
+
 from core.config import settings
 from db.models.problem import Problem
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 
 class ProblemManager:

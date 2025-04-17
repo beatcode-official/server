@@ -3,16 +3,17 @@ import os
 import tempfile
 from typing import List
 
-import docker
 from core.config import settings
 from services.execution.docker import DockerRunner
+from services.execution.runtime_analysis import runtime_analysis_service
 from services.execution.test_generator import (
-    PythonTestGenerator,
-    JavaTestGenerator,
     CppTestGenerator,
+    JavaTestGenerator,
+    PythonTestGenerator,
 )
 from services.execution.types import ExecutionResult
-from services.execution.runtime_analysis import runtime_analysis_service
+
+import docker
 
 
 class CodeExecutionService:
@@ -61,7 +62,6 @@ class CodeExecutionService:
         gen = self.test_generators[lang]
 
         async with sem:  # blocks until a semaphore is available
-
             # Create a temporary file to store the test runner file.
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=gen.get_file_extension(), delete=False

@@ -1,9 +1,10 @@
 import random
 from typing import Dict, List, Optional
+
 from core.config import settings
 from db.models.problem import Problem
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 
 class ProblemManager:
@@ -69,13 +70,13 @@ class ProblemManager:
         return problems
 
     @staticmethod
-    def prepare_problem_for_client(problem: Problem) -> Dict:
+    def prepare_problem_for_client(problem: Problem, explanation: bool = False) -> Dict:
         """
         Return a non-sensitive version of the problem that can be sent to the client.
 
         :param problem: The problem to be prepared.
         """
-        return {
+        result = {
             "title": problem.title,
             "source": problem.source,
             "description": problem.description,
@@ -88,6 +89,9 @@ class ProblemManager:
                 "python": problem.boilerplate.python,
             },
         }
+        if explanation:
+            result["explanation"] = problem.explanation
+        return result
 
     @staticmethod
     def get_problem_for_validation(problem: Problem) -> Dict:

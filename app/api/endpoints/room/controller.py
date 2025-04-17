@@ -1,15 +1,10 @@
 import asyncio
 from typing import Optional
 
-from api.endpoints.users.controller import get_current_user
 from api.endpoints.room.utils import get_users_from_db
-from core.errors.room import (
-    RoomNotFoundError,
-    GuestUpdateSettingsError,
-    AlreadyInRoomError,
-    GameInProgressError,
-)
+from api.endpoints.users.controller import get_current_user
 from core.errors.game import AlreadyInGameError
+from core.errors.room import *
 from db.models.user import User
 from db.session import get_db
 from fastapi import (

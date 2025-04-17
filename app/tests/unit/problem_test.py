@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -9,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from core.config import settings
 from db.models.problem import Problem
 from services.problem.service import ProblemManager
+
 # fmt: on
 
 sync_db_url = settings.DATABASE_URL

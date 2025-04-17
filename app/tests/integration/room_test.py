@@ -2,11 +2,8 @@ import json
 import os
 import subprocess
 import sys
-import time
-from pprint import pprint
 
 from websockets.exceptions import ConnectionClosedError
-from websockets.legacy.exceptions import InvalidStatusCode
 
 # fmt: off
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

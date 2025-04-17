@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+
 from pydantic import BaseModel
 from schemas.game import GameEvent
 from services.game.manager import GameManager
@@ -45,16 +46,16 @@ class AbilityManager:
             "rickrollio": Ability(
                 sp_cost=20, mp_cost=30
             ),  # You already know what this does
-            "insertio": Ability(
-                sp_cost=10, mp_cost=5
-            ),  # Insert a random character inside your opponent's code
-            "errorio": Ability(
-                sp_cost=10, mp_cost=5
-            ),  # Add a random error inside your opponent's code
-            "peekio": Ability(sp_cost=10, mp_cost=10),  # Peek your opponent's code
-            "mistypio": Ability(
-                sp_cost=10, mp_cost=20
-            ),  # Every key will be mapped to a different key when typing
+            # "insertio": Ability(
+            #     sp_cost=10, mp_cost=5
+            # ),  # Insert a random character inside your opponent's code
+            # "errorio": Ability(
+            #     sp_cost=10, mp_cost=5
+            # ),  # Add a random error inside your opponent's code
+            # "peekio": Ability(sp_cost=10, mp_cost=10),  # Peek your opponent's code
+            # "mistypio": Ability(
+            #     sp_cost=10, mp_cost=20
+            # ),  # Every key will be mapped to a different key when typing
         }
 
     async def handle_ability_message(
@@ -176,7 +177,9 @@ class AbilityManager:
 
         # Handle abilities here, define new methods if needed
         if ability_id == "healio":
-            player.hp += 20  # Heal for 20
+            player.hp = min(
+                player.hp + 20, player.max_hp
+            )  # Heal for 20, not exceeding max_hp
 
         await game_state.broadcast_event(
             GameEvent(

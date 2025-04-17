@@ -4,13 +4,17 @@ import time
 from typing import Annotated
 
 from core.config import settings
+from core.errors.auth import CredentialError
 from core.security.jwt import jwt_manager
 from core.security.password import PasswordManager
-from db.models.user import RefreshToken, User
 from db.models.game import Match
+from db.models.user import RefreshToken, User
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+import jwt
 from schemas.user import (
     ForgotPassword,
     PasswordReset,
@@ -23,12 +27,9 @@ from schemas.user import (
 )
 from services.email.service import email_service
 from sqlalchemy.orm import Session
-import jwt
-from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
 
 router = APIRouter(prefix="/users", tags=["users"])
-oath2_scheme = OAuth2PasswordBearer(tokenUrl=f"users/login")
+oath2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
 
 async def get_current_user(
@@ -41,12 +42,6 @@ async def get_current_user(
     :param db: The database session
     """
     # Define an exception to raise if the credentials are invalid
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
@@ -57,18 +52,18 @@ async def get_current_user(
         token_secret: str = payload.get("secret")
 
         if username is None:
-            raise credentials_exception
+            raise CredentialError()
     except jwt.PyJWTError:
-        raise credentials_exception
+        raise CredentialError()
 
     # Query the database for the user with that username
     user = db.query(User).filter(User.username == username).first()
     if user is None:
-        raise credentials_exception
+        raise CredentialError()
 
     # Check if the token secret in the payload matches the user's token secret
     if token_secret != user.token_secret:
-        raise credentials_exception
+        raise CredentialError()
 
     return user
 
@@ -375,9 +370,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
 
         # First delete associated refresh tokens
         old_guest_users = (
-            db.query(User)
-            .filter(User.is_guest == True, User.created_at < time_limit)
-            .all()
+            db.query(User).filter(User.is_guest, User.created_at < time_limit).all()
         )
 
         # Delete all records of old guest users to prevent foreign key violations
@@ -387,9 +380,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
             db.query(Match).filter(Match.player2_id == user.id).delete()
 
         # Then delete the guest users
-        db.query(User).filter(
-            User.is_guest == True, User.created_at < time_limit
-        ).delete()
+        db.query(User).filter(User.is_guest, User.created_at < time_limit).delete()
 
         db.commit()
     except Exception as e:
@@ -420,7 +411,7 @@ async def create_guest_account(db: Session = Depends(get_db)):
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-    except Exception as e:
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1,5 +1,5 @@
-import random
 from collections import defaultdict
+import random
 from typing import Dict, List, Optional, Set, Tuple
 
 from core.config import settings

@@ -1,7 +1,7 @@
+from api.router import include_routers
+from core.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
-from api.router import include_routers
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

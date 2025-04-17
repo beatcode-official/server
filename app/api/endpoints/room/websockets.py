@@ -2,17 +2,9 @@ import asyncio
 import time
 import traceback
 
-from api.endpoints.users.websockets import get_current_user_ws
 from api.endpoints.room.utils import get_users_from_db
-from core.errors.room import (
-    WSRoomNotFoundError,
-    WSRoomFullError,
-    WSAlreadyInRoomError,
-    RoomError,
-    GuestStartGameError,
-    NotAllPlayersReadyError,
-    NotEnoughPlayersError,
-)
+from api.endpoints.users.websockets import get_current_user_ws
+from core.errors.room import *
 from db.models.user import User
 from db.session import get_db
 from fastapi import (
@@ -146,8 +138,8 @@ async def _run_room_loop(room, room_service, current_user, websocket, db):
             continue
         except WebSocketDisconnect:
             break
-        except Exception as e:
-            print(f"Error in room websocket")
+        except Exception:
+            print("Error in room websocket")
             print(traceback.format_exc())
             break
 

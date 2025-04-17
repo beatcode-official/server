@@ -2,9 +2,10 @@ import json
 import os
 import traceback
 
-import docker.errors
 from core.config import settings
 from services.execution.types import ExecutionResult
+
+import docker.errors
 
 
 class DockerRunner:
@@ -187,7 +188,7 @@ class DockerRunner:
             print(traceback.format_exc())
             return ExecutionResult(
                 success=False,
-                message=f"Execution Error",
+                message="Execution Error",
             )
 
     def get_last_logs(self) -> str:

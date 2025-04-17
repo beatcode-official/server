@@ -1,5 +1,4 @@
-from fastapi import WebSocket, HTTPException, WebSocketException, status
-from typing import Optional
+from fastapi import HTTPException, WebSocket, WebSocketException, status
 
 
 class RoomNotFoundError(HTTPException):

@@ -3,23 +3,9 @@ import json
 from pprint import pprint
 
 import requests
+from tests.integration.constants import *
 import websockets
-
-BASE_URL = "http://localhost:8000/api"
-WS_BASE_URL = "ws://localhost:8000/api"
-API_MAP = {
-    "register": "/users/register",
-    "login": "/users/login",
-    "verify": "/users/verify-email",
-    "user": "/users/me",
-    "forgot": "/users/forgot-password",
-    "reset": "/users/reset-password",
-    "refresh": "/users/refresh",
-    "logout": "/users/logout",
-    "queue": "/game/queue",
-    "queue_ranked": "/game/ranked-queue",
-    "current_game": "/game/current-game",
-}
+from websockets import ConnectionClosedError
 
 
 def register_user(username, email, password, display_name):
@@ -71,6 +57,7 @@ def delete_user(access_token):
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.delete(url, headers=headers)
+    return response.json()
 
 
 def forgot_password(email):
@@ -129,7 +116,21 @@ async def make_user(username, email, password, display_name):
     response = session.post(
         login_url, data={"username": username, "password": password}
     )
-    access_token = response.json()["access_token"]
+
+    response_json = response.json()
+
+    # Handle the typo in the response key (acceess_token instead of access_token)
+    if "access_token" in response_json:
+        access_token = response_json["access_token"]
+    elif "acceess_token" in response_json:
+        access_token = response_json["acceess_token"]
+    elif "token" in response_json and "access_token" in response_json["token"]:
+        access_token = response_json["token"]["access_token"]
+    else:
+        # Print full response for debugging
+        print(f"Full response content: {response.text}")
+        raise KeyError(f"Could not find access_token in response: {response_json}")
+
     return {"Authorization": f"Bearer {access_token}"}
 
 
@@ -174,7 +175,9 @@ async def send_chat(ws: websockets.WebSocketClientProtocol, message: str):
 
 
 async def send_code(ws: websockets.WebSocketClientProtocol, code: str):
-    return await ws.send(json.dumps({"type": "submit", "data": {"code": code}}))
+    return await ws.send(
+        json.dumps({"type": "submit", "data": {"code": code, "lang": "python"}})
+    )
 
 
 async def buy_ability(ws: websockets.WebSocketClientProtocol, ability_id: str):
@@ -233,3 +236,21 @@ async def leave_room(room_code: str, auth_headers: dict):
 
 def extract_token(auth_header):
     return auth_header["Authorization"].split(" ")[1]
+
+
+async def wait_for_message(ws, timeout=20):
+    """Waits for a message, parses it as JSON, and returns it."""
+    message_str = ""
+    try:
+        message_str = await asyncio.wait_for(ws.recv(), timeout=timeout)
+        return json.loads(message_str)
+    except asyncio.TimeoutError:
+        assert False, f"Timeout: Did not receive message within {timeout}s"
+    except json.JSONDecodeError:
+        assert False, f"Failed to decode JSON: {message_str}"
+    except ConnectionClosedError as e:
+        assert (
+            False
+        ), f"Connection closed while waiting for message: {e.code} {e.reason}"
+    except Exception as e:
+        assert False, f"Error waiting for/parsing message: {e}"

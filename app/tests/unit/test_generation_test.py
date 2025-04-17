@@ -1,16 +1,16 @@
 import os
 import sys
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from core.config import settings
 from db.models.problem import Problem
 from services.execution.service import CodeExecutionService
-import re
 
 sync_db_url = settings.DATABASE_URL
 engine = create_engine(sync_db_url)
@@ -51,7 +51,7 @@ class CodeGenerationService:
                 temperature=0,
             )
             return completion.choices[0].message.parsed
-        except:
+        except Exception:
             return CodeGenerationResponse()
 
 

@@ -1,6 +1,6 @@
 import asyncio
-import time
 from enum import Enum
+import time
 from typing import Dict, List, Optional
 
 from core.config import settings
@@ -57,6 +57,14 @@ class PlayerState(BaseModel):
     # Necessary for inclusion of types like WebSocket
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def max_hp(self) -> int:
+        """
+        Returns the maximum HP value.
+        This is needed for the healio ability to work correctly.
+        """
+        return settings.STARTING_HP if not settings.TESTING else 140
 
     async def send_event(self, event: GameEvent):
         """

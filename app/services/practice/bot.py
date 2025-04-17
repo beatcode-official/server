@@ -213,7 +213,7 @@ class BotPlayer:
                     and "healio" in self.player_state.abilities
                 ):
                     healio = ability_manager.abilities.get("healio")
-                    asyncio.sleep(random.uniform(1, 2))
+                    await asyncio.sleep(random.uniform(1, 2))
                     if healio and self.player_state.mana_points >= healio.mp_cost:
                         result = await self._use_ability("healio", True)
                         if result:
@@ -263,7 +263,8 @@ class BotPlayer:
         self.is_thinking = True
         thinking_time = (
             BASE_THINKING_TIME
-            * BOT_PLAYER_CONFIG[problem.difficulty]["thinking_multiplier"]
+            * 1
+            / BOT_PLAYER_CONFIG[problem.difficulty]["thinking_multiplier"]
         )
         thinking_time = thinking_time * random.uniform(0.8, 1.2)
 
@@ -432,7 +433,7 @@ class BotPlayer:
             if not sentence:
                 continue
 
-            await asyncio.sleep(random.uniform(0.5, 1.5))
+            await asyncio.sleep(random.uniform(2, 3))
             await self.game_state.broadcast_event(
                 GameEvent(
                     type="chat",

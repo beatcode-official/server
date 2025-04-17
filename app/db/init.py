@@ -12,6 +12,7 @@ from sqlalchemy_utils import create_database, database_exists
 def run_migrations():
     """Run Alembic migrations to ensure the schema is up to date."""
     try:
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
         subprocess.run(
             ["alembic", "revision", "--autogenerate", "-m", "auto"], check=True
         )
@@ -32,12 +33,10 @@ def init_db(test=False):
         create_database(engine.url)
         print(f"Created database: {engine.url}")
 
-    # Create all tables first to ensure they exist
+    run_migrations()
+
     Base.metadata.create_all(bind=engine)
     print("Created all tables")
-
-    # Then run migrations to handle any schema changes
-    run_migrations()
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()

@@ -91,7 +91,9 @@ async def practice_websocket(
 
         # Send first problem
         if problems:
-            problem = ProblemManager.prepare_problem_for_client(problems[0])
+            problem = ProblemManager.prepare_problem_for_client(
+                problems[0], explanation=True
+            )
             await websocket.send_json({"type": "problem", "data": problem})
 
             await practice_bot_manager.start_bot_simulation(
@@ -178,7 +180,7 @@ async def practice_websocket(
 
                 elif data["type"] == "forfeit":
                     game_state.status = GameStatus.FINISHED
-                    game_state.winner_id = bot_id
+                    game_state.winner = str(bot_id)
                     await game_state.broadcast_event(
                         GameEvent(
                             type="match_end",

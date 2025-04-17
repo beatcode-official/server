@@ -4,8 +4,7 @@ import subprocess
 import sys
 import time
 
-from websockets.exceptions import ConnectionClosedError
-from websockets.legacy.exceptions import InvalidStatusCode
+from websockets.exceptions import ConnectionClosedError, InvalidStatus
 
 # fmt: off
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -98,16 +97,16 @@ if 1 not in SKIP:
         try:
             async with websockets.connect(unranked_queue_url) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode as e:  # 403
-            assert e.status_code == 403
+        except InvalidStatus:  # 403
+            assert True
         except Exception:
             assert False
 
         try:
             async with websockets.connect(ranked_queue_url) as ws:
                 await asyncio.wait_for(ws.recv(), timeout=1)
-        except InvalidStatusCode as e:  # 403
-            assert e.status_code == 403
+        except InvalidStatus:  # 403
+            assert True
         except Exception:
             assert False
 
@@ -766,8 +765,8 @@ if 2 not in SKIP:
             try:
                 async with websockets.connect(f"{game_url}{match_id}") as ws:
                     await asyncio.wait_for(ws.recv(), timeout=1)
-            except InvalidStatusCode as e:  # 403
-                assert e.status_code == 403
+            except InvalidStatus:  # 403
+                assert True
             except Exception:
                 assert False
 

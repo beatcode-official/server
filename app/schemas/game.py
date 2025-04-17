@@ -37,7 +37,6 @@ class GameView(BaseModel):
     status: str
     winner: Optional[str] = None
     rating_change: Optional[float] = None
-    explanation: Optional[str] = None  # Explanation for practice mode bot actions
     skill_points: int
     mana_points: int
     abilities: List[str]

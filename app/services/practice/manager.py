@@ -3,10 +3,11 @@ from typing import Any, Dict, Optional
 
 from schemas.game import GameView
 from services.game.ability import ability_manager
+from services.game.manager import GameManager
 from services.game.state import GameState
 
 
-class PracticeGameManager:
+class PracticeGameManager(GameManager):
     """
     A service class for managing practice game state and operations.
 

@@ -206,7 +206,6 @@ async def game_websocket(
             {"type": "game_state", "data": game_view.model_dump()}
         )
 
-        # Send the current problem if the game is in progress
         if (
             game_state.status == GameStatus.IN_PROGRESS
             and player.current_problem_index < len(game_state.problems)
@@ -216,7 +215,6 @@ async def game_websocket(
             )
             await websocket.send_json({"type": "problem", "data": current_problem})
 
-        # Start the game if both players are connected and the game is waiting
         opponent = game_state.get_opponent_state(current_user.id)
         if opponent and opponent.ws and game_state.status == GameStatus.WAITING:
             game_state.status = GameStatus.IN_PROGRESS
@@ -231,7 +229,6 @@ async def game_websocket(
             try:
                 data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
 
-                # No longer accept messages if the game is finished
                 if game_state.status == GameStatus.FINISHED:
                     break
 
@@ -258,6 +255,9 @@ async def game_websocket(
                         )
 
                 elif data["type"] == "query":
+                    game_view = game_manager.create_game_view(
+                        game_state, current_user.id
+                    )
                     await websocket.send_json(
                         {"type": "game_state", "data": game_view.model_dump()}
                     )
@@ -269,7 +269,6 @@ async def game_websocket(
                     submission_cooldown = (
                         settings.SUBMISSION_COOLDOWN if not settings.TESTING else 2
                     )
-                    # Check if the player is submitting too fast
                     if (
                         player.last_submission is not None
                         and current_time - player.last_submission < submission_cooldown
@@ -341,7 +340,6 @@ async def game_websocket(
                             )
                         )
 
-                        # Send the next problem if the current one was solved
                         if (
                             submission_result["problem_solved"]
                             and problem_index < len(game_state.problems) - 1
@@ -356,7 +354,6 @@ async def game_websocket(
                         if await game_manager.check_game_end(game_id):
                             await game_manager.handle_game_end(game_state, db)
                     else:
-                        # Submission failed, send the result to the player
                         await player.send_event(
                             GameEvent(type="submission_result", data=result)
                         )

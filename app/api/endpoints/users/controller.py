@@ -152,7 +152,7 @@ async def login(
     if not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified",
+            detail="Email not verified. If you're running tests, make sure TESTING=True in env",
         )
 
     access_token, refresh_token = jwt_manager.create_tokens(user, db)

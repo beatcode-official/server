@@ -139,20 +139,16 @@ async def make_user(username, email, password, display_name):
 async def get_latest_message(
     ws: websockets.WebSocketClientProtocol, timeout=300
 ) -> Dict:
-    # This function seems unused and potentially incorrect (infinite loop).
-    # Keeping structure but noting potential issue.
-    # If intended to get only the *last* message after a burst, logic needs rework.
-    # If intended to get the *next* message, it should return inside the loop.
     message = None
-    while True:  # Potential infinite loop if ws keeps sending messages
+    while True:
         try:
             message_str = await asyncio.wait_for(ws.recv(), timeout=timeout)
             message = json.loads(message_str)
             if VERBOSE:
                 pprint(message)
-            # Assuming it should return the first message received:
             return message
         except asyncio.TimeoutError:
+            # Will exit loop if no response after timeout
             assert False, f"No response after {timeout}"
         except json.JSONDecodeError:
             assert False, f"Failed to decode JSON: {message}"
@@ -162,12 +158,6 @@ async def get_latest_message(
             )
         except Exception as e:
             assert False, f"Error waiting for/parsing message: {e}"
-
-    # This return statement was outside the loop, making the function potentially infinite.
-    # Moved inside based on assumed intent. If it should consume all messages first,
-    # the logic needs significant change.
-    # return message
-
 
 async def get_until(
     ws: websockets.WebSocketClientProtocol, message_type: str, timeout=300

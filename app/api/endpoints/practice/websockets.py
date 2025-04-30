@@ -241,33 +241,8 @@ async def practice_websocket(
                             result["summary"]["passed_tests"],
                             result["summary"]["total_tests"],
                         )
-                        # passed_tests = result["summary"]["passed_tests"]
-                        # total_tests = result["summary"]["total_tests"]
 
-                        # damage = int((passed_tests / total_tests) * 30)
-                        # problem_solved = passed_tests == total_tests
-
-                        # bot_player.hp = max(0, bot_player.hp - damage)
                         await operator.heal_bot_if_needed(game_id, bot_player)
-                        # if problem_solved:
-                        #     player.mana_points += (
-                        #         settings.MANA_RECHARGE
-                        #         if hasattr(settings, "MANA_RECHARGE")
-                        #         else 50
-                        #     )
-
-                        # submission_result = {
-                        #     "damage_dealt": damage,
-                        #     "problem_solved": problem_solved,
-                        # }
-
-                        # await websocket.send_json(
-                        #     {
-                        #         "type": "submission_result",
-                        #         "data": {**result, **submission_result},
-                        #     }
-                        # )
-
                         await player.send_event(
                             GameEvent(
                                 type="submission_result",

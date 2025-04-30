@@ -123,7 +123,7 @@ if 3 not in SKIP:
         ) as ws:
             msg = await wait_for_message(ws)
             assert msg.get("type") == "game_state", (
-                f"Expected type 'problem', got {msg.get('type', 'None')}"
+                f"Expected type 'game_state', got {msg.get('type', 'None')}"
             )
 
             msg = await wait_for_message(ws)

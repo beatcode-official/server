@@ -83,7 +83,7 @@ class AbilityManager:
                 game_state, game_manager, player_id, message.get("ability_id")
             )
 
-        return "Invalid action"
+        return f"Invalid action: {message}"
 
     async def handle_buy_ability(
         self,
@@ -123,21 +123,12 @@ class AbilityManager:
             )
         )
 
-        # Send updated player states to both players
-        await game_state.player1.send_event(
+        # Send updated player state to the player who bought the ability
+        await player.send_event(
             GameEvent(
                 type="game_state",
                 data=game_manager.create_game_view(
-                    game_state, game_state.player1.user_id
-                ).model_dump(),
-            )
-        )
-
-        await game_state.player2.send_event(
-            GameEvent(
-                type="game_state",
-                data=game_manager.create_game_view(
-                    game_state, game_state.player2.user_id
+                    game_state, player.user_id
                 ).model_dump(),
             )
         )

@@ -1,3 +1,6 @@
+import sys
+
+VERBOSE = "-v" in sys.argv
 BASE_URL = "http://localhost:8000/api"
 WS_BASE_URL = "ws://localhost:8000/api"
 API_MAP = {

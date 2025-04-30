@@ -1,11 +1,13 @@
 import asyncio
 import json
 from pprint import pprint
+from typing import Dict
 
 import requests
 from tests.integration.constants import *
+from tests.integration.constants import VERBOSE
 import websockets
-from websockets import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedError
 
 
 def register_user(username, email, password, display_name):
@@ -134,30 +136,51 @@ async def make_user(username, email, password, display_name):
     return {"Authorization": f"Bearer {access_token}"}
 
 
-async def get_latest_message(ws: websockets.WebSocketClientProtocol, print_all=False):
+async def get_latest_message(
+    ws: websockets.WebSocketClientProtocol, timeout=300
+) -> Dict:
     message = None
     while True:
         try:
-            message = await asyncio.wait_for(ws.recv(), timeout=1)
-            message = json.loads(message)
-            if print_all:
+            message_str = await asyncio.wait_for(ws.recv(), timeout=timeout)
+            message = json.loads(message_str)
+            if VERBOSE:
                 pprint(message)
+            return message
         except asyncio.TimeoutError:
-            break
+            # Will exit loop if no response after timeout
+            assert False, f"No response after {timeout}"
+        except json.JSONDecodeError:
+            assert False, f"Failed to decode JSON: {message}"
+        except ConnectionClosedError as e:
+            assert False, (
+                f"Connection closed while waiting for message: {e.code} {e.reason}"
+            )
+        except Exception as e:
+            assert False, f"Error waiting for/parsing message: {e}"
 
-    return message
-
-
-async def get_until(ws: websockets.WebSocketClientProtocol, message_type: str):
+async def get_until(
+    ws: websockets.WebSocketClientProtocol, message_type: str, timeout=300
+) -> Dict:
     message = None
     while True:
         try:
-            message = await asyncio.wait_for(ws.recv(), timeout=1)
-            message = json.loads(message)
-            if message["type"] == message_type:
+            message_str = await asyncio.wait_for(ws.recv(), timeout=timeout)
+            message = json.loads(message_str)
+            if VERBOSE:
+                pprint(message)
+            if message.get("type") == message_type:
                 break
         except asyncio.TimeoutError:
-            break
+            assert False, f"No response after {timeout}"
+        except json.JSONDecodeError:
+            assert False, f"Failed to decode JSON: {message}"
+        except ConnectionClosedError as e:
+            assert False, (
+                f"Connection closed while waiting for message: {e.code} {e.reason}"
+            )
+        except Exception as e:
+            assert False, f"Error waiting for/parsing message: {e}"
 
     return message
 
@@ -238,19 +261,23 @@ def extract_token(auth_header):
     return auth_header["Authorization"].split(" ")[1]
 
 
-async def wait_for_message(ws, timeout=20):
+async def wait_for_message(ws, timeout=300):
     """Waits for a message, parses it as JSON, and returns it."""
     message_str = ""
     try:
         message_str = await asyncio.wait_for(ws.recv(), timeout=timeout)
-        return json.loads(message_str)
+        message = json.loads(message_str)
+        if VERBOSE:
+            # Use pprint for better readability of complex messages
+            pprint(message)
+        return message
     except asyncio.TimeoutError:
-        assert False, f"Timeout: Did not receive message within {timeout}s"
+        assert False, f"No response after {timeout}"
     except json.JSONDecodeError:
         assert False, f"Failed to decode JSON: {message_str}"
     except ConnectionClosedError as e:
-        assert (
-            False
-        ), f"Connection closed while waiting for message: {e.code} {e.reason}"
+        assert False, (
+            f"Connection closed while waiting for message: {e.code} {e.reason}"
+        )
     except Exception as e:
         assert False, f"Error waiting for/parsing message: {e}"

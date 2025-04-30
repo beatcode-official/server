@@ -1,5 +1,4 @@
 import asyncio
-import random
 import time
 import traceback
 
@@ -10,17 +9,14 @@ from db.session import get_db
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from schemas.game import GameEvent
 from services.execution.service import code_execution
-from services.game.ability import ability_manager
 from services.game.state import GameState, GameStatus, PlayerState
-from services.practice.bot import HEALING_THRESHOLD, practice_bot_manager
-from services.practice.dialogue import (
-    get_ability_received_dialogue,
-)
-from services.practice.manager import practice_game_manager
+from services.practice.constants import BOT_NAME
+from services.practice.operator import PracticeGameOperator
 from services.problem.service import ProblemManager
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/practice", tags=["practice"])
+operator = PracticeGameOperator()
 
 
 @router.websocket("")
@@ -36,21 +32,16 @@ async def practice_websocket(
     :param current_user: Current user
     :param db: Database session
     """
-    # Fetch problems
     distribution = {
         "easy": 1,
         "medium": 1,
         "hard": 1,
-    }  # Simple distribution for practice
+    }
     problems = await ProblemManager.get_problems_by_distribution(db, distribution)
 
-    # Create game state with a bot opponent
-    bot_id = -int(
-        time.time()
-    )  # Use a negative number to ensure uniqueness but still provide an integer
     game_id = f"practice-{current_user.id}-{int(time.time())}"
+    bot_id = -int(time.time())
 
-    # Create player states
     player = PlayerState(
         user_id=current_user.id,
         username=current_user.username,
@@ -61,10 +52,10 @@ async def practice_websocket(
 
     bot_player = PlayerState(
         user_id=bot_id,
-        username=practice_bot_manager.get_bot_name(),
-        display_name=practice_bot_manager.get_bot_name(),
-        rating=1000,  # Default rating for bot
-        ws=None,  # Bot doesn't need a websocket
+        username=BOT_NAME,
+        display_name=BOT_NAME,
+        rating=1000,
+        ws=None,
     )
 
     game_state = GameState(
@@ -77,34 +68,26 @@ async def practice_websocket(
         start_time=time.time(),
     )
 
-    practice_bot_manager.create_bot(bot_id, bot_player, game_state)
-
     try:
-        game_view = practice_game_manager.create_game_view(
-            game_state, current_user.id
-        ).model_dump()
+        operator.register_game(game_state)
+        game_view = operator.get_game_view(game_state, current_user.id)
 
         await websocket.send_json({"type": "game_state", "data": game_view})
 
-        # Start the game
         game_state.status = GameStatus.IN_PROGRESS
+        await operator.create_bot(bot_id, bot_player, game_state)
+        await operator.run_bot(game_id, current_user.display_name)
 
-        # Send first problem
         if problems:
             problem = ProblemManager.prepare_problem_for_client(
                 problems[0], explanation=True
             )
             await websocket.send_json({"type": "problem", "data": problem})
 
-            await practice_bot_manager.start_bot_simulation(
-                game_id, current_user.display_name
-            )
-
         while True:
             try:
                 data = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
 
-                # No longer accept messages if the game is finished
                 if game_state.status == GameStatus.FINISHED:
                     break
 
@@ -119,61 +102,30 @@ async def practice_websocket(
                             },
                         )
                     )
-                    await practice_bot_manager.get_chat_response(game_id)
+                    await operator.handle_chat_message(game_id)
 
                 elif data["type"] == "change_bot_difficulty":
                     difficulty = data["data"]["difficulty"]
-                    if difficulty in ["easy", "medium", "hard"]:
-                        success = await practice_bot_manager.change_bot_difficulty(
-                            game_id, difficulty
-                        )
-                        if not success:
-                            await websocket.send_json(
-                                {
-                                    "type": "error",
-                                    "data": {
-                                        "message": "Failed to change bot difficulty"
-                                    },
-                                }
-                            )
-                    else:
+                    try:
+                        await operator.change_bot_difficulty(game_id, difficulty)
+                    except Exception as e:
                         await websocket.send_json(
                             {
                                 "type": "error",
                                 "data": {
-                                    "message": "Invalid difficulty level. Valid options are: easy, medium, hard"
+                                    "message": f"Failed to change bot difficulty: {str(e)}"
                                 },
                             }
                         )
 
                 elif data["type"] == "ability":
-                    action = data["data"].get("action", "")
-                    ability_id = data["data"].get("ability_id", "")
-
-                    error = await ability_manager.handle_ability_message(
-                        game_state, practice_game_manager, current_user.id, data["data"]
+                    error = await operator.handle_ability_message(
+                        game_state, current_user.id, data
                     )
                     if error:
                         await websocket.send_json(
                             {"type": "error", "data": {"message": error}}
                         )
-                    else:
-                        if action == "use" and ability_id != "healio":
-                            bot_response = get_ability_received_dialogue()
-                            await game_state.broadcast_event(
-                                GameEvent(
-                                    type="chat",
-                                    data={
-                                        "sender": bot_player.username,
-                                        "message": bot_response,
-                                        "timestamp": time.time(),
-                                    },
-                                )
-                            )
-
-                        game_view = practice_game_manager.create_game_view(
-                            game_state, current_user.id
-                        ).model_dump()
 
                 elif data["type"] == "query":
                     await websocket.send_json({"type": "game_state", "data": game_view})
@@ -194,11 +146,10 @@ async def practice_websocket(
                     break
 
                 elif data["type"] == "retry":
-                    practice_bot_manager.cleanup_bot(game_id)
+                    await operator.cleanup_game(game_id)
                     new_bot_id = -int(time.time())
-                    new_game_id = f"practice-{current_user.id}-{int(time.time())}"
+                    new_game_id = f"practice-{current_user.id}-{new_bot_id}"
 
-                    # Start new game
                     player = PlayerState(
                         user_id=current_user.id,
                         username=current_user.username,
@@ -207,16 +158,14 @@ async def practice_websocket(
                         ws=websocket,
                     )
 
-                    # Create new bot player
                     new_bot_player = PlayerState(
                         user_id=new_bot_id,
-                        username=practice_bot_manager.get_bot_name(),
-                        display_name=practice_bot_manager.get_bot_name(),
+                        username=BOT_NAME,
+                        display_name=BOT_NAME,
                         rating=1000,
                         ws=None,
                     )
 
-                    # Create new game state
                     game_state = GameState(
                         id=new_game_id,
                         player1=player,
@@ -229,30 +178,18 @@ async def practice_websocket(
                         start_time=time.time(),
                     )
 
-                    # Create new bot
-                    practice_bot_manager.create_bot(
-                        new_bot_id, new_bot_player, game_state
-                    )
-
-                    # Send new game state to player
-                    game_view = practice_game_manager.create_game_view(
-                        game_state, current_user.id
-                    ).model_dump()
-
+                    game_view = operator.get_game_view(game_state, current_user.id)
                     await websocket.send_json({"type": "game_state", "data": game_view})
 
-                    # Start new game
                     game_state.status = GameStatus.IN_PROGRESS
+                    await operator.create_bot(new_bot_id, bot_player, game_state)
+                    await operator.run_bot(new_game_id, current_user.display_name)
 
                     if game_state.problems:
                         problem = ProblemManager.prepare_problem_for_client(
                             game_state.problems[0]
                         )
                         await websocket.send_json({"type": "problem", "data": problem})
-
-                        await practice_bot_manager.start_bot_simulation(
-                            new_game_id, current_user.display_name
-                        )
 
                 elif data["type"] == "submit":
                     current_time = time.time()
@@ -298,59 +235,49 @@ async def practice_websocket(
                     result = result.to_dict()
 
                     if result["success"]:
-                        passed_tests = result["summary"]["passed_tests"]
-                        total_tests = result["summary"]["total_tests"]
-
-                        damage = int((passed_tests / total_tests) * 30)
-                        problem_solved = passed_tests == total_tests
-
-                        bot_hp_before = bot_player.hp
-
-                        bot_player.hp = max(0, bot_player.hp - damage)
-
-                        active_bot = practice_bot_manager.active_bots.get(str(game_id))
-
-                        if (
-                            active_bot
-                            and bot_player.hp < HEALING_THRESHOLD
-                            and bot_hp_before >= HEALING_THRESHOLD
-                            and "healio" in bot_player.abilities
-                        ):
-                            await asyncio.sleep(random.randint(1, 5))
-                            healio = ability_manager.abilities.get("healio")
-                            if healio and bot_player.mana_points >= healio.mp_cost:
-                                asyncio.create_task(active_bot.trigger_bot_healing())
-
-                            if problem_solved:
-                                player.mana_points += (
-                                    settings.MANA_RECHARGE
-                                    if hasattr(settings, "MANA_RECHARGE")
-                                    else 50
-                                )
-
-                        submission_result = {
-                            "damage_dealt": damage,
-                            "problem_solved": problem_solved,
-                        }
-
-                        # Send submission result to player
-                        await websocket.send_json(
-                            {
-                                "type": "submission_result",
-                                "data": {**result, **submission_result},
-                            }
+                        submission_result = await operator.process_submission(
+                            game_id,
+                            current_user.id,
+                            result["summary"]["passed_tests"],
+                            result["summary"]["total_tests"],
                         )
 
-                        game_view = practice_game_manager.create_game_view(
-                            game_state, current_user.id
-                        ).model_dump()
+                        await operator.heal_bot_if_needed(game_id, bot_player)
+                        await player.send_event(
+                            GameEvent(
+                                type="submission_result",
+                                data={**result, **submission_result},
+                            )
+                        )
+
+                        await game_state.player1.send_event(
+                            GameEvent(
+                                type="game_state",
+                                data=operator.get_game_view(
+                                    game_state, game_state.player1.user_id
+                                ),
+                            )
+                        )
+
+                        await game_state.player2.send_event(
+                            GameEvent(
+                                type="game_state",
+                                data=operator.get_game_view(
+                                    game_state, game_state.player2.user_id
+                                ),
+                            )
+                        )
+
+                        game_view = operator.get_game_view(game_state, current_user.id)
 
                         await websocket.send_json(
                             {"type": "game_state", "data": game_view}
                         )
 
-                        # Move to next problem if current one is solved
-                        if problem_solved and problem_index < len(problems) - 1:
+                        if (
+                            submission_result["problem_solved"]
+                            and problem_index < len(game_state.problems) - 1
+                        ):
                             player.current_problem_index += 1
                             next_problem = ProblemManager.prepare_problem_for_client(
                                 problems[player.current_problem_index]
@@ -359,20 +286,20 @@ async def practice_websocket(
                                 {"type": "problem", "data": next_problem}
                             )
 
-                        if bot_player.hp <= 0:
-                            game_state.status = GameStatus.FINISHED
-                            game_state.winner_id = current_user.id
-                            await game_state.broadcast_event(
-                                GameEvent(
-                                    type="match_end",
-                                    data={
-                                        "winner": current_user.username,
-                                        "winner_id": current_user.id,
-                                        "reason": "hp_depleted",
-                                    },
+                            if bot_player.hp <= 0:
+                                game_state.status = GameStatus.FINISHED
+                                game_state.winner = current_user.id
+                                await game_state.broadcast_event(
+                                    GameEvent(
+                                        type="match_end",
+                                        data={
+                                            "winner": current_user.username,
+                                            "winner_id": current_user.id,
+                                            "reason": "hp_depleted",
+                                        },
+                                    )
                                 )
-                            )
-                            break
+                                break
                     else:
                         await websocket.send_json(
                             {"type": "submission_result", "data": result}
@@ -398,6 +325,5 @@ async def practice_websocket(
     except Exception:
         print(f"Error in practice websocket: {traceback.format_exc()}")
     finally:
-        # Clean up the bot through the manager
-        practice_bot_manager.cleanup_bot(game_id)
+        await operator.cleanup_game(game_id)
         game_state.status = GameStatus.FINISHED

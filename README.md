@@ -7,6 +7,8 @@ This README.md provides information on how to install and run the server.
 
 For information on how to integrate with the frontend, check out DOCS.md.
 
+**[More comprehensive documentation](https://deepwiki.com/beatcode-official/server)**
+
 ## Requirements
 1. Python (this repo uses Python 3.11)
 2. Ready-to-go PostgreSQL database

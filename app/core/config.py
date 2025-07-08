@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"  # Version of the project
     API_STR: str = "/api"  # Base URL for the API
 
+    # CORS
+    CORS_ORIGINS: str = "*"  # Comma-separated list of allowed origins, or "*" for all
+    CORS_CREDENTIALS: bool = True  # Allow credentials in CORS requests
+    CORS_METHODS: str = "*"  # Comma-separated list of allowed methods, or "*" for all
+    CORS_HEADERS: str = "*"  # Comma-separated list of allowed headers, or "*" for all
+
     # Testing
     TESTING: bool  # Enable testing mode
     TEST_EMAIL_TOKEN: str  # Email token for testing verification and password reset
@@ -144,6 +150,36 @@ class Settings(BaseSettings):
             "starting_mp": self.ROOM_STARTING_MP,
             "mana_recharge": self.ROOM_MANA_RECHARGE,
         }
+
+    @property
+    def CORS_ORIGINS_LIST(self) -> list[str]:
+        """
+        Parse CORS origins from comma-separated string.
+        Returns ["*"] if CORS_ORIGINS is "*", otherwise splits by comma and strips whitespace.
+        """
+        if self.CORS_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def CORS_METHODS_LIST(self) -> list[str]:
+        """
+        Parse CORS methods from comma-separated string.
+        Returns ["*"] if CORS_METHODS is "*", otherwise splits by comma and strips whitespace.
+        """
+        if self.CORS_METHODS == "*":
+            return ["*"]
+        return [method.strip() for method in self.CORS_METHODS.split(",") if method.strip()]
+
+    @property
+    def CORS_HEADERS_LIST(self) -> list[str]:
+        """
+        Parse CORS headers from comma-separated string.
+        Returns ["*"] if CORS_HEADERS is "*", otherwise splits by comma and strips whitespace.
+        """
+        if self.CORS_HEADERS == "*":
+            return ["*"]
+        return [header.strip() for header in self.CORS_HEADERS.split(",") if header.strip()]
 
     model_config = SettingsConfigDict(
         env_file="../.env",

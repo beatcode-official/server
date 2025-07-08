@@ -20,12 +20,10 @@ class TestResult:
 
     def to_dict(self, is_sample: bool = True):
         result = {
-            {
-                "expected": self.expected,
-                "output": self.output,
-                "passed": self.passed,
-                "error": self.error,
-            }
+            "expected": self.expected,
+            "output": self.output,
+            "passed": self.passed,
+            "error": self.error,
         }
         if is_sample:
             result["logs"] = self.logs
